@@ -1,0 +1,31 @@
+# for progressive validation
+
+Training...
+bytes/total bytes, bytes/s
+events/?, events/s
+
+exponential backoff of metric
+event counter metric value
+1             0
+2             1
+4             2
+8             3
+
+Done in x seconds
+wrote model file to xxx
+
+# For multipass
+Training...
+pass 1/10
+bytes/total bytes, bytes/s
+events/?, events/s
+
+exponential backoff of metric
+pass counter metric value
+1            0
+2            1
+4            2
+8            3
+
+Done in x seconds
+wrote model file to xxx
