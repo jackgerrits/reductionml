@@ -2,5 +2,5 @@ use anyhow::Result;
 
 pub(crate) trait Command {
     type Args;
-    fn execute(args: &Self::Args) -> Result<()>;
+    fn execute(args: &Self::Args, quiet: bool) -> Result<()>;
 }

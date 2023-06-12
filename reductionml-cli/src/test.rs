@@ -37,7 +37,7 @@ pub(crate) struct TestCommand;
 
 impl Command for TestCommand {
     type Args = TestArgs;
-    fn execute(_args: &TestArgs) -> Result<()> {
+    fn execute(_args: &TestArgs, quiet: bool) -> Result<()> {
         eprintln!("{} Not implemented.", "Error:".red());
         todo!()
     }

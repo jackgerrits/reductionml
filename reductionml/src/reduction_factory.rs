@@ -1,5 +1,6 @@
 use std::any::Any;
 
+use schemars::{JsonSchema, schema::{RootSchema, Schema, SchemaObject}, gen::SchemaGenerator};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -11,6 +12,8 @@ use crate::{
     ModelIndex,
 };
 
+// This intentionally does not derive JsonSchema
+// Use gen_json_reduction_config_schema instead with schema_with
 #[derive(Serialize, Deserialize)]
 pub struct JsonReductionConfig {
     typename: String,
@@ -70,6 +73,25 @@ pub trait ReductionFactory {
         num_models_above: ModelIndex,
     ) -> Result<ReductionWrapper>;
     fn typename(&self) -> String;
+    fn get_config_schema(&self) -> RootSchema;
+}
+
+#[macro_export]
+macro_rules! impl_default_factory_functions {
+    ($typename: expr, $config_type: ident) => {
+        fn typename(&self) -> String {
+            $typename.to_owned()
+        }
+        fn parse_config(&self, value: &serde_json::Value) -> Result<Box<dyn ReductionConfig>> {
+            let res: $config_type = serde_json::from_value(value.clone()).unwrap();
+            Ok(Box::new(res))
+        }
+
+        fn get_config_schema(&self) -> RootSchema
+        {
+            schema_for!($config_type)
+        }
+    };
 }
 
 pub fn parse_config(config: &JsonReductionConfig) -> Result<Box<dyn ReductionConfig>> {

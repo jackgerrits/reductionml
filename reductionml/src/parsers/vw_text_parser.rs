@@ -387,6 +387,7 @@ fn read_multi_lines(
     input: &mut dyn std::io::BufRead,
     mut output_buffer: String,
 ) -> Result<Option<String>> {
+    assert!(output_buffer.is_empty());
     loop {
         let len_before = output_buffer.len();
         if !output_buffer.is_empty() {

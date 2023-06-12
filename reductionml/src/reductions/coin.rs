@@ -36,11 +36,14 @@ use crate::sparse_namespaced_features::SparseFeatures;
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
 use crate::weights::{foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut};
-use crate::{types::*, ModelIndex, StateIndex};
+use crate::{types::*, ModelIndex, StateIndex, impl_default_factory_functions};
+use schemars::schema::RootSchema;
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_default::DefaultFromSerde;
 
-#[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone)]
+#[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CoinRegressorConfig {
     #[serde(default = "default_alpha")]
     alpha: f32,
@@ -155,7 +158,12 @@ impl CoinRegressor {
 #[derive(Default)]
 pub struct CoinRegressorFactory;
 
+
+
+
 impl ReductionFactory for CoinRegressorFactory {
+    impl_default_factory_functions!("coin", CoinRegressorConfig);
+
     fn create(
         &self,
         config: &dyn ReductionConfig,
@@ -168,6 +176,7 @@ impl ReductionFactory for CoinRegressorFactory {
             .unwrap();
 
         Ok(ReductionWrapper::new(
+            self.typename(),
             Box::new(CoinRegressor::new(
                 config.clone(),
                 global_config,
@@ -181,14 +190,6 @@ impl ReductionFactory for CoinRegressorFactory {
             .build(),
             num_models_above,
         ))
-    }
-
-    fn typename(&self) -> String {
-        "coin".to_owned()
-    }
-    fn parse_config(&self, value: &serde_json::Value) -> Result<Box<dyn ReductionConfig>> {
-        let res: CoinRegressorConfig = serde_json::from_value(value.clone()).unwrap();
-        Ok(Box::new(res))
     }
 }
 
@@ -255,10 +256,6 @@ impl ReductionImpl for CoinRegressor {
         _depth_info: DepthInfo,
     ) -> f32 {
         todo!()
-    }
-
-    fn typename(&self) -> String {
-        "coin".to_owned()
     }
 }
 
@@ -365,6 +362,7 @@ impl CoinRegressor {
 mod tests {
 
     use approx::assert_relative_eq;
+    use schemars::{schema_for, schema::{Schema, SchemaObject, RootSchema}};
 
     use crate::sparse_namespaced_features::Namespace;
 

@@ -16,7 +16,7 @@ pub(crate) struct CheckCommand;
 
 impl Command for CheckCommand {
     type Args = CheckArgs;
-    fn execute(args: &CheckArgs) -> Result<()> {
+    fn execute(args: &CheckArgs, quiet: bool) -> Result<()> {
         // load json from file
         let json = std::fs::read_to_string(&args.config).unwrap();
         let _workspace = reductionml::workspace::Workspace::create_from_json(&json).unwrap();

@@ -1,12 +1,13 @@
 use std::{
     fs::File,
-    io::{self, stdout, Write},
+    io::{self, stdout, Write}, time::Duration,
 };
 
 use anyhow::Result;
 
 use clap::Args;
 use crossterm::{cursor, terminal, ExecutableCommand};
+use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 use reductionml::{
     metrics::MeanSquaredErrorMetric,
     metrics::Metric,
@@ -53,7 +54,7 @@ pub(crate) struct TrainCommand;
 
 impl Command for TrainCommand {
     type Args = TrainArgs;
-    fn execute(args: &TrainArgs) -> Result<()> {
+    fn execute(args: &TrainArgs, quiet: bool) -> Result<()> {
         let mut workspace = match (&args.input_config.config, &args.input_config.input_model) {
             // Loading from json config
             (Some(config_file), None) => {
@@ -79,9 +80,9 @@ impl Command for TrainCommand {
         println!();
         println!("Training...");
 
-        let mut stdout = stdout();
-        writeln!(stdout, "Example count: 0").unwrap();
-        writeln!(stdout, "Metric: 0").unwrap();
+        // let mut stdout = stdout();
+        // writeln!(stdout, "Example count: 0").unwrap();
+        // writeln!(stdout, "Metric: 0").unwrap();
 
         let mut counter: i32 = 0;
         let pool = workspace.features_pool().clone();
@@ -97,7 +98,24 @@ impl Command for TrainCommand {
             workspace.global_config().num_bits(),
             pool.clone(),
         );
-        let mut input_file = io::BufReader::new(file);
+
+        let mp = MultiProgress::new();
+        let pb: ProgressBar = ProgressBar::new(file.metadata()?.len());
+        let ex_spinner = ProgressBar::new_spinner();
+        mp.add(ex_spinner.clone());
+        mp.add(pb.clone());
+        pb.set_style(ProgressStyle::with_template("Input progress: {bar:40.cyan/blue} {bytes_per_sec}")
+        .unwrap()
+        .progress_chars("##-"));
+
+    // ex_spinner.set_style(ProgressStyle::default_spinner());
+    ex_spinner.set_style(ProgressStyle::with_template("Elapsed time: {elapsed}\nExamples processed: {pos}\nPer sec: {per_sec}\n\n").unwrap());
+    ex_spinner.set_message(format!("{}", counter));
+    ex_spinner.enable_steady_tick(Duration::from_millis(250));
+    pb.enable_steady_tick(Duration::from_millis(250));
+
+        let mut f = pb.wrap_read(file);
+        let mut input_file = io::BufReader::new(f);
         let mut buffer: String = String::new();
         loop {
             let chunk = parser.get_next_chunk(&mut input_file, buffer).unwrap();
@@ -110,13 +128,21 @@ impl Command for TrainCommand {
                     // metric.add_point(&label, &prediction);
                     workspace.learn(&features, &label);
 
-                    if (counter % 1000) == 0 {
-                        stdout.execute(cursor::MoveUp(2)).unwrap();
-                        stdout
-                            .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
-                            .unwrap();
-                        writeln!(stdout, "Example count: {}", counter).unwrap();
-                        writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
+                    if (counter % 1) == 0 {
+                        // stdout.execute(cursor::MoveUp(2)).unwrap();
+                        // stdout
+                        //     .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+                        //     .unwrap();
+
+                        // ex_spinner.set_message(format!("{}", counter));
+
+                        // pb.set_message(format!("{}", counter));
+                        // writeln!(stdout, "Example count: {}", counter).unwrap();
+                        // writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
+                        // mp.println(format!("Mean squared error: {}", metric.get_value()));
+                        // pb.tick();
+                        // ex_spinner.tick();
+                        ex_spinner.inc(1);
                     }
 
                     // Put feature objects back into the pool for reuse.
@@ -129,12 +155,17 @@ impl Command for TrainCommand {
             }
         }
 
-        stdout.execute(cursor::MoveUp(2)).unwrap();
-        stdout
-            .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
-            .unwrap();
-        writeln!(stdout, "Example count: {}", counter).unwrap();
-        writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
+        pb.finish();
+        ex_spinner.finish();
+        // pb.println(format!("Mean squared error: {}", metric.get_value()));
+        // mp.finish();
+
+        // stdout.execute(cursor::MoveUp(2)).unwrap();
+        // stdout
+        //     .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+        //     .unwrap();
+        // writeln!(stdout, "Example count: {}", counter).unwrap();
+        // writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
 
         Ok(())
     }

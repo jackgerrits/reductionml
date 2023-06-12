@@ -11,11 +11,13 @@ use crate::utils::GetInner;
 
 use crate::reductions::CoinRegressorConfig;
 use crate::sparse_namespaced_features::SparseFeatures;
-use crate::{types::*, ModelIndex};
+use crate::{types::*, ModelIndex, impl_default_factory_functions};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use schemars::schema::RootSchema;
+use schemars::{JsonSchema, schema_for};
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, JsonSchema)]
 enum CBType {
     #[serde(rename = "ips")]
     Ips,
@@ -23,10 +25,12 @@ enum CBType {
     Mtr,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct CBAdfConfig {
     cb_type: CBType,
     #[serde(default = "default_regressor")]
+    #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
     regressor: JsonReductionConfig,
 }
 
@@ -64,6 +68,8 @@ struct CBAdfReduction {
 pub struct CBAdfReductionFactory;
 
 impl ReductionFactory for CBAdfReductionFactory {
+    impl_default_factory_functions!("cb_adf", CBAdfConfig);
+
     fn create(
         &self,
         config: &dyn ReductionConfig,
@@ -93,6 +99,7 @@ impl ReductionFactory for CBAdfReductionFactory {
         }
 
         Ok(ReductionWrapper::new(
+            self.typename(),
             Box::new(CBAdfReduction {
                 cb_type: config.cb_type,
                 regressor,
@@ -102,18 +109,6 @@ impl ReductionFactory for CBAdfReductionFactory {
             types,
             num_models_above,
         ))
-    }
-
-    fn typename(&self) -> String {
-        "cb_adf".to_owned()
-    }
-
-    fn parse_config(
-        &self,
-        value: &serde_json::Value,
-    ) -> Result<Box<dyn crate::reduction_factory::ReductionConfig>> {
-        let res: CBAdfConfig = serde_json::from_value(value.clone()).unwrap();
-        Ok(Box::new(res))
     }
 }
 
@@ -242,9 +237,5 @@ impl ReductionImpl for CBAdfReduction {
 
     fn children(&self) -> Vec<&ReductionWrapper> {
         vec![&self.regressor]
-    }
-
-    fn typename(&self) -> String {
-        "cb_adf".to_owned()
     }
 }

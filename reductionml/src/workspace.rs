@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -21,12 +22,16 @@ pub struct Workspace {
     features_pool: Arc<Pool<SparseFeatures>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct Configuration {
+    // $schema,
+    #[serde(rename = "$schema", default)]
+    _schema: Option<String>,
     global_config: GlobalConfig,
-    reduction: JsonReductionConfig,
+    #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
+    entry_reduction: JsonReductionConfig,
 }
 
 impl Workspace {
@@ -35,7 +40,7 @@ impl Workspace {
             Error::InvalidConfiguration(format!("Failed to parse configuration: {}", e))
         })?;
 
-        let reduction_config = crate::reduction_factory::parse_config(&config.reduction)?;
+        let reduction_config = crate::reduction_factory::parse_config(&config.entry_reduction)?;
         let entry_reduction = crate::reduction_factory::create_reduction(
             reduction_config.as_ref(),
             &config.global_config,
@@ -121,7 +126,7 @@ mod tests {
                 "globalConfig": {
                     "numBits": 4
                 },
-                "reduction": {
+                "entryReduction": {
                     "typename": "coin",
                     "config": {
                         "alpha": 10

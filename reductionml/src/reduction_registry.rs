@@ -33,4 +33,8 @@ impl ReductionRegistry {
     pub fn get(&self, typename: &str) -> Option<&dyn ReductionFactory> {
         self.registry.get(typename).map(|x| x.as_ref())
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &dyn ReductionFactory> {
+        self.registry.values().map(|x| x.as_ref())
+    }
 }

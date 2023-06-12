@@ -217,12 +217,13 @@ pub struct ReductionWrapper {
 
 impl ReductionWrapper {
     pub fn new(
+        typename: String,
         reduction: Box<dyn ReductionImpl>,
         type_description: ReductionTypeDescription,
         num_models_below: ModelIndex,
     ) -> ReductionWrapper {
         ReductionWrapper {
-            typename: reduction.typename(),
+            typename,
             reduction,
             type_description,
             num_models_below,
@@ -240,7 +241,6 @@ impl ReductionWrapper {
 
 #[typetag::serde(tag = "type")]
 pub trait ReductionImpl {
-    fn typename(&self) -> String;
     fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction;
     fn predict_then_learn(
         &mut self,

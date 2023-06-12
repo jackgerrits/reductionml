@@ -18,7 +18,7 @@ pub(crate) struct ExportModelCommand;
 
 impl Command for ExportModelCommand {
     type Args = ExportModelArgs;
-    fn execute(args: &ExportModelArgs) -> Result<()> {
+    fn execute(args: &ExportModelArgs, quiet: bool) -> Result<()> {
         eprintln!(
             "{} Exporting a model to JSON is not a supported feature. Use at your own risk.",
             "Warning:".yellow()

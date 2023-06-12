@@ -29,7 +29,7 @@ pub(crate) struct CreateInvHashTableCommand;
 
 impl Command for CreateInvHashTableCommand {
     type Args = CreateInvHashTableArgs;
-    fn execute(args: &CreateInvHashTableArgs) -> Result<()> {
+    fn execute(args: &CreateInvHashTableArgs, quiet: bool) -> Result<()> {
         let file = File::open(&args.data).unwrap();
         let mut stderr = stderr();
         writeln!(stderr, "Reading data file: {}", &args.data).unwrap();

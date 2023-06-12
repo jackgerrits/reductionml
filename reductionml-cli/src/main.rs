@@ -18,6 +18,10 @@ mod train;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// Silence all output
+    #[arg(long, default_value = "false")]
+    quiet: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -62,28 +66,28 @@ fn main() {
     let cli = Cli::parse();
     match &cli.command {
         Commands::Check(args) => {
-            check::CheckCommand::execute(args).unwrap();
+            check::CheckCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::Train(args) => {
-            train::TrainCommand::execute(args).unwrap();
+            train::TrainCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::CreateInvHashTable(args) => {
-            create_inv_hash_table::CreateInvHashTableCommand::execute(args).unwrap();
+            create_inv_hash_table::CreateInvHashTableCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::Test(args) => {
-            test::TestCommand::execute(args).unwrap();
+            test::TestCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::ExportModel(args) => {
-            export_model::ExportModelCommand::execute(args).unwrap();
+            export_model::ExportModelCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::ImportModel(args) => {
-            import_model::ImportModelCommand::execute(args).unwrap();
+            import_model::ImportModelCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::ConvertData(args) => {
-            convert_data::ConvertDataCommand::execute(args).unwrap();
+            convert_data::ConvertDataCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::GenCompletions(args) => {
-            gen_completions::GenCompletionsCommand::execute(args).unwrap();
+            gen_completions::GenCompletionsCommand::execute(args, cli.quiet).unwrap();
         }
     }
 }

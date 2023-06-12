@@ -9,13 +9,16 @@ use crate::reduction_factory::{
 use crate::utils::GetInner;
 
 use crate::reductions::CoinRegressorConfig;
-use crate::{types::*, ModelIndex};
+use crate::{types::*, ModelIndex, impl_default_factory_functions};
+use schemars::gen::SchemaGenerator;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-
-#[derive(Deserialize)]
+use schemars::schema::{RootSchema, Schema, SchemaObject};
+use schemars::{JsonSchema, schema_for};
+#[derive(Deserialize, JsonSchema)]
 struct BinaryReductionConfig {
     #[serde(default = "default_regressor")]
+    #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
     regressor: JsonReductionConfig,
 }
 
@@ -42,6 +45,7 @@ impl ReductionConfig for BinaryReductionConfig {
 }
 
 impl ReductionFactory for BinaryReductionFactory {
+    impl_default_factory_functions!("binary", BinaryReductionConfig);
     fn create(
         &self,
         config: &dyn ReductionConfig,
@@ -74,27 +78,11 @@ impl ReductionFactory for BinaryReductionFactory {
         }
 
         Ok(ReductionWrapper::new(
+            self.typename(),
             Box::new(BinaryReduction { regressor }),
             types,
             num_models_above,
         ))
-    }
-
-    fn typename(&self) -> String {
-        "binary".to_owned()
-    }
-
-    fn parse_config(
-        &self,
-        value: &serde_json::Value,
-    ) -> Result<Box<dyn crate::reduction_factory::ReductionConfig>> {
-        if value["typename"] != "binary" {
-            return Err(Error::InvalidArgument(
-                "Invalid typename for binary reduction".to_owned(),
-            ));
-        }
-        let res: BinaryReductionConfig = serde_json::from_value(value.clone()).unwrap();
-        Ok(Box::new(res))
     }
 }
 
@@ -153,9 +141,5 @@ impl ReductionImpl for BinaryReduction {
 
     fn children(&self) -> Vec<&ReductionWrapper> {
         vec![&self.regressor]
-    }
-
-    fn typename(&self) -> String {
-        "binary".to_owned()
     }
 }
