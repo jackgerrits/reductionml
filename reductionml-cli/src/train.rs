@@ -9,7 +9,7 @@ use anyhow::Result;
 use clap::Args;
 use crossterm::{cursor, terminal, ExecutableCommand};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use reductionml::{
+use reductionml_core::{
     metrics::MeanSquaredErrorMetric,
     metrics::Metric,
     object_pool::{self, PoolReturnable},
@@ -68,12 +68,12 @@ impl Command for TrainCommand {
             // Loading from json config
             (Some(config_file), None) => {
                 let json = std::fs::read_to_string(config_file).unwrap();
-                reductionml::workspace::Workspace::create_from_json(&json).unwrap()
+                reductionml_core::workspace::Workspace::create_from_json(&json).unwrap()
             }
             // Loading from model file
             (None, Some(input_model_file)) => {
                 let data = std::fs::read(input_model_file).unwrap();
-                reductionml::workspace::Workspace::create_from_model(&data).unwrap()
+                reductionml_core::workspace::Workspace::create_from_model(&data).unwrap()
             }
             _ => unreachable!(),
         };

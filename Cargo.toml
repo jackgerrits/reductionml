@@ -1,11 +1,6 @@
 [workspace]
 
 members = [
-    "reductionml",
+    "reductionml-core",
     "reductionml-cli",
 ]
-
-[profile.release]
-strip = true
-lto = true
-panic = "abort"

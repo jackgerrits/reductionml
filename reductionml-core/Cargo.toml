@@ -1,5 +1,5 @@
 [package]
-name = "reductionml"
+name = "reductionml-core"
 version = "0.1.0"
 edition = "2021"
 
@@ -22,7 +22,3 @@ schemars = "0.8.12"
 
 [dev-dependencies]
 approx = "0.5.1"
-
-[[bin]]
-name = "schema_gen"
-path = "src/schema_gen.rs"

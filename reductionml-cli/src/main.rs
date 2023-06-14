@@ -12,6 +12,7 @@ mod gen_completions;
 mod import_model;
 mod test;
 mod train;
+mod gen_schema;
 
 #[derive(Parser)]
 #[command(version)]
@@ -47,6 +48,8 @@ enum Commands {
     ConvertData(convert_data::ConvertDataArgs),
     /// Generate shell completions
     GenCompletions(gen_completions::GenCompletionsArgs),
+    /// Generate JSON schema for configuration
+    GenSchema(gen_schema::GenSchemaArgs),
 }
 
 #[derive(Args)]
@@ -88,6 +91,9 @@ fn main() {
         }
         Commands::GenCompletions(args) => {
             gen_completions::GenCompletionsCommand::execute(args, cli.quiet).unwrap();
+        },
+        Commands::GenSchema(args) => {
+            gen_schema::GenSchemaCommand::execute(args, cli.quiet).unwrap();
         }
     }
 }

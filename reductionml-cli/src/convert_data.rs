@@ -1,6 +1,6 @@
 use clap::{Args, ValueEnum};
 
-use reductionml::LabelType;
+use reductionml_core::LabelType;
 
 use crate::{command::Command, DataFormat};
 

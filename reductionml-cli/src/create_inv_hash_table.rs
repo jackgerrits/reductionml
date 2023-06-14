@@ -36,7 +36,7 @@ impl Command for CreateInvHashTableCommand {
         writeln!(stderr, "Example count: 0").unwrap();
 
         let mut counter: i32 = 0;
-        let inv_hash_table = reductionml::inverse_hash_table::InverseHashTable::new();
+        let inv_hash_table = reductionml_core::inverse_hash_table::InverseHashTable::new();
 
         for line in io::BufReader::new(file).lines() {
             counter += 1;

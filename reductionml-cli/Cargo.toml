@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reductionml = { path = "../reductionml" }
+reductionml-core = { path = "../reductionml-core" }
 clap = { version = "4.3.0", features = ["derive"] }
 crossterm = "0.26.1"
 anyhow = "1.0.71"

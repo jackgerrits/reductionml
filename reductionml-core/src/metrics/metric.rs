@@ -1,6 +1,5 @@
 use crate::{
-    types::{Label, Prediction},
-    LabelType, PredictionType,
+    types::{Label, Prediction}
 };
 
 pub trait Metric {
