@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::global_config::GlobalConfig;
-use crate::object_pool::Pool;
+use crate::object_pool::{Pool, PoolReturnable};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
@@ -147,8 +147,7 @@ impl ReductionImpl for CBAdfReduction {
             counter += 1;
         }
 
-        feats_to_reuse.clear();
-        self.object_pool.return_object(feats_to_reuse);
+        feats_to_reuse.clear_and_return_object(&self.object_pool);
 
         action_scores.into()
     }
@@ -197,8 +196,7 @@ impl ReductionImpl for CBAdfReduction {
                     counter += 1;
                 }
 
-                feats_to_reuse.clear();
-                self.object_pool.return_object(feats_to_reuse);
+                feats_to_reuse.clear_and_return_object(&self.object_pool);
             }
             CBType::Mtr => {
                 self.mtr_state.action_sum += cb_adf_features.actions.len();
@@ -222,8 +220,7 @@ impl ReductionImpl for CBAdfReduction {
                             depth_info,
                             0.into(),
                         );
-                        self.object_pool
-                            .return_object(SparseFeatures::try_from(feats_obj).unwrap());
+                        feats_obj.clear_and_return_object(&self.object_pool);
                     }
                     None => {
                         todo!()

@@ -242,7 +242,8 @@ impl SparseFeatures {
 }
 
 impl PoolReturnable<SparseFeatures> for SparseFeatures {
-    fn return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
+    fn clear_and_return_object(mut self, pool: &crate::object_pool::Pool<SparseFeatures>) {
+        self.clear();
         pool.return_object(self);
     }
 }

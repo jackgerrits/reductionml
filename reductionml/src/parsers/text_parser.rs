@@ -22,7 +22,7 @@ pub enum ParsedNamespaceInfo<'a> {
     Default,
 }
 
-pub trait TextModeParser {
+pub trait TextModeParser: Sync {
     fn get_next_chunk(
         &self,
         input: &mut dyn BufRead,

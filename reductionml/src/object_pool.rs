@@ -41,7 +41,7 @@ impl<T: Default> Default for Pool<T> {
 }
 
 pub trait PoolReturnable<T: Default> {
-    fn return_object(self, pool: &Pool<T>);
+    fn clear_and_return_object(self, pool: &Pool<T>);
 }
 
 #[cfg(test)]

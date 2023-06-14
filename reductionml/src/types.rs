@@ -113,12 +113,12 @@ pub struct CBAdfFeatures {
 }
 
 impl PoolReturnable<SparseFeatures> for CBAdfFeatures {
-    fn return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
+    fn clear_and_return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
         if let Some(shared) = self.shared {
-            pool.return_object(shared)
+            shared.clear_and_return_object(pool);
         }
         for action in self.actions {
-            pool.return_object(action);
+            action.clear_and_return_object(pool);
         }
     }
 }
@@ -220,11 +220,13 @@ pub enum FeaturesType {
 }
 
 impl PoolReturnable<SparseFeatures> for Features<'_> {
-    fn return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
+    fn clear_and_return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
         match self {
-            Features::SparseSimple(obj) => obj.return_object(pool),
+            Features::SparseSimple(mut obj) => {
+                obj.clear_and_return_object(pool);
+            }
             Features::SparseSimpleRef(_) => (),
-            Features::SparseCBAdf(obj) => obj.return_object(pool),
+            Features::SparseCBAdf(obj) => obj.clear_and_return_object(pool),
             Features::SparseCBAdfRef(_) => (),
         }
     }
