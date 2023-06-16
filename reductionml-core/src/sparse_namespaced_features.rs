@@ -1,9 +1,10 @@
-use crate::{object_pool::PoolReturnable, FeatureIndex, NamespaceHash};
-
+use crate::{hash::FNV_PRIME, object_pool::PoolReturnable, FeatureIndex, NamespaceHash};
+use itertools::Itertools;
 pub struct NamespacesIterator<'a> {
     namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
 }
 
+#[derive(Clone)]
 pub struct NamespaceIterator<'a> {
     indices: std::slice::Iter<'a, FeatureIndex>,
     values: std::slice::Iter<'a, f32>,
@@ -138,11 +139,57 @@ impl Default for SparseFeatures {
     }
 }
 
+fn quadratic_feature_hash(i1: FeatureIndex, i2: FeatureIndex) -> FeatureIndex {
+    let multiplied = (FNV_PRIME as u64).wrapping_mul(u32::from(i1) as u64) as u32;
+    (multiplied ^ u32::from(i2)).into()
+}
+
+fn cubic_feature_hash(i1: FeatureIndex, i2: FeatureIndex, i3: FeatureIndex) -> FeatureIndex {
+    let multiplied = (FNV_PRIME as u64).wrapping_mul(u32::from(i1) as u64) as u32;
+    let multiplied = (FNV_PRIME as u64).wrapping_mul((multiplied ^ u32::from(i2)) as u64) as u32;
+    (multiplied ^ u32::from(i3)).into()
+}
+
 impl SparseFeatures {
     pub fn namespaces(&self) -> NamespacesIterator {
         NamespacesIterator {
             namespaces: self.namespaces.iter(),
         }
+    }
+
+    pub fn quadratic_features(
+        &self,
+        ns1: Namespace,
+        ns2: Namespace,
+    ) -> Option<impl Iterator<Item = (FeatureIndex, f32)> + '_> {
+        let ns1 = self.get_namespace(ns1)?;
+        let ns2 = self.get_namespace(ns2)?;
+
+        Some(
+            ns1.iter()
+                .cartesian_product(ns2.iter().clone())
+                .map(|((i1, v1), (i2, v2))| (quadratic_feature_hash(i1, i2), v1 * v2)),
+        )
+    }
+
+    pub fn cubic_features(
+        &self,
+        ns1: Namespace,
+        ns2: Namespace,
+        ns3: Namespace,
+    ) -> Option<impl Iterator<Item = (FeatureIndex, f32)> + '_> {
+        let ns1 = self.get_namespace(ns1)?;
+        let ns2 = self.get_namespace(ns2)?;
+        let ns3 = self.get_namespace(ns3)?;
+
+        Some(
+            ns1.iter()
+                .cartesian_product(ns2.iter().clone())
+                .cartesian_product(ns3.iter().clone())
+                .map(|(((i1, v1), (i2, v2)), (i3, v3))| {
+                    (cubic_feature_hash(i1, i2, i3), v1 * v2 * v3)
+                }),
+        )
     }
 
     pub fn all_features(&self) -> impl Iterator<Item = (FeatureIndex, f32)> + '_ {

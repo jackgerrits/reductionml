@@ -248,6 +248,12 @@ macro_rules! impl_extra_traits {
                 &self.0
             }
         }
+
+        impl From<$structname> for $inner_type{
+            fn from(value: $structname) -> Self {
+                value.0
+            }
+        }
     };
 }
 
