@@ -6,23 +6,28 @@ use std::{
 
 use anyhow::Result;
 
-use clap::Args;
-use crossterm::{cursor, terminal, ExecutableCommand};
+use clap::{Args, ValueHint};
+use colored::Colorize;
+// use crossterm::{cursor, terminal, ExecutableCommand};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use prettytable::{cell, table};
+use prettytable::{format, Table};
 use reductionml_core::{
     metrics::MeanSquaredErrorMetric,
-    metrics::Metric,
+    metrics::{Metric, MetricValue},
     object_pool::{self, PoolReturnable},
     parsers::{TextModeParserFactory, VwTextParserFactory},
+    Features, Label,
 };
 
 use crate::{command::Command, DataFormat, InputConfigArg};
-use rayon::prelude::*;
+use rayon::{prelude::*, vec};
+use std::str::FromStr;
 // TODO: multipass
 // TODO: test file for metrics
 #[derive(Args)]
 pub(crate) struct TrainArgs {
-    #[arg(short, long)]
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
     data: String,
 
     #[arg(long)]
@@ -42,12 +47,13 @@ pub(crate) struct TrainArgs {
     hash_seed: u32,
 
     // Output predictions to file
+    // TODO: implement this
     #[arg(short, long)]
     predictions: Option<String>,
 
     // Metric values to calculate during training
     #[arg(short, long)]
-    #[arg(default_value = "auto")]
+    #[arg(default_value = None, value_parser, num_args = 1.., value_delimiter = ',')]
     metrics: Option<Vec<String>>,
 
     #[arg(long)]
@@ -57,6 +63,73 @@ pub(crate) struct TrainArgs {
     #[arg(long)]
     #[arg(default_value = "512")]
     queue_size: usize,
+
+    /// Number of threads to use for the rayon thread pool. By default will use
+    /// the number of logical cores.
+    #[arg(long)]
+    #[arg(default_value = None)]
+    thread_pool_size: Option<usize>,
+}
+
+enum OutputPeriod {
+    Additive(i32),
+    Multiplicative(f32),
+}
+
+struct TrainResultManager {
+    iteration: i32,
+    next_output_iteration: i32,
+    period: OutputPeriod,
+    last_render_height: u16,
+    table: Table,
+    columns: Vec<String>,
+}
+
+impl TrainResultManager {
+    fn new(period: OutputPeriod, columns: Vec<String>) -> TrainResultManager {
+        let mut table = Table::new();
+        table.set_format(*format::consts::FORMAT_BORDERS_ONLY);
+        table.set_titles(columns.iter().into());
+        TrainResultManager {
+            iteration: 0,
+            next_output_iteration: 0,
+            period,
+            last_render_height: 0,
+            table,
+            columns,
+        }
+    }
+
+    #[must_use = "Output indicates if results should be added for this iteration."]
+    fn inc_iteration(&mut self) -> bool {
+        self.iteration += 1;
+        if self.iteration >= self.next_output_iteration {
+            self.next_output_iteration = match self.period {
+                OutputPeriod::Additive(period) => self.iteration + period,
+                OutputPeriod::Multiplicative(period) => (self.iteration as f32 * period) as i32,
+            };
+            return true;
+        }
+        false
+    }
+
+    fn add_results(&mut self, results: Vec<MetricValue>) {
+        if results.len() == self.columns.len() {
+            self.table
+                .add_row(results.iter().map(|v| v.to_string()).into());
+        } else {
+            panic!("Results columns do not match previous results columns.");
+        }
+    }
+
+    fn render_table_to_stdout(&mut self) {
+        let mut stdout = term::stdout().unwrap();
+        for _ in 0..self.last_render_height {
+            stdout.cursor_up().unwrap();
+            stdout.delete_line().unwrap();
+        }
+        self.last_render_height = self.table.print_tty(false).unwrap() as u16;
+    }
 }
 
 pub(crate) struct TrainCommand;
@@ -64,6 +137,12 @@ pub(crate) struct TrainCommand;
 impl Command for TrainCommand {
     type Args = TrainArgs;
     fn execute(args: &TrainArgs, quiet: bool) -> Result<()> {
+        if let Some(size) = args.thread_pool_size {
+            rayon::ThreadPoolBuilder::new()
+                .num_threads(size)
+                .build_global()?;
+        }
+
         let mut workspace = match (&args.input_config.config, &args.input_config.input_model) {
             // Loading from json config
             (Some(config_file), None) => {
@@ -79,22 +158,22 @@ impl Command for TrainCommand {
         };
 
         let file = File::open(&args.data).unwrap();
-        let mut metric = MeanSquaredErrorMetric::new();
 
-        println!("Reading data file: {}", &args.data);
-        println!(
-            "Using entry reduction: {}",
-            workspace.get_entry_reduction().typename()
+        eprintln!(
+            "{}: Reading data file: {}",
+            "info".cyan().bold(),
+            &args.data.bold()
         );
-        println!();
-        println!("Training...");
-
-        // let mut stdout = stdout();
-        // writeln!(stdout, "Example count: 0").unwrap();
-        // writeln!(stdout, "Metric: 0").unwrap();
+        eprintln!(
+            "{}: Using entry reduction: {}",
+            "info".cyan().bold(),
+            workspace.get_entry_reduction().typename().bold()
+        );
+        eprintln!("{}: Starting training...", "info".cyan().bold());
 
         let mut counter: i32 = 0;
         let pool = workspace.features_pool().clone();
+
         // TODO read format
         let parser_factory = VwTextParserFactory::default();
         let parser = parser_factory.create(
@@ -108,44 +187,38 @@ impl Command for TrainCommand {
             pool.clone(),
         );
 
-        let mp = MultiProgress::new();
-        let pb: ProgressBar = ProgressBar::new(file.metadata()?.len());
-        let ex_spinner = ProgressBar::new_spinner();
+        let mut input_file = io::BufReader::new(file);
+        let mut predictions_file = if args.predictions.is_some() {
+            eprintln!(
+                "{}: The format output in the predictions file is currently a placeholder",
+                "warning".yellow().bold()
+            );
+            let file = File::create(&args.predictions.as_ref().unwrap()).unwrap();
+            Some(io::BufWriter::new(file))
+        } else {
+            None
+        };
 
-        mp.add(ex_spinner.clone());
-        mp.add(pb.clone());
-        pb.set_style(
-            ProgressStyle::with_template("Input progress: {bar:40.cyan/blue} {bytes_per_sec}")
+        let mut metrics: Vec<Box<dyn Metric>> = if (args.metrics.is_some()) {
+            args.metrics
+                .as_ref()
                 .unwrap()
-                .progress_chars("##-"),
-        );
+                .iter()
+                .map(|name| reductionml_core::metrics::get_metric(&name).unwrap())
+                .collect()
+        } else {
+            vec![]
+        };
 
-        // ex_spinner.set_style(ProgressStyle::default_spinner());
-        ex_spinner.set_style(
-            ProgressStyle::with_template(
-                "Elapsed time: {elapsed}\nExamples processed: {pos}\nPer sec: {per_sec}\n\n",
-            )
-            .unwrap(),
-        );
-        ex_spinner.set_message(format!("{}", counter));
-        ex_spinner.enable_steady_tick(Duration::from_millis(250));
-        pb.enable_steady_tick(Duration::from_millis(250));
-
-        // rayon::ThreadPoolBuilder::new()
-        //     .num_threads(4)
-        //     .build_global()?;
-
-        let mut f = pb.wrap_read(file);
-        let mut input_file = io::BufReader::new(f);
-        let mut buffer: String = String::new();
-
-        // let mut batch = vec![];
+        let mut col_names: Vec<String> = vec!["Example #".into()];
+        col_names.extend(metrics.iter().map(|x| x.get_name()));
+        let mut manager = TrainResultManager::new(OutputPeriod::Multiplicative(2.0), col_names);
 
         let (tx, rx) = flume::bounded(args.queue_size);
 
         let string_pool = object_pool::Pool::<String>::new();
 
-        let res = std::thread::scope(|s| -> Result<()> {
+        std::thread::scope(|s| -> Result<()> {
             s.spawn(|| {
                 loop {
                     let mut batch = vec![];
@@ -164,42 +237,49 @@ impl Command for TrainCommand {
                         break;
                     }
 
-                    batch.into_par_iter().for_each(|line| {
-                        let res = parser.parse_chunk(&line).unwrap();
-                        string_pool.return_object(line);
-                        tx.send(res).expect(
+                    // Must be collected so that original order is preserved.
+                    let batch: Vec<(Features<'_>, Option<Label>)> = batch
+                        .into_par_iter()
+                        .map(|line| {
+                            let res = parser.parse_chunk(&line).unwrap();
+                            string_pool.return_object(line);
+                            res
+                        })
+                        .collect();
+
+                    for item in batch {
+                        tx.send(item).expect(
                             "Receiver should not be disconnected before all lines have been sent.",
                         );
-                    });
+                    }
                 }
                 std::mem::drop(tx);
             });
 
             loop {
                 let res = rx.recv();
-                // dbg!("got batch");
                 match res {
                     Ok((features, label)) => {
                         let prediction = workspace.predict(&features);
+                        if let Some(file) = predictions_file.as_mut() {
+                            // TODO: some cannonical format for prediction values.
+                            writeln!(file, "{:?}", prediction).unwrap();
+                        }
+
                         let label = label.unwrap();
-                        // metric.add_point(&label, &prediction);
                         workspace.learn(&features, &label);
 
-                        if (counter % 1) == 0 {
-                            // stdout.execute(cursor::MoveUp(2)).unwrap();
-                            // stdout
-                            //     .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
-                            //     .unwrap();
+                        for metric in metrics.iter_mut() {
+                            metric.add_point(&features, &label, &prediction);
+                        }
 
-                            // ex_spinner.set_message(format!("{}", counter));
-
-                            // pb.set_message(format!("{}", counter));
-                            // writeln!(stdout, "Example count: {}", counter).unwrap();
-                            // writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
-                            // mp.println(format!("Mean squared error: {}", metric.get_value()));
-                            // pb.tick();
-                            // ex_spinner.tick();
-                            ex_spinner.inc(1);
+                        counter += 1;
+                        let should_output = manager.inc_iteration();
+                        if should_output {
+                            let mut results = vec![MetricValue::Int(counter)];
+                            results.extend(metrics.iter().map(|x| x.get_value()));
+                            manager.add_results(results.into());
+                            manager.render_table_to_stdout();
                         }
 
                         // Put feature objects back into the pool for reuse.
@@ -209,27 +289,12 @@ impl Command for TrainCommand {
                 }
             }
             Ok(())
-        });
+        })?;
 
-        // match chunk {
-
-        //         counter += 1;
-
-        //     }
-        //     None => break,
-        // }
-
-        pb.finish();
-        ex_spinner.finish();
-        // pb.println(format!("Mean squared error: {}", metric.get_value()));
-        // mp.finish();
-
-        // stdout.execute(cursor::MoveUp(2)).unwrap();
-        // stdout
-        //     .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
-        //     .unwrap();
-        // writeln!(stdout, "Example count: {}", counter).unwrap();
-        // writeln!(stdout, "Mean squared error: {}", metric.get_value()).unwrap();
+        let mut results = vec![MetricValue::Int(counter)];
+        results.extend(metrics.iter().map(|x| x.get_value()));
+        manager.add_results(results.into());
+        manager.render_table_to_stdout();
 
         Ok(())
     }

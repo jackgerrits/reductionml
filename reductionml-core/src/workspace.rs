@@ -40,6 +40,20 @@ impl Workspace {
             Error::InvalidConfiguration(format!("Failed to parse configuration: {}", e))
         })?;
 
+        Self::create_from_configuration(config)
+    }
+
+    pub fn create_from_yaml(yaml: &str) -> Result<Workspace> {
+        let json_from_yaml = serde_yaml::from_str::<serde_json::Value>(yaml)
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse yaml: {}", e)))?;
+        let config: Configuration = serde_json::from_value(json_from_yaml).map_err(|e| {
+            Error::InvalidConfiguration(format!("Failed to parse configuration: {}", e))
+        })?;
+
+        Self::create_from_configuration(config)
+    }
+
+    fn create_from_configuration(config: Configuration) -> Result<Workspace> {
         let reduction_config = crate::reduction_factory::parse_config(&config.entry_reduction)?;
         let entry_reduction = crate::reduction_factory::create_reduction(
             reduction_config.as_ref(),

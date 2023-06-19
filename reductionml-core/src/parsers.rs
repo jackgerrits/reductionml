@@ -1,4 +1,7 @@
 mod text_parser;
+use std::io::Cursor;
+
+use murmur3::murmur3_32;
 pub use text_parser::*;
 mod vw_text_parser;
 pub use vw_text_parser::*;
@@ -15,11 +18,11 @@ impl<'a> ParsedFeature<'a> {
     pub fn hash(&self, namespace_hash: NamespaceHash) -> FeatureHash {
         match &self {
             ParsedFeature::Simple { name } => {
-                FeatureHash::from(murmurhash3_32(name.as_bytes(), *namespace_hash))
+                FeatureHash::from(murmur3_32(&mut Cursor::new(name), *namespace_hash).unwrap())
             }
             ParsedFeature::SimpleWithStringValue { name, value } => {
-                let name_key_hash = murmurhash3_32(name.as_bytes(), *namespace_hash);
-                FeatureHash::from(murmurhash3_32(value.as_bytes(), name_key_hash))
+                let name_key_hash = murmur3_32(&mut Cursor::new(name), *namespace_hash).unwrap();
+                FeatureHash::from(murmur3_32(&mut Cursor::new(value), name_key_hash).unwrap())
             }
             ParsedFeature::Anonymous { offset } => (*namespace_hash + offset).into(),
         }

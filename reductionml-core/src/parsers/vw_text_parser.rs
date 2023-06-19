@@ -1,6 +1,9 @@
 use core::f32;
+use std::io::Cursor;
 
 use derive_more::TryInto;
+use murmur3::murmur3_32;
+use smallvec::SmallVec;
 
 use crate::error::{Error, Result};
 use crate::hash::murmurhash3_32;
@@ -55,17 +58,21 @@ fn finalize_parsed_result_singleline<'a>(
     }
 }
 
-fn finalize_parsed_result_multiline<'a>(
-    feats: Vec<SparseFeatures>,
-    parsed: Vec<TextParseResult>,
+fn finalize_parsed_result_multiline<'a, 'b, T, U>(
+    mut feats_iter: T,
+    parsed: U,
     expected_label: LabelType,
     expected_features: FeaturesType,
-) -> Result<(Features<'a>, Option<Label>)> {
+) -> Result<(Features<'b>, Option<Label>)>
+where
+    T: IntoIterator<Item = SparseFeatures> + Iterator<Item = SparseFeatures> + Clone,
+    U: Iterator<Item = TextParseResult<'a>>,
+{
     match (expected_label, expected_features) {
         (LabelType::CB, FeaturesType::SparseCBAdf) => {
             // First thing to do is to determine if there is a shared example.
-            let mut txt_labels_iter = parsed.iter().map(|x| x.label.unwrap()).peekable();
-            let mut feats_iter = feats.into_iter();
+            let mut txt_labels_iter = parsed.map(|x| x.label.unwrap()).peekable();
+            // let mut feats_iter = feats.into_iter();
             let first_label: &CBTextLabel = txt_labels_iter
                 .peek()
                 .ok_or(Error::InvalidArgument("".to_owned()))?
@@ -242,7 +249,9 @@ fn parse_namespace_inline(
         // TODO: consider different hash if hash_seed is not 0
         " " => (Namespace::Default, 0.into()),
         _ => {
-            let namespace_hash = murmurhash3_32(namespace_name.as_bytes(), hash_seed).into();
+            let namespace_hash = murmur3_32(&mut Cursor::new(namespace_name), hash_seed)
+                .unwrap()
+                .into();
             (Namespace::Named(namespace_hash), namespace_hash)
         }
     };
@@ -447,10 +456,10 @@ impl TextModeParser for VwTextParser {
         }
     }
 
-    fn parse_chunk<'a>(&self, chunk: &str) -> Result<(Features<'a>, Option<Label>)> {
+    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
         if self.is_multiline() {
-            let mut results = Vec::new();
-            let mut all_feautures = Vec::new();
+            let mut results = SmallVec::<[TextParseResult<'a>; 4]>::new();
+            let mut all_feautures = SmallVec::<[SparseFeatures; 4]>::new();
             for line in chunk.lines() {
                 let mut dest = self.pool.get_object();
                 let result = parse_text_line_internal(
@@ -464,8 +473,8 @@ impl TextModeParser for VwTextParser {
                 all_feautures.push(dest);
             }
             finalize_parsed_result_multiline(
-                all_feautures,
-                results,
+                all_feautures.into_iter(),
+                results.into_iter(),
                 self.label_type,
                 self.feature_type,
             )

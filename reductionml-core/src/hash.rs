@@ -11,7 +11,7 @@ fn fmix(mut h: u32) -> u32 {
 }
 
 #[allow(arithmetic_overflow)]
-pub fn murmurhash3_32(key: &[u8], seed: u32) -> u32 {
+pub(crate) fn murmurhash3_32(key: &[u8], seed: u32) -> u32 {
     let num_blocks = key.len() / 4;
     let mut h1 = seed;
 
@@ -57,7 +57,7 @@ pub fn murmurhash3_32(key: &[u8], seed: u32) -> u32 {
     fmix(h1)
 }
 
-pub fn bit_mask(num_bits: u32) -> u32 {
+pub(crate) fn bit_mask(num_bits: u32) -> u32 {
     (1 << num_bits) - 1
 }
 

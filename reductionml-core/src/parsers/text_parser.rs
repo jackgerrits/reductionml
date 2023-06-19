@@ -22,6 +22,7 @@ pub enum ParsedNamespaceInfo<'a> {
     Default,
 }
 
+// TODO: DSJSON parser
 pub trait TextModeParser: Sync {
     fn get_next_chunk(
         &self,

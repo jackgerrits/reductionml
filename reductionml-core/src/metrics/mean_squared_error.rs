@@ -1,4 +1,6 @@
-use crate::{metrics::Metric, utils::GetInner, ScalarPrediction, SimpleLabel};
+use crate::{metrics::Metric, utils::GetInner, Features, ScalarPrediction, SimpleLabel};
+
+use super::MetricValue;
 
 pub struct MeanSquaredErrorMetric {
     pub value: f32,
@@ -15,15 +17,20 @@ impl MeanSquaredErrorMetric {
 }
 
 impl Metric for MeanSquaredErrorMetric {
-    fn add_point(&mut self, label: &crate::types::Label, prediction: &crate::types::Prediction) {
+    fn add_point(
+        &mut self,
+        _features: &Features,
+        label: &crate::types::Label,
+        prediction: &crate::types::Prediction,
+    ) {
         let label: &SimpleLabel = label.get_inner_ref().unwrap();
         let pred: &ScalarPrediction = prediction.get_inner_ref().unwrap();
         self.value += (label.0 - pred.prediction) * (label.0 - pred.prediction);
         self.count += 1;
     }
 
-    fn get_value(&self) -> f32 {
-        self.value / self.count as f32
+    fn get_value(&self) -> MetricValue {
+        MetricValue::Float(self.value / self.count as f32)
     }
 
     fn get_name(&self) -> String {

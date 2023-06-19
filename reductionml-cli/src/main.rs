@@ -1,18 +1,18 @@
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use colored::Colorize;
 
 use crate::command::Command;
 
-mod check;
 mod command;
+mod config;
 mod convert_data;
 mod create_inv_hash_table;
 mod export_model;
 mod gen_completions;
+mod gen_schema;
 mod import_model;
 mod test;
 mod train;
-mod gen_schema;
 
 #[derive(Parser)]
 #[command(version)]
@@ -36,8 +36,8 @@ enum Commands {
     Train(train::TrainArgs),
     /// Test a model on a dataset
     Test(test::TestArgs),
-    /// Check a config file for errors
-    Check(check::CheckArgs),
+    /// Check or generate a config
+    Config(config::ConfigArgs),
     /// Export a model to a human-readable format
     ExportModel(export_model::ExportModelArgs),
     /// Import a model from a human-readable format
@@ -56,20 +56,20 @@ enum Commands {
 #[group(required = true, multiple = false)]
 struct InputConfigArg {
     /// Start new model with given configuration
-    #[arg(short, long)]
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
     config: Option<String>,
 
     /// Load an existing model file
-    #[arg(short, long)]
+    #[arg(short, long, value_hint = ValueHint::FilePath)]
     input_model: Option<String>,
 }
 
 fn main() {
-    eprintln!("{} This CLI tool is not stable.", "Warning:".yellow());
+    eprintln!("{}: This CLI tool is not stable", "warning".yellow().bold());
     let cli = Cli::parse();
     match &cli.command {
-        Commands::Check(args) => {
-            check::CheckCommand::execute(args, cli.quiet).unwrap();
+        Commands::Config(args) => {
+            config::ConfigCommand::execute(args, cli.quiet).unwrap();
         }
         Commands::Train(args) => {
             train::TrainCommand::execute(args, cli.quiet).unwrap();
@@ -91,7 +91,7 @@ fn main() {
         }
         Commands::GenCompletions(args) => {
             gen_completions::GenCompletionsCommand::execute(args, cli.quiet).unwrap();
-        },
+        }
         Commands::GenSchema(args) => {
             gen_schema::GenSchemaCommand::execute(args, cli.quiet).unwrap();
         }

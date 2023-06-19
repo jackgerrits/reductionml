@@ -1,5 +1,5 @@
 use clap::Args;
-use crossterm::{cursor, terminal, ExecutableCommand};
+// use crossterm::{cursor, terminal, ExecutableCommand};
 
 use std::io::{self, BufRead, Write};
 use std::{fs::File, io::stderr};
@@ -67,12 +67,12 @@ impl Command for CreateInvHashTableCommand {
             // }
         }
 
-        stderr.execute(cursor::MoveUp(1)).unwrap();
-        stderr
-            .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
-            .unwrap();
-        writeln!(stderr, "Example count: {}", counter).unwrap();
-        println!("{}", serde_json::to_string_pretty(&inv_hash_table).unwrap());
+        // stderr.execute(cursor::MoveUp(1)).unwrap();
+        // stderr
+        //     .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+        //     .unwrap();
+        // writeln!(stderr, "Example count: {}", counter).unwrap();
+        // println!("{}", serde_json::to_string_pretty(&inv_hash_table).unwrap());
 
         Ok(())
     }

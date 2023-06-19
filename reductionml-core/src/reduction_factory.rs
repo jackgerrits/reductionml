@@ -1,6 +1,10 @@
 use std::any::Any;
 
-use schemars::{JsonSchema, schema::{RootSchema, Schema, SchemaObject}, gen::SchemaGenerator};
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{RootSchema, Schema, SchemaObject},
+    JsonSchema,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -74,6 +78,10 @@ pub trait ReductionFactory {
     ) -> Result<ReductionWrapper>;
     fn typename(&self) -> String;
     fn get_config_schema(&self) -> RootSchema;
+    fn get_config_default(&self) -> serde_json::Value;
+    fn get_suggested_metrics(&self) -> Vec<String> {
+        vec![]
+    }
 }
 
 #[macro_export]
@@ -87,9 +95,12 @@ macro_rules! impl_default_factory_functions {
             Ok(Box::new(res))
         }
 
-        fn get_config_schema(&self) -> RootSchema
-        {
+        fn get_config_schema(&self) -> RootSchema {
             schema_for!($config_type)
+        }
+
+        fn get_config_default(&self) -> serde_json::Value {
+            serde_json::to_value($config_type::default()).unwrap()
         }
     };
 }

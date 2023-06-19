@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::error::{Error, Result};
 use crate::global_config::GlobalConfig;
 use crate::reduction::{
@@ -9,13 +11,14 @@ use crate::reduction_factory::{
 use crate::utils::GetInner;
 
 use crate::reductions::CoinRegressorConfig;
-use crate::{types::*, ModelIndex, impl_default_factory_functions};
+use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::gen::SchemaGenerator;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
 use schemars::schema::{RootSchema, Schema, SchemaObject};
-use schemars::{JsonSchema, schema_for};
-#[derive(Deserialize, JsonSchema)]
+use schemars::{schema_for, JsonSchema};
+use serde::{Deserialize, Serialize};
+use serde_default::DefaultFromSerde;
+use serde_json::json;
+#[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
 struct BinaryReductionConfig {
     #[serde(default = "default_regressor")]
     #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]

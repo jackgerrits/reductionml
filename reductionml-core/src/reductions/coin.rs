@@ -22,6 +22,7 @@
 //   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
 // };
 
+use std::iter::Sum;
 use std::ops::Deref;
 
 use crate::dense_weights::DenseWeights;
@@ -35,10 +36,13 @@ use crate::reduction_factory::{ReductionConfig, ReductionFactory};
 use crate::sparse_namespaced_features::SparseFeatures;
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
-use crate::weights::{foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut};
-use crate::{types::*, ModelIndex, StateIndex, impl_default_factory_functions};
+use crate::weights::{
+    foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut, Weights,
+};
+use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex};
+use rayon::prelude::{ParallelBridge, ParallelIterator};
 use schemars::schema::RootSchema;
-use schemars::{JsonSchema, schema_for};
+use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_default::DefaultFromSerde;
 
@@ -56,6 +60,9 @@ pub struct CoinRegressorConfig {
 
     #[serde(default)]
     l2_lambda: f32,
+
+    #[serde(default)]
+    interactions: Option<Vec<Vec<String>>>,
 }
 
 const fn default_alpha() -> f32 {
@@ -157,9 +164,6 @@ impl CoinRegressor {
 
 #[derive(Default)]
 pub struct CoinRegressorFactory;
-
-
-
 
 impl ReductionFactory for CoinRegressorFactory {
     impl_default_factory_functions!("coin", CoinRegressorConfig);
@@ -266,10 +270,21 @@ const W_MX: usize = 3; //  maximum absolute value
 const W_WE: usize = 4; //  Wealth
 const W_MG: usize = 5; //  Maximum Lipschitz constant
 
+struct PredOutcome(f32, f32);
+
+impl Sum for PredOutcome {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        let mut sum = PredOutcome(0.0, 0.0);
+        for PredOutcome(x, y) in iter {
+            sum.0 += x;
+            sum.1 += y;
+        }
+        sum
+    }
+}
+
 impl CoinRegressor {
     fn coin_betting_predict(&mut self, features: &SparseFeatures, weight: f32) -> f32 {
-        let mut prediction = 0.0;
-        let mut normalized_squared_norm_x = 0.0;
         let inner_predict = |feat_value: f32, state: &[f32]| {
             let mut w_mx = state[W_MX];
             let mut w_xt = 0.0;
@@ -286,14 +301,26 @@ impl CoinRegressor {
                     * state[W_ZT];
             }
 
-            prediction += w_xt * feat_value;
             if w_mx > 0.0 {
                 let x_normalized = feat_value / w_mx;
-                normalized_squared_norm_x += x_normalized * x_normalized;
+                PredOutcome(w_xt * feat_value, x_normalized * x_normalized)
+            } else {
+                PredOutcome(w_xt * feat_value, 0.0)
             }
         };
 
-        foreach_feature_with_state(ModelIndex::from(0), features, &self.weights, inner_predict);
+        let oc: PredOutcome = features
+            .all_features()
+            .map(|(feat_index, feat_value)| {
+                let state = self.weights.state_at(feat_index, 0.into());
+                inner_predict(feat_value, state)
+            })
+            .sum();
+
+        let prediction = oc.0;
+        let normalized_squared_norm_x = oc.1;
+
+        // foreach_feature_with_state(ModelIndex::from(0), features, &self.weights, inner_predict);
 
         // todo select correct one
         self.model_states[0].normalized_sum_norm_x += normalized_squared_norm_x * weight;
@@ -357,12 +384,9 @@ impl CoinRegressor {
     }
 }
 
-// tests
 #[cfg(test)]
 mod tests {
-
     use approx::assert_relative_eq;
-    use schemars::{schema_for, schema::{Schema, SchemaObject, RootSchema}};
 
     use crate::sparse_namespaced_features::Namespace;
 

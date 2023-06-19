@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     object_pool::PoolReturnable, sparse_namespaced_features::SparseFeatures, utils::GetInner,
 };
+use derive_more::TryInto;
 use std::ops::Deref;
 macro_rules! impl_conversion_traits {
     ($target_type: ident, $enum_variant: ident, $structname: ident) => {
@@ -40,22 +41,28 @@ impl From<bool> for BinaryPrediction {
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct ActionScoresPrediction(pub Vec<(usize, f32)>);
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct ActionProbsPrediction(pub Vec<(usize, f32)>);
+
+#[derive(Debug, PartialEq, Clone, TryInto)]
 pub enum Prediction {
     Scalar(ScalarPrediction),
     Binary(BinaryPrediction),
     ActionScores(ActionScoresPrediction),
+    ActionProbs(ActionProbsPrediction),
 }
 
 impl_conversion_traits!(Prediction, Scalar, ScalarPrediction);
 impl_conversion_traits!(Prediction, Binary, BinaryPrediction);
 impl_conversion_traits!(Prediction, ActionScores, ActionScoresPrediction);
+impl_conversion_traits!(Prediction, ActionProbs, ActionProbsPrediction);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PredictionType {
     Scalar,
     Binary,
     ActionScores,
+    ActionProbs,
 }
 
 /// value, weight
@@ -249,7 +256,7 @@ macro_rules! impl_extra_traits {
             }
         }
 
-        impl From<$structname> for $inner_type{
+        impl From<$structname> for $inner_type {
             fn from(value: $structname) -> Self {
                 value.0
             }
@@ -284,7 +291,7 @@ impl FeatureMask {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct NamespaceHash(u32);
 impl_extra_traits!(NamespaceHash, u32);
 

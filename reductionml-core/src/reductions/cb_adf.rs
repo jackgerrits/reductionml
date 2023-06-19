@@ -11,11 +11,12 @@ use crate::utils::GetInner;
 
 use crate::reductions::CoinRegressorConfig;
 use crate::sparse_namespaced_features::SparseFeatures;
-use crate::{types::*, ModelIndex, impl_default_factory_functions};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
+use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::schema::RootSchema;
-use schemars::{JsonSchema, schema_for};
+use schemars::{schema_for, JsonSchema};
+use serde::{Deserialize, Serialize};
+use serde_default::DefaultFromSerde;
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Clone, Copy, JsonSchema)]
 enum CBType {
@@ -25,13 +26,18 @@ enum CBType {
     Mtr,
 }
 
-#[derive(Deserialize, JsonSchema)]
+#[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
 #[serde(deny_unknown_fields)]
 pub struct CBAdfConfig {
+    #[serde(default = "default_cb_type")]
     cb_type: CBType,
     #[serde(default = "default_regressor")]
     #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
     regressor: JsonReductionConfig,
+}
+
+fn default_cb_type() -> CBType {
+    CBType::Ips
 }
 
 impl ReductionConfig for CBAdfConfig {

@@ -5,7 +5,10 @@ use once_cell::sync::Lazy;
 
 use crate::{
     reduction_factory::ReductionFactory,
-    reductions::{BinaryReductionFactory, CBAdfReductionFactory, CoinRegressorFactory},
+    reductions::{
+        BinaryReductionFactory, CBAdfReductionFactory, CBExploreAdfGreedyReductionFactory,
+        CoinRegressorFactory,
+    },
 };
 
 pub static REDUCTION_REGISTRY: Lazy<RwLock<ReductionRegistry>> = Lazy::new(|| {
@@ -13,6 +16,7 @@ pub static REDUCTION_REGISTRY: Lazy<RwLock<ReductionRegistry>> = Lazy::new(|| {
     registry.register(Box::<CoinRegressorFactory>::default());
     registry.register(Box::<BinaryReductionFactory>::default());
     registry.register(Box::<CBAdfReductionFactory>::default());
+    registry.register(Box::<CBExploreAdfGreedyReductionFactory>::default());
     RwLock::new(registry)
 });
 
