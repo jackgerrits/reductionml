@@ -57,10 +57,6 @@ pub(crate) fn murmurhash3_32(key: &[u8], seed: u32) -> u32 {
     fmix(h1)
 }
 
-pub(crate) fn bit_mask(num_bits: u32) -> u32 {
-    (1 << num_bits) - 1
-}
-
 pub(crate) const FNV_PRIME: u32 = 16777619;
 
 // Test truth values calculated using C++ implementation.

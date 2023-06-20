@@ -1,18 +1,18 @@
-use std::default;
 
-use crate::error::{Error, Result};
+
+use crate::error::{Result};
 use crate::global_config::GlobalConfig;
-use crate::object_pool::{Pool, PoolReturnable};
+
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{
     create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
 };
-use crate::utils::GetInner;
 
-use crate::reductions::CoinRegressorConfig;
-use crate::sparse_namespaced_features::SparseFeatures;
+
+
+
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
@@ -98,7 +98,7 @@ impl ReductionFactory for CBExploreAdfGreedyReductionFactory {
             self.typename(),
             Box::new(CBExploreAdfGreedyReduction {
                 epsilon: config.epsilon,
-                cb_adf: cb_adf,
+                cb_adf,
             }),
             types,
             num_models_above,

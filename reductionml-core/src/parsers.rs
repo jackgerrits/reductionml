@@ -6,7 +6,7 @@ pub use text_parser::*;
 mod vw_text_parser;
 pub use vw_text_parser::*;
 
-use crate::{hash::murmurhash3_32, FeatureHash, NamespaceHash};
+use crate::{FeatureHash, NamespaceHash};
 
 pub enum ParsedFeature<'a> {
     Simple { name: &'a str },

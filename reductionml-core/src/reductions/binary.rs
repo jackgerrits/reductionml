@@ -1,6 +1,6 @@
-use std::default;
 
-use crate::error::{Error, Result};
+
+use crate::error::{Result};
 use crate::global_config::GlobalConfig;
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
@@ -12,8 +12,8 @@ use crate::utils::GetInner;
 
 use crate::reductions::CoinRegressorConfig;
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
-use schemars::gen::SchemaGenerator;
-use schemars::schema::{RootSchema, Schema, SchemaObject};
+
+use schemars::schema::{RootSchema};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;

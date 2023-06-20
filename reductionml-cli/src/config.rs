@@ -1,7 +1,6 @@
 use clap::{Args, ValueEnum};
 use reductionml_core::{
     global_config,
-    reductions::{CBAdfConfig, CoinRegressorConfig},
 };
 use serde_json::json;
 
@@ -13,8 +12,8 @@ use clap::Subcommand;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum ConfigFormat {
-    JSON,
-    YAML,
+    Json,
+    Yaml,
 }
 
 #[derive(Args)]
@@ -47,7 +46,7 @@ pub(crate) struct ConfigCommand;
 
 impl Command for ConfigCommand {
     type Args = ConfigArgs;
-    fn execute(args: &ConfigArgs, quiet: bool) -> Result<()> {
+    fn execute(args: &ConfigArgs, _quiet: bool) -> Result<()> {
         match &args.subcommand {
             ConfigSubCommand::Check(args) => {
                 // load json from file

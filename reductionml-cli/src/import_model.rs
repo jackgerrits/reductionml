@@ -18,7 +18,7 @@ pub(crate) struct ImportModelCommand;
 
 impl Command for ImportModelCommand {
     type Args = ImportModelArgs;
-    fn execute(_args: &ImportModelArgs, quiet: bool) -> Result<()> {
+    fn execute(_args: &ImportModelArgs, _quiet: bool) -> Result<()> {
         eprintln!(
             "{} Importing a model from JSON is not a supported feature. Use at your own risk.",
             "Warning:".yellow()

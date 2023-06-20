@@ -1,6 +1,5 @@
 use crate::{
-    metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features, ScalarPrediction,
-    SimpleLabel,
+    metrics::Metric, Features,
 };
 
 use super::MetricValue;
@@ -19,8 +18,8 @@ impl Metric for ParsedFeaturesMetric {
     fn add_point(
         &mut self,
         features: &Features,
-        label: &crate::types::Label,
-        prediction: &crate::types::Prediction,
+        _label: &crate::types::Label,
+        _prediction: &crate::types::Prediction,
     ) {
         match features {
             Features::SparseSimple(s) => self.count += s.all_features().count() as u64,

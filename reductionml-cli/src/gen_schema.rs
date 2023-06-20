@@ -1,5 +1,5 @@
 use clap::Args;
-use reductionml_core::reductions::{CBAdfConfig, CoinRegressorConfig};
+
 use reductionml_core::{config_schema::ConfigSchema, reduction_registry::REDUCTION_REGISTRY};
 
 use crate::command::Command;
@@ -13,7 +13,7 @@ pub(crate) struct GenSchemaCommand;
 
 impl Command for GenSchemaCommand {
     type Args = GenSchemaArgs;
-    fn execute(args: &GenSchemaArgs, quiet: bool) -> Result<()> {
+    fn execute(_args: &GenSchemaArgs, _quiet: bool) -> Result<()> {
         let mut schema = ConfigSchema::new();
         REDUCTION_REGISTRY
             .read()

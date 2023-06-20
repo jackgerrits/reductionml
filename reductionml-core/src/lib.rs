@@ -16,6 +16,7 @@ pub mod sparse_namespaced_features;
 pub mod types;
 pub mod weights;
 pub mod workspace;
+pub mod interactions;
 
 pub(crate) mod utils;
 

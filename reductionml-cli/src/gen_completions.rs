@@ -29,7 +29,7 @@ pub(crate) struct GenCompletionsCommand;
 
 impl Command for GenCompletionsCommand {
     type Args = GenCompletionsArgs;
-    fn execute(args: &GenCompletionsArgs, quiet: bool) -> Result<()> {
+    fn execute(args: &GenCompletionsArgs, _quiet: bool) -> Result<()> {
         match args.shell {
             Some(shell) => {
                 generate(

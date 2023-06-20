@@ -28,19 +28,19 @@ use std::ops::Deref;
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
+use crate::interactions::{Interaction, HashedInteraction, hash_interaction, compile_interactions};
 use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{ReductionConfig, ReductionFactory};
-use crate::sparse_namespaced_features::SparseFeatures;
+use crate::sparse_namespaced_features::{SparseFeatures, Namespace};
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
 use crate::weights::{
-    foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut, Weights,
+    foreach_feature, foreach_feature_with_state_mut, Weights, foreach_feature_with_state,
 };
-use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex};
-use rayon::prelude::{ParallelBridge, ParallelIterator};
+use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex, hash};
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -62,7 +62,7 @@ pub struct CoinRegressorConfig {
     l2_lambda: f32,
 
     #[serde(default)]
-    interactions: Option<Vec<Vec<String>>>,
+    interactions: Option<Vec<Interaction>>,
 }
 
 const fn default_alpha() -> f32 {
@@ -129,7 +129,11 @@ struct CoinRegressor {
     average_squared_norm_x: f32,
     min_label: f32,
     max_label: f32,
+    // TODO allow this to be chosen
     loss_function: LossFunctionHolder,
+    pairs: Option<Vec<(Namespace, Namespace)>>,
+    triples: Option<Vec<(Namespace, Namespace, Namespace)>>,
+    num_bits: u8,
 }
 
 impl CoinRegressor {
@@ -138,6 +142,15 @@ impl CoinRegressor {
         global_config: &GlobalConfig,
         num_models_above: ModelIndex,
     ) -> Result<CoinRegressor> {
+        let (pairs, triples) = match config.interactions.as_ref().map(|x| {
+            compile_interactions(x, global_config.hash_seed())
+        }) {
+            Some((Some(pairs), Some(triples))) => (Some(pairs), Some(triples)),
+            Some((None, Some(triples))) => (None, Some(triples)),
+            Some((Some(pairs), None)) => (Some(pairs), None),
+            Some((None, None)) => (None, None),
+            None => (None, None),
+        };
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -158,6 +171,9 @@ impl CoinRegressor {
             loss_function: LossFunctionHolder {
                 loss_function: LossFunctionType::Squared.create(),
             },
+            pairs,
+            triples,
+            num_bits: global_config.num_bits(),
         })
     }
 }
@@ -203,9 +219,12 @@ impl ReductionImpl for CoinRegressor {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
         let mut prediction = 0.0;
         foreach_feature(
-            depth_info.absolute_offset(),
+            0.into(),
             sparse_feats,
             &self.weights,
+            &self.pairs,
+            &self.triples,
+            self.num_bits,
             |feat_val, weight_val| prediction += feat_val * weight_val,
         );
 
@@ -285,6 +304,9 @@ impl Sum for PredOutcome {
 
 impl CoinRegressor {
     fn coin_betting_predict(&mut self, features: &SparseFeatures, weight: f32) -> f32 {
+        let mut prediction =0.0;
+        let mut normalized_squared_norm_x = 0.0;
+
         let inner_predict = |feat_value: f32, state: &[f32]| {
             let mut w_mx = state[W_MX];
             let mut w_xt = 0.0;
@@ -301,26 +323,16 @@ impl CoinRegressor {
                     * state[W_ZT];
             }
 
+            prediction += w_xt * feat_value;
             if w_mx > 0.0 {
                 let x_normalized = feat_value / w_mx;
-                PredOutcome(w_xt * feat_value, x_normalized * x_normalized)
+                normalized_squared_norm_x += x_normalized * x_normalized;
             } else {
-                PredOutcome(w_xt * feat_value, 0.0)
             }
         };
 
-        let oc: PredOutcome = features
-            .all_features()
-            .map(|(feat_index, feat_value)| {
-                let state = self.weights.state_at(feat_index, 0.into());
-                inner_predict(feat_value, state)
-            })
-            .sum();
-
-        let prediction = oc.0;
-        let normalized_squared_norm_x = oc.1;
-
-        // foreach_feature_with_state(ModelIndex::from(0), features, &self.weights, inner_predict);
+        foreach_feature_with_state(0.into(), features, &self.weights,  &self.pairs,
+        &self.triples, self.num_bits,inner_predict);
 
         // todo select correct one
         self.model_states[0].normalized_sum_norm_x += normalized_squared_norm_x * weight;
@@ -347,6 +359,7 @@ impl CoinRegressor {
                 * weight;
 
         let inner_update = |feat_value: f32, state: &mut [f32]| {
+            // dbg!(feat_value);
             //   float fabs_x = std::fabs(x);
             let fabs_x = feat_value.abs();
             let gradient = update * feat_value;
@@ -379,6 +392,9 @@ impl CoinRegressor {
             ModelIndex::from(0),
             features,
             &mut self.weights,
+            &self.pairs,
+            &self.triples,
+            self.num_bits,
             inner_update,
         );
     }
@@ -395,7 +411,7 @@ mod tests {
     #[test]
     fn test_coin_betting_predict() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4);
+        let global_config = GlobalConfig::new(4, 0);
         let coin = CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         let mut features = SparseFeatures::new();
         let ns = features.get_or_create_namespace(Namespace::Default);
@@ -412,7 +428,7 @@ mod tests {
     #[test]
     fn test_learning() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(2);
+        let global_config = GlobalConfig::new(2, 0);
         let mut coin =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 

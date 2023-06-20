@@ -52,7 +52,7 @@ impl ConfigSchema {
             .properties
             .insert("typename".to_owned(), Schema::Object(typename_constant));
 
-        let mut reductions_inner_schema = reduction_factory.get_config_schema();
+        let reductions_inner_schema = reduction_factory.get_config_schema();
         reduction_config_schema.object().properties.insert(
             "config".to_owned(),
             Schema::Object(reductions_inner_schema.schema),
@@ -89,7 +89,7 @@ impl ConfigSchema {
         // TODO: Handle duplicate definitions
         self.schema
             .definitions
-            .extend(reductions_inner_schema.definitions.clone());
+            .extend(reductions_inner_schema.definitions);
 
         // TODO handle "true" reduction
     }

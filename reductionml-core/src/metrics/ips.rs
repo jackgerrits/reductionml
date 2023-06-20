@@ -1,6 +1,5 @@
 use crate::{
-    metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features, ScalarPrediction,
-    SimpleLabel,
+    metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features,
 };
 
 use super::MetricValue;

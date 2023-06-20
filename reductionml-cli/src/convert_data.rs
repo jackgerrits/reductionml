@@ -46,7 +46,7 @@ pub(crate) struct ConvertDataCommand;
 
 impl Command for ConvertDataCommand {
     type Args = ConvertDataArgs;
-    fn execute(_args: &ConvertDataArgs, quiet: bool) -> Result<()> {
+    fn execute(_args: &ConvertDataArgs, _quiet: bool) -> Result<()> {
         todo!()
     }
 }

@@ -1,15 +1,13 @@
 use std::any::Any;
 
 use schemars::{
-    gen::SchemaGenerator,
-    schema::{RootSchema, Schema, SchemaObject},
-    JsonSchema,
+    schema::{RootSchema},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 
 use crate::{
-    error::{Error, Result},
+    error::{Result},
     global_config::GlobalConfig,
     reduction::ReductionWrapper,
     reduction_registry::REDUCTION_REGISTRY,
@@ -107,7 +105,7 @@ macro_rules! impl_default_factory_functions {
 
 pub fn parse_config(config: &JsonReductionConfig) -> Result<Box<dyn ReductionConfig>> {
     match REDUCTION_REGISTRY.read().unwrap().get(&config.typename) {
-        Some(factory) => factory.parse_config(&config.json_value()),
+        Some(factory) => factory.parse_config(config.json_value()),
         None => Err(crate::error::Error::InvalidArgument(format!(
             "Unknown reduction type: {}",
             &config.typename

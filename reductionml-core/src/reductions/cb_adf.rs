@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::{Result};
 use crate::global_config::GlobalConfig;
 use crate::object_pool::{Pool, PoolReturnable};
 use crate::reduction::{

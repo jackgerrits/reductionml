@@ -6,7 +6,7 @@ use murmur3::murmur3_32;
 use smallvec::SmallVec;
 
 use crate::error::{Error, Result};
-use crate::hash::murmurhash3_32;
+
 use crate::object_pool::Pool;
 use crate::parsers::ParsedFeature;
 use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
@@ -53,6 +53,7 @@ fn finalize_parsed_result_singleline<'a>(
             hashed_sparse_features,
             Some(Label::Simple(SimpleLabel(x, _weight.unwrap_or(1.0)))),
         ),
+        // TODO binary
         Some(_) => todo!(),
         None => (hashed_sparse_features, None),
     }
@@ -114,7 +115,7 @@ where
                     shared: shared_ex,
                     actions: feats_iter.collect(),
                 }),
-                label.map(|x| Label::CB(x)),
+                label.map(Label::CB),
             ))
         }
         _ => Err(Error::InvalidArgument("".to_owned())),
@@ -154,7 +155,7 @@ fn parse_label(tokens: &[&str], label_type: LabelType) -> Result<Option<TextLabe
                 acp: None,
             }))),
             Some(value) => {
-                let mut tokens = value.split(":");
+                let mut tokens = value.split(':');
                 let action = tokens.next().unwrap().parse().unwrap();
                 let cost = fast_float::parse(tokens.next().unwrap()).unwrap();
                 let probability = fast_float::parse(tokens.next().unwrap()).unwrap();

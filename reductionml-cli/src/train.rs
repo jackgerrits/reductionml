@@ -1,7 +1,6 @@
 use std::{
     fs::File,
-    io::{self, stdout, Write},
-    time::Duration,
+    io::{self, Write, stdout}, process::Output, str::FromStr,
 };
 
 use anyhow::Result;
@@ -9,11 +8,11 @@ use anyhow::Result;
 use clap::{Args, ValueHint};
 use colored::Colorize;
 // use crossterm::{cursor, terminal, ExecutableCommand};
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use prettytable::{cell, table};
+
+
+use crossterm::{cursor, ExecutableCommand, terminal};
 use prettytable::{format, Table};
 use reductionml_core::{
-    metrics::MeanSquaredErrorMetric,
     metrics::{Metric, MetricValue},
     object_pool::{self, PoolReturnable},
     parsers::{TextModeParserFactory, VwTextParserFactory},
@@ -21,8 +20,8 @@ use reductionml_core::{
 };
 
 use crate::{command::Command, DataFormat, InputConfigArg};
-use rayon::{prelude::*, vec};
-use std::str::FromStr;
+use rayon::{prelude::*};
+
 // TODO: multipass
 // TODO: test file for metrics
 #[derive(Args)]
@@ -37,14 +36,14 @@ pub(crate) struct TrainArgs {
     #[command(flatten)]
     input_config: InputConfigArg,
 
+    #[arg(long)]
+    #[arg(default_value = "*2")]
+    #[arg(value_parser = clap::value_parser!(OutputPeriod))]
+    progress: OutputPeriod,
+
     // Save final model to file
     #[arg(short, long)]
     output_model: Option<String>,
-
-    /// Seed to use when hashing input text
-    #[arg(long)]
-    #[arg(default_value = "0")]
-    hash_seed: u32,
 
     // Output predictions to file
     // TODO: implement this
@@ -71,14 +70,45 @@ pub(crate) struct TrainArgs {
     thread_pool_size: Option<usize>,
 }
 
+#[derive(Debug, Clone, Copy)]
 enum OutputPeriod {
-    Additive(i32),
+    Additive(u32),
     Multiplicative(f32),
 }
 
+impl FromStr for OutputPeriod {
+   type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        let value = value.to_lowercase();
+        if value.starts_with("+") {
+            let period = value[1..].parse::<u32>().map_err(|e| format!(
+                "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
+                value
+            ))?;
+            Ok(OutputPeriod::Additive(period))
+        } else if value.starts_with("*") {
+            let period = value[1..].parse::<f32>().map_err(|e| format!(
+                "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
+                value
+            ))?;
+            Ok(OutputPeriod::Multiplicative(period))
+        } else {
+            if let Ok(period) = value.parse::<u32>() {
+                return Ok(OutputPeriod::Additive(period));
+            }
+
+            Err(format!(
+                "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
+                value
+            ))
+        }
+    }
+}
+
 struct TrainResultManager {
-    iteration: i32,
-    next_output_iteration: i32,
+    iteration: u32,
+    next_output_iteration: u32,
     period: OutputPeriod,
     last_render_height: u16,
     table: Table,
@@ -102,14 +132,15 @@ impl TrainResultManager {
 
     #[must_use = "Output indicates if results should be added for this iteration."]
     fn inc_iteration(&mut self) -> bool {
-        self.iteration += 1;
         if self.iteration >= self.next_output_iteration {
             self.next_output_iteration = match self.period {
                 OutputPeriod::Additive(period) => self.iteration + period,
-                OutputPeriod::Multiplicative(period) => (self.iteration as f32 * period) as i32,
+                OutputPeriod::Multiplicative(period) => (self.iteration as f32 * period) as u32,
             };
+            self.iteration += 1;
             return true;
         }
+        self.iteration += 1;
         false
     }
 
@@ -122,12 +153,11 @@ impl TrainResultManager {
         }
     }
 
+    // FIXME: if the period is too low and the training too fast then this will cause rendering issues.
     fn render_table_to_stdout(&mut self) {
-        let mut stdout = term::stdout().unwrap();
-        for _ in 0..self.last_render_height {
-            stdout.cursor_up().unwrap();
-            stdout.delete_line().unwrap();
-        }
+        let mut stdout = stdout();
+        stdout.execute(cursor::MoveUp(self.last_render_height)).unwrap();
+        stdout.execute(terminal::Clear(terminal::ClearType::FromCursorDown)).unwrap();
         self.last_render_height = self.table.print_tty(false).unwrap() as u16;
     }
 }
@@ -136,7 +166,7 @@ pub(crate) struct TrainCommand;
 
 impl Command for TrainCommand {
     type Args = TrainArgs;
-    fn execute(args: &TrainArgs, quiet: bool) -> Result<()> {
+    fn execute(args: &TrainArgs, _quiet: bool) -> Result<()> {
         if let Some(size) = args.thread_pool_size {
             rayon::ThreadPoolBuilder::new()
                 .num_threads(size)
@@ -182,7 +212,7 @@ impl Command for TrainCommand {
                 .types()
                 .input_features_type(),
             workspace.get_entry_reduction().types().input_label_type(),
-            args.hash_seed,
+            workspace.global_config().hash_seed(),
             workspace.global_config().num_bits(),
             pool.clone(),
         );
@@ -193,18 +223,18 @@ impl Command for TrainCommand {
                 "{}: The format output in the predictions file is currently a placeholder",
                 "warning".yellow().bold()
             );
-            let file = File::create(&args.predictions.as_ref().unwrap()).unwrap();
+            let file = File::create(args.predictions.as_ref().unwrap()).unwrap();
             Some(io::BufWriter::new(file))
         } else {
             None
         };
 
-        let mut metrics: Vec<Box<dyn Metric>> = if (args.metrics.is_some()) {
+        let mut metrics: Vec<Box<dyn Metric>> = if args.metrics.is_some() {
             args.metrics
                 .as_ref()
                 .unwrap()
                 .iter()
-                .map(|name| reductionml_core::metrics::get_metric(&name).unwrap())
+                .map(|name| reductionml_core::metrics::get_metric(name).unwrap())
                 .collect()
         } else {
             vec![]
@@ -212,7 +242,7 @@ impl Command for TrainCommand {
 
         let mut col_names: Vec<String> = vec!["Example #".into()];
         col_names.extend(metrics.iter().map(|x| x.get_name()));
-        let mut manager = TrainResultManager::new(OutputPeriod::Multiplicative(2.0), col_names);
+        let mut manager = TrainResultManager::new(args.progress, col_names);
 
         let (tx, rx) = flume::bounded(args.queue_size);
 
@@ -262,7 +292,7 @@ impl Command for TrainCommand {
                     Ok((features, label)) => {
                         let prediction = workspace.predict(&features);
                         if let Some(file) = predictions_file.as_mut() {
-                            // TODO: some cannonical format for prediction values.
+                            // TODO: some canonical format for prediction values.
                             writeln!(file, "{:?}", prediction).unwrap();
                         }
 
@@ -272,13 +302,13 @@ impl Command for TrainCommand {
                         for metric in metrics.iter_mut() {
                             metric.add_point(&features, &label, &prediction);
                         }
-
                         counter += 1;
+
                         let should_output = manager.inc_iteration();
                         if should_output {
-                            let mut results = vec![MetricValue::Int(counter)];
+                            let mut results = vec![MetricValue::Int(counter-1)];
                             results.extend(metrics.iter().map(|x| x.get_value()));
-                            manager.add_results(results.into());
+                            manager.add_results(results);
                             manager.render_table_to_stdout();
                         }
 
@@ -293,8 +323,13 @@ impl Command for TrainCommand {
 
         let mut results = vec![MetricValue::Int(counter)];
         results.extend(metrics.iter().map(|x| x.get_value()));
-        manager.add_results(results.into());
-        manager.render_table_to_stdout();
+        manager.add_results(results);
+        // manager.render_table_to_stdout();
+
+        if let Some(file) = &args.output_model {
+            let data = workspace.serialize_model().unwrap();
+            std::fs::write(file, data).unwrap();
+        }
 
         Ok(())
     }

@@ -229,7 +229,7 @@ pub enum FeaturesType {
 impl PoolReturnable<SparseFeatures> for Features<'_> {
     fn clear_and_return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
         match self {
-            Features::SparseSimple(mut obj) => {
+            Features::SparseSimple(obj) => {
                 obj.clear_and_return_object(pool);
             }
             Features::SparseSimpleRef(_) => (),
