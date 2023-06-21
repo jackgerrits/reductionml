@@ -1,6 +1,6 @@
 use clap::Args;
 use colored::Colorize;
-use reductionml_core::workspace::{self, Workspace};
+use reductionml_core::workspace::Workspace;
 
 use crate::command::Command;
 

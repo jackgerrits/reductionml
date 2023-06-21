@@ -1,6 +1,4 @@
-use crate::{
-    metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features,
-};
+use crate::{metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features};
 
 use super::MetricValue;
 
@@ -15,6 +13,12 @@ impl IpsMetric {
             examples_count: 0,
             weighted_reward: 0.0,
         }
+    }
+}
+
+impl Default for IpsMetric {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

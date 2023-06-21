@@ -1,6 +1,4 @@
-use crate::{
-    metrics::Metric, Features,
-};
+use crate::{metrics::Metric, Features};
 
 use super::MetricValue;
 
@@ -11,6 +9,12 @@ pub struct ParsedFeaturesMetric {
 impl ParsedFeaturesMetric {
     pub fn new() -> ParsedFeaturesMetric {
         ParsedFeaturesMetric { count: 0 }
+    }
+}
+
+impl Default for ParsedFeaturesMetric {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -28,8 +32,7 @@ impl Metric for ParsedFeaturesMetric {
                 self.count += feats
                     .shared
                     .as_ref()
-                    .map(|x| x.all_features().count())
-                    .unwrap_or(0) as u64;
+                    .map_or(0, |x| x.all_features().count()) as u64;
                 self.count += feats
                     .actions
                     .iter()
@@ -40,8 +43,7 @@ impl Metric for ParsedFeaturesMetric {
                 self.count += feats
                     .shared
                     .as_ref()
-                    .map(|x| x.all_features().count())
-                    .unwrap_or(0) as u64;
+                    .map_or(0, |x| x.all_features().count()) as u64;
                 self.count += feats
                     .actions
                     .iter()

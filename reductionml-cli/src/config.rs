@@ -1,7 +1,5 @@
 use clap::{Args, ValueEnum};
-use reductionml_core::{
-    global_config,
-};
+use reductionml_core::global_config;
 use serde_json::json;
 
 use crate::command::Command;

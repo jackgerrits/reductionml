@@ -89,6 +89,12 @@ pub struct InverseHashTable {
     hash_table: std::collections::HashMap<FeatureIndex, std::collections::HashSet<Feature>>,
 }
 
+impl Default for InverseHashTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InverseHashTable {
     pub fn new() -> Self {
         Self {

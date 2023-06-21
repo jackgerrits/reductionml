@@ -1,6 +1,9 @@
-use crate::{hash::FNV_PRIME, object_pool::PoolReturnable, FeatureIndex, NamespaceHash, FeatureHash, FeatureMask};
+use crate::{
+    hash::FNV_PRIME, object_pool::PoolReturnable, FeatureHash, FeatureIndex, FeatureMask,
+    NamespaceHash,
+};
 use itertools::Itertools;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 pub struct NamespacesIterator<'a> {
     namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
 }
@@ -172,7 +175,9 @@ impl SparseFeatures {
         Some(
             ns1.iter()
                 .cartesian_product(ns2.iter().clone())
-                .map(move |((i1, v1), (i2, v2))| (quadratic_feature_hash(i1, i2).mask(masker), v1 * v2)),
+                .map(move |((i1, v1), (i2, v2))| {
+                    (quadratic_feature_hash(i1, i2).mask(masker), v1 * v2)
+                }),
         )
     }
 

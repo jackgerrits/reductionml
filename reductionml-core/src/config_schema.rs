@@ -10,6 +10,12 @@ pub struct ConfigSchema {
     schema: RootSchema,
 }
 
+impl Default for ConfigSchema {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConfigSchema {
     pub fn new() -> Self {
         let mut schema = schema_for!(Configuration);
@@ -22,9 +28,6 @@ impl ConfigSchema {
             "any_reduction_config".to_owned(),
             Schema::Object(any_reduction_config),
         );
-
-        let mut entry_reduction = SchemaObject::default();
-        entry_reduction.reference = Some("#/definitions/any_reduction_config".to_owned());
 
         // Allow $schema to be set to anything
         let mut schema_schema: SchemaObject = SchemaObject::default();
@@ -43,8 +46,10 @@ impl ConfigSchema {
     }
 
     pub fn add_reduction(&mut self, reduction_factory: &dyn ReductionFactory) {
-        let mut typename_constant = SchemaObject::default();
-        typename_constant.const_value = Some(reduction_factory.typename().into());
+        let typename_constant = schemars::schema::SchemaObject {
+            const_value: Some(reduction_factory.typename().into()),
+            ..Default::default()
+        };
 
         let mut reduction_config_schema = SchemaObject::default();
         reduction_config_schema
@@ -73,9 +78,10 @@ impl ConfigSchema {
             .unwrap()
         {
             Schema::Object(any_reduction_config) => {
-                let mut new_reduction_ref = SchemaObject::default();
-                new_reduction_ref.reference =
-                    Some(format!("#/definitions/{}", reduction_factory.typename()));
+                let new_reduction_ref = schemars::schema::SchemaObject {
+                    reference: Some(format!("#/definitions/{}", reduction_factory.typename())),
+                    ..Default::default()
+                };
                 any_reduction_config
                     .subschemas()
                     .one_of
@@ -96,7 +102,9 @@ impl ConfigSchema {
 }
 
 pub(crate) fn gen_json_reduction_config_schema(_gen: &mut SchemaGenerator) -> Schema {
-    let mut any_reduction_config = SchemaObject::default();
-    any_reduction_config.reference = Some("#/definitions/any_reduction_config".to_owned());
-    any_reduction_config.into()
+    schemars::schema::SchemaObject {
+        reference: Some("#/definitions/any_reduction_config".to_owned()),
+        ..Default::default()
+    }
+    .into()
 }

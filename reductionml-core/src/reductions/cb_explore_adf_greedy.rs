@@ -1,6 +1,4 @@
-
-
-use crate::error::{Result};
+use crate::error::Result;
 use crate::global_config::GlobalConfig;
 
 use crate::reduction::{
@@ -9,9 +7,6 @@ use crate::reduction::{
 use crate::reduction_factory::{
     create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
 };
-
-
-
 
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::schema::RootSchema;
@@ -151,16 +146,6 @@ impl ReductionImpl for CBExploreAdfGreedyReduction {
         let pred = self.cb_adf.predict(features, depth_info, 0.into());
         let scores: ActionScoresPrediction = pred.try_into().unwrap();
         Prediction::ActionProbs(self.action_scores_to_probs(scores))
-    }
-
-    fn predict_then_learn(
-        &mut self,
-        _features: &Features,
-        _label: &Label,
-        _depth_info: &mut DepthInfo,
-        _model_offset: ModelIndex,
-    ) -> Prediction {
-        todo!()
     }
 
     fn learn(

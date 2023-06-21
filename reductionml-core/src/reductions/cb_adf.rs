@@ -1,4 +1,4 @@
-use crate::error::{Result};
+use crate::error::Result;
 use crate::global_config::GlobalConfig;
 use crate::object_pool::{Pool, PoolReturnable};
 use crate::reduction::{
@@ -139,10 +139,8 @@ impl ReductionImpl for CBAdfReduction {
             feats_to_reuse.append(shared_feats);
         }
 
-        let mut action_scores: ActionScoresPrediction = Default::default();
-
-        let mut counter = 0;
-        for action in &cb_adf_features.actions {
+        let mut action_scores = ActionScoresPrediction::default();
+        for (counter, action) in cb_adf_features.actions.iter().enumerate() {
             feats_to_reuse.append(action);
             let wrapped_feats = feats_to_reuse.into();
             let pred = self.regressor.predict(&wrapped_feats, depth_info, 0.into());
@@ -150,22 +148,11 @@ impl ReductionImpl for CBAdfReduction {
             action_scores.0.push((counter, scalar_pred.raw_prediction));
             feats_to_reuse = SparseFeatures::try_from(wrapped_feats).unwrap();
             feats_to_reuse.remove(action);
-            counter += 1;
         }
 
         feats_to_reuse.clear_and_return_object(&self.object_pool);
 
         action_scores.into()
-    }
-
-    fn predict_then_learn(
-        &mut self,
-        _features: &Features,
-        _label: &Label,
-        _depth_info: &mut DepthInfo,
-        _model_offset: ModelIndex,
-    ) -> Prediction {
-        todo!()
     }
 
     fn learn(
@@ -186,8 +173,7 @@ impl ReductionImpl for CBAdfReduction {
                     feats_to_reuse.append(shared_feats);
                 }
 
-                let mut counter = 0;
-                for action in &cb_adf_features.actions {
+                for (counter, action) in cb_adf_features.actions.iter().enumerate() {
                     feats_to_reuse.append(action);
                     let wrapped_feats = feats_to_reuse.into();
 
@@ -199,7 +185,6 @@ impl ReductionImpl for CBAdfReduction {
                     );
                     feats_to_reuse = SparseFeatures::try_from(wrapped_feats).unwrap();
                     feats_to_reuse.remove(action);
-                    counter += 1;
                 }
 
                 feats_to_reuse.clear_and_return_object(&self.object_pool);

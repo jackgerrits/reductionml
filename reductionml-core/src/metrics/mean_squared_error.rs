@@ -16,6 +16,12 @@ impl MeanSquaredErrorMetric {
     }
 }
 
+impl Default for MeanSquaredErrorMetric {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Metric for MeanSquaredErrorMetric {
     fn add_point(
         &mut self,

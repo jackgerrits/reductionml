@@ -7,19 +7,19 @@ pub struct DepthInfo {
 }
 
 impl DepthInfo {
-    pub fn new() -> DepthInfo {
+    pub(crate) fn new() -> DepthInfo {
         DepthInfo { offset: 0.into() }
     }
-    pub fn increment(&mut self, num_models_below: ModelIndex, i: ModelIndex) {
+    pub(crate) fn increment(&mut self, num_models_below: ModelIndex, i: ModelIndex) {
         self.offset = (*self.offset + (*num_models_below * *i)).into();
     }
-    pub fn decrement(&mut self, num_models_below: ModelIndex, i: ModelIndex) {
+    pub(crate) fn decrement(&mut self, num_models_below: ModelIndex, i: ModelIndex) {
         self.offset = (*self.offset - (*num_models_below * *i)).into();
     }
 
-    pub fn absolute_offset(&self) -> ModelIndex {
-        self.offset
-    }
+    // pub(crate) fn absolute_offset(&self) -> ModelIndex {
+    //     self.offset
+    // }
 }
 
 impl ReductionWrapper {

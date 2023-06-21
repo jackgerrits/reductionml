@@ -37,7 +37,7 @@ pub struct Configuration {
 impl Workspace {
     pub fn create_from_json(json: &str) -> Result<Workspace> {
         let config: Configuration = serde_json::from_str(json).map_err(|e| {
-            Error::InvalidConfiguration(format!("Failed to parse configuration: {}", e))
+            Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
         })?;
 
         Self::create_from_configuration(config)
@@ -45,9 +45,9 @@ impl Workspace {
 
     pub fn create_from_yaml(yaml: &str) -> Result<Workspace> {
         let json_from_yaml = serde_yaml::from_str::<serde_json::Value>(yaml)
-            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse yaml: {}", e)))?;
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse yaml: {e}")))?;
         let config: Configuration = serde_json::from_value(json_from_yaml).map_err(|e| {
-            Error::InvalidConfiguration(format!("Failed to parse configuration: {}", e))
+            Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
         })?;
 
         Self::create_from_configuration(config)
@@ -84,13 +84,13 @@ impl Workspace {
     // experimental
     pub fn serialize_to_json(&self) -> Result<String> {
         serde_json::to_string(&self)
-            .map_err(|e| Error::InvalidConfiguration(format!("Failed to serialize model: {}", e)))
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to serialize model: {e}")))
     }
 
     // experimental
     pub fn deserialize_from_json(json: &str) -> Result<Workspace> {
         serde_json::from_str(json)
-            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse model: {}", e)))
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse model: {e}")))
     }
 
     pub fn predict(&self, features: &Features) -> Prediction {
@@ -127,9 +127,10 @@ impl Workspace {
 #[cfg(test)]
 mod tests {
 
+    use approx::assert_relative_eq;
     use serde_json::json;
 
-    use crate::{sparse_namespaced_features::SparseFeatures, ScalarPrediction};
+    use crate::{sparse_namespaced_features::SparseFeatures, utils::GetInner, ScalarPrediction};
 
     use super::*;
 
@@ -161,13 +162,8 @@ mod tests {
         let features = Features::SparseSimple(features);
 
         let pred = workspace.predict(&features);
-        assert!(matches!(
-            pred,
-            Prediction::Scalar(ScalarPrediction {
-                prediction: 0.0,
-                ..
-            })
-        ));
+        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        assert_relative_eq!(scalar_pred.prediction, 0.0);
 
         let label = Label::Simple(0.5.into());
 
@@ -176,13 +172,7 @@ mod tests {
         workspace.learn(&features, &label);
 
         let pred = workspace.predict(&features);
-        // TODO: fix this test. It never fails.
-        assert!(!matches!(
-            pred,
-            Prediction::Scalar(ScalarPrediction {
-                prediction: 0.0,
-                ..
-            })
-        ));
+        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        assert_relative_eq!(scalar_pred.prediction, 0.5);
     }
 }

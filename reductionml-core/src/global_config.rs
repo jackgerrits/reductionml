@@ -2,8 +2,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 
-use crate::hash;
-
 #[derive(Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -21,7 +19,10 @@ fn default_num_bits() -> u8 {
 
 impl GlobalConfig {
     pub fn new(num_bits: u8, hash_seed: u32) -> GlobalConfig {
-        GlobalConfig { num_bits, hash_seed }
+        GlobalConfig {
+            num_bits,
+            hash_seed,
+        }
     }
 
     pub fn num_bits(&self) -> u8 {

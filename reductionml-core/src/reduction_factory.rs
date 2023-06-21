@@ -1,17 +1,11 @@
 use std::any::Any;
 
-use schemars::{
-    schema::{RootSchema},
-};
+use schemars::schema::RootSchema;
 use serde::{Deserialize, Serialize};
 
-
 use crate::{
-    error::{Result},
-    global_config::GlobalConfig,
-    reduction::ReductionWrapper,
-    reduction_registry::REDUCTION_REGISTRY,
-    ModelIndex,
+    error::Result, global_config::GlobalConfig, reduction::ReductionWrapper,
+    reduction_registry::REDUCTION_REGISTRY, ModelIndex,
 };
 
 // This intentionally does not derive JsonSchema

@@ -1,6 +1,7 @@
 use std::{
     fs::File,
-    io::{self, Write, stdout}, process::Output, str::FromStr,
+    io::{self, stdout, Write},
+    str::FromStr,
 };
 
 use anyhow::Result;
@@ -9,8 +10,7 @@ use clap::{Args, ValueHint};
 use colored::Colorize;
 // use crossterm::{cursor, terminal, ExecutableCommand};
 
-
-use crossterm::{cursor, ExecutableCommand, terminal};
+use crossterm::{cursor, terminal, ExecutableCommand};
 use prettytable::{format, Table};
 use reductionml_core::{
     metrics::{Metric, MetricValue},
@@ -20,7 +20,7 @@ use reductionml_core::{
 };
 
 use crate::{command::Command, DataFormat, InputConfigArg};
-use rayon::{prelude::*};
+use rayon::prelude::*;
 
 // TODO: multipass
 // TODO: test file for metrics
@@ -77,21 +77,25 @@ enum OutputPeriod {
 }
 
 impl FromStr for OutputPeriod {
-   type Err = String;
+    type Err = String;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let value = value.to_lowercase();
-        if value.starts_with("+") {
-            let period = value[1..].parse::<u32>().map_err(|e| format!(
-                "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
-                value
-            ))?;
+        if let Some(stripped) = value.strip_prefix('+') {
+            let period = stripped.parse::<u32>().map_err(|_| {
+                format!(
+                    "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
+                    value
+                )
+            })?;
             Ok(OutputPeriod::Additive(period))
-        } else if value.starts_with("*") {
-            let period = value[1..].parse::<f32>().map_err(|e| format!(
-                "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
-                value
-            ))?;
+        } else if let Some(stripped) = value.strip_prefix('*') {
+            let period = stripped.parse::<f32>().map_err(|_| {
+                format!(
+                    "Invalid output period: {}. Must be of the form <int>, +<int> or *<float>",
+                    value
+                )
+            })?;
             Ok(OutputPeriod::Multiplicative(period))
         } else {
             if let Ok(period) = value.parse::<u32>() {
@@ -156,8 +160,12 @@ impl TrainResultManager {
     // FIXME: if the period is too low and the training too fast then this will cause rendering issues.
     fn render_table_to_stdout(&mut self) {
         let mut stdout = stdout();
-        stdout.execute(cursor::MoveUp(self.last_render_height)).unwrap();
-        stdout.execute(terminal::Clear(terminal::ClearType::FromCursorDown)).unwrap();
+        stdout
+            .execute(cursor::MoveUp(self.last_render_height))
+            .unwrap();
+        stdout
+            .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+            .unwrap();
         self.last_render_height = self.table.print_tty(false).unwrap() as u16;
     }
 }
@@ -290,14 +298,12 @@ impl Command for TrainCommand {
                 let res = rx.recv();
                 match res {
                     Ok((features, label)) => {
-                        let prediction = workspace.predict(&features);
+                        let label = label.unwrap();
+                        let prediction = workspace.predict_then_learn(&features, &label);
                         if let Some(file) = predictions_file.as_mut() {
                             // TODO: some canonical format for prediction values.
                             writeln!(file, "{:?}", prediction).unwrap();
                         }
-
-                        let label = label.unwrap();
-                        workspace.learn(&features, &label);
 
                         for metric in metrics.iter_mut() {
                             metric.add_point(&features, &label, &prediction);
@@ -306,10 +312,12 @@ impl Command for TrainCommand {
 
                         let should_output = manager.inc_iteration();
                         if should_output {
-                            let mut results = vec![MetricValue::Int(counter-1)];
+                            let mut results = vec![MetricValue::Int(counter - 1)];
                             results.extend(metrics.iter().map(|x| x.get_value()));
                             manager.add_results(results);
-                            manager.render_table_to_stdout();
+                            if !_quiet {
+                                manager.render_table_to_stdout();
+                            }
                         }
 
                         // Put feature objects back into the pool for reuse.
@@ -324,7 +332,9 @@ impl Command for TrainCommand {
         let mut results = vec![MetricValue::Int(counter)];
         results.extend(metrics.iter().map(|x| x.get_value()));
         manager.add_results(results);
-        // manager.render_table_to_stdout();
+        if !_quiet {
+            manager.render_table_to_stdout();
+        }
 
         if let Some(file) = &args.output_model {
             let data = workspace.serialize_model().unwrap();

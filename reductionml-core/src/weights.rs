@@ -1,4 +1,7 @@
-use crate::{sparse_namespaced_features::{SparseFeatures, Namespace}, FeatureIndex, ModelIndex};
+use crate::{
+    sparse_namespaced_features::{Namespace, SparseFeatures},
+    FeatureIndex, ModelIndex,
+};
 
 pub trait Weights {
     fn weight_at(&self, feature_index: FeatureIndex, model_index: ModelIndex) -> f32;

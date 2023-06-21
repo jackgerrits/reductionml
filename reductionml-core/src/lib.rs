@@ -3,6 +3,7 @@ pub mod dense_weights;
 pub mod error;
 pub mod global_config;
 pub mod hash;
+pub mod interactions;
 pub mod inverse_hash_table;
 pub mod loss_function;
 pub mod metrics;
@@ -16,7 +17,6 @@ pub mod sparse_namespaced_features;
 pub mod types;
 pub mod weights;
 pub mod workspace;
-pub mod interactions;
 
 pub(crate) mod utils;
 

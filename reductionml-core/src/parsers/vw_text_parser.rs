@@ -26,7 +26,7 @@ struct CBTextLabel {
 #[derive(TryInto, Clone, Copy)]
 enum TextLabel {
     Simple(f32, Option<f32>),
-    Binary(bool),
+    // Binary(bool),
     CB(CBTextLabel),
 }
 
@@ -49,9 +49,9 @@ fn finalize_parsed_result_singleline<'a>(
     let hashed_sparse_features = Features::SparseSimple(dest);
     match parsed.label {
         // TODO fix
-        Some(TextLabel::Simple(x, _weight)) => (
+        Some(TextLabel::Simple(x, weight)) => (
             hashed_sparse_features,
-            Some(Label::Simple(SimpleLabel(x, _weight.unwrap_or(1.0)))),
+            Some(Label::Simple(SimpleLabel(x, weight.unwrap_or(1.0)))),
         ),
         // TODO binary
         Some(_) => todo!(),
@@ -91,9 +91,8 @@ where
             };
 
             // Find the labelled action.
-            let mut counter = 0;
             let mut label: Option<CBLabel> = None;
-            for action_label in txt_labels_iter {
+            for (counter, action_label) in txt_labels_iter.enumerate() {
                 let lbl: &CBTextLabel = action_label.get_inner_ref().expect("Label should be CB");
                 if let Some((_a, c, p)) = lbl.acp {
                     if label.is_some() {
@@ -102,12 +101,11 @@ where
                         ));
                     }
                     label = Some(CBLabel {
-                        action: counter as usize,
+                        action: counter,
                         cost: c,
                         probability: p,
                     });
                 }
-                counter += 1;
             }
 
             Ok((
@@ -179,14 +177,14 @@ fn parse_feature<'a>(feature: &'a str, offset_counter: &mut u32) -> (ParsedFeatu
     if first_char_is_colon {
         // Anonymous feature
         let value = fast_float::parse(&feature[1..]);
-        if value.is_ok() {
+        if let Ok(value) = value {
             let offset_to_use = *offset_counter;
             *offset_counter += 1;
             (
                 ParsedFeature::Anonymous {
                     offset: offset_to_use,
                 },
-                value.unwrap(),
+                value,
             )
         } else {
             return (
@@ -203,9 +201,8 @@ fn parse_feature<'a>(feature: &'a str, offset_counter: &mut u32) -> (ParsedFeatu
         let name = tokens.next().unwrap();
         match tokens.next() {
             Some(value) => {
-                let v = fast_float::parse(value);
-                if v.is_ok() {
-                    (ParsedFeature::Simple { name }, v.unwrap())
+                if let Ok(value) = fast_float::parse(value) {
+                    (ParsedFeature::Simple { name }, value)
                 } else {
                     (
                         ParsedFeature::SimpleWithStringValue {
@@ -332,8 +329,8 @@ fn parse_initial_segment(
     let tag = match tokens.last() {
         Some(&x) if (x.starts_with('\'') || !last_char_is_space) => {
             tokens.pop();
-            if x.starts_with('\'') {
-                Some(&x[1..])
+            if let Some(x) = x.strip_prefix('\'') {
+                Some(x)
             } else {
                 Some(x)
             }

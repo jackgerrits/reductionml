@@ -1,46 +1,20 @@
-// class ftrl_update_data
-// {
-// public:
-//   float update = 0.f;
-//   float ftrl_alpha = 0.f;
-//   float ftrl_beta = 0.f;
-//   float l1_lambda = 0.f;
-//   float l2_lambda = 0.f;
-//   float predict = 0.f;
-//   float normalized_squared_norm_x = 0.f;
-//   float average_squared_norm_x = 0.f;
-// };
-
-// class ftrl
-// {
-// public:
-//   VW::workspace* all = nullptr;  // features, finalize, l1, l2,
-//   float ftrl_alpha = 0.f;
-//   float ftrl_beta = 0.f;
-//   ftrl_update_data data;
-//   uint32_t ftrl_size = 0;
-//   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
-// };
-
 use std::iter::Sum;
 use std::ops::Deref;
 
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
-use crate::interactions::{Interaction, HashedInteraction, hash_interaction, compile_interactions};
+use crate::interactions::{compile_interactions, Interaction};
 use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{ReductionConfig, ReductionFactory};
-use crate::sparse_namespaced_features::{SparseFeatures, Namespace};
+use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
-use crate::weights::{
-    foreach_feature, foreach_feature_with_state_mut, Weights, foreach_feature_with_state,
-};
-use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex, hash};
+use crate::weights::{foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut};
+use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex};
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -142,15 +116,18 @@ impl CoinRegressor {
         global_config: &GlobalConfig,
         num_models_above: ModelIndex,
     ) -> Result<CoinRegressor> {
-        let (pairs, triples) = match config.interactions.as_ref().map(|x| {
-            compile_interactions(x, global_config.hash_seed())
-        }) {
+        let (pairs, triples) = match config
+            .interactions
+            .as_ref()
+            .map(|x| compile_interactions(x, global_config.hash_seed()))
+        {
             Some((Some(pairs), Some(triples))) => (Some(pairs), Some(triples)),
             Some((None, Some(triples))) => (None, Some(triples)),
             Some((Some(pairs), None)) => (Some(pairs), None),
             Some((None, None)) => (None, None),
             None => (None, None),
         };
+        dbg!(global_config.num_bits());
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -215,7 +192,7 @@ impl ReductionFactory for CoinRegressorFactory {
 
 #[typetag::serde]
 impl ReductionImpl for CoinRegressor {
-    fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction {
+    fn predict(&self, features: &Features, _depth_info: &mut DepthInfo) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
         let mut prediction = 0.0;
         foreach_feature(
@@ -228,6 +205,10 @@ impl ReductionImpl for CoinRegressor {
             |feat_val, weight_val| prediction += feat_val * weight_val,
         );
 
+        if prediction.is_nan() {
+            prediction = 0.0;
+        }
+
         let scalar_pred = ScalarPrediction {
             prediction: prediction.clamp(self.min_label, self.max_label),
             raw_prediction: prediction,
@@ -237,12 +218,28 @@ impl ReductionImpl for CoinRegressor {
 
     fn predict_then_learn(
         &mut self,
-        _features: &Features,
-        _label: &Label,
+        features: &Features,
+        label: &Label,
         _depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
-        todo!()
+        let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
+        let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
+
+        self.min_label = simple_label.0.min(self.min_label);
+        self.max_label = simple_label.0.max(self.max_label);
+        let prediction = self.coin_betting_predict(sparse_feats, simple_label.1);
+        self.coin_betting_update_after_predict(
+            sparse_feats,
+            prediction,
+            simple_label.0,
+            simple_label.1,
+        );
+        let scalar_pred = ScalarPrediction {
+            prediction: prediction.clamp(self.min_label, self.max_label),
+            raw_prediction: prediction,
+        };
+        scalar_pred.into()
     }
 
     fn learn(
@@ -289,6 +286,8 @@ const W_MX: usize = 3; //  maximum absolute value
 const W_WE: usize = 4; //  Wealth
 const W_MG: usize = 5; //  Maximum Lipschitz constant
 
+// TODO constant
+
 struct PredOutcome(f32, f32);
 
 impl Sum for PredOutcome {
@@ -304,24 +303,22 @@ impl Sum for PredOutcome {
 
 impl CoinRegressor {
     fn coin_betting_predict(&mut self, features: &SparseFeatures, weight: f32) -> f32 {
-        let mut prediction =0.0;
+        let mut prediction = 0.0;
         let mut normalized_squared_norm_x = 0.0;
 
         let inner_predict = |feat_value: f32, state: &[f32]| {
-            let mut w_mx = state[W_MX];
-            let mut w_xt = 0.0;
+            assert!(state.len() == 6);
 
-            let fabs_x = feat_value.abs();
-            if fabs_x > w_mx {
-                w_mx = fabs_x;
-            }
+            let w_mx = state[W_MX].max(feat_value.abs());
 
             // COCOB update without sigmoid
-            if state[W_MG] * w_mx > 0.0 {
-                w_xt = ((self.config.alpha + state[W_WE])
+            let w_xt = if state[W_MG] * w_mx > 0.0 {
+                ((self.config.alpha + state[W_WE])
                     / (state[W_MG] * w_mx * (state[W_MG] * w_mx + state[W_G2])))
-                    * state[W_ZT];
-            }
+                    * state[W_ZT]
+            } else {
+                0.0
+            };
 
             prediction += w_xt * feat_value;
             if w_mx > 0.0 {
@@ -331,8 +328,15 @@ impl CoinRegressor {
             }
         };
 
-        foreach_feature_with_state(0.into(), features, &self.weights,  &self.pairs,
-        &self.triples, self.num_bits,inner_predict);
+        foreach_feature_with_state(
+            0.into(),
+            features,
+            &self.weights,
+            &self.pairs,
+            &self.triples,
+            self.num_bits,
+            inner_predict,
+        );
 
         // todo select correct one
         self.model_states[0].normalized_sum_norm_x += normalized_squared_norm_x * weight;
@@ -341,6 +345,8 @@ impl CoinRegressor {
             (self.model_states[0].normalized_sum_norm_x + 1e-6) / self.model_states[0].total_weight;
 
         let partial_prediction = prediction / self.average_squared_norm_x;
+
+        // dbg!(partial_prediction);
 
         // todo check nan
         partial_prediction.clamp(self.min_label, self.max_label)
@@ -358,7 +364,10 @@ impl CoinRegressor {
                 .first_derivative(self.min_label, self.max_label, prediction, label)
                 * weight;
 
+        // dbg!(update);
+
         let inner_update = |feat_value: f32, state: &mut [f32]| {
+            assert!(state.len() == 6);
             // dbg!(feat_value);
             //   float fabs_x = std::fabs(x);
             let fabs_x = feat_value.abs();
@@ -366,7 +375,9 @@ impl CoinRegressor {
             if fabs_x > state[W_MX] {
                 state[W_MX] = fabs_x;
             }
-            let fabs_gradient = gradient.abs();
+            let fabs_gradient = update.abs();
+            // if (fabs_gradient > w[W_MG]) { w[W_MG] = fabs_gradient > d.ftrl_beta ? fabs_gradient : d.ftrl_beta; }
+
             if fabs_gradient > state[W_MG] {
                 state[W_MG] = if fabs_gradient > self.config.beta {
                     fabs_gradient
@@ -387,6 +398,14 @@ impl CoinRegressor {
             state[W_WE] += -gradient * state[W_XT];
 
             state[W_XT] /= self.average_squared_norm_x;
+
+            // dbg!(state[W_XT]);
+            // dbg!(state[W_ZT]);
+            // dbg!(state[W_G2]);
+            // dbg!(state[W_MX]);
+            // dbg!(state[W_WE]);
+            // dbg!(state[W_MG]);
+            // dbg!("---");
         };
         foreach_feature_with_state_mut(
             ModelIndex::from(0),
@@ -473,11 +492,6 @@ mod tests {
 
         assert!(matches!(pred, Prediction::Scalar { .. }));
         let pred1: &ScalarPrediction = pred.get_inner_ref().unwrap();
-        match pred1 {
-            ScalarPrediction { prediction, .. } => {
-                assert_relative_eq!(*prediction, 0.5);
-            }
-            _ => unreachable!(),
-        }
+        assert_relative_eq!(pred1.prediction, 0.5);
     }
 }
