@@ -125,7 +125,15 @@ impl CBExploreAdfGreedyReduction {
             .0
             .iter()
             .enumerate()
-            .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .min_by(|(_, (_, a)), (_, (_, b))| {
+                if a > b {
+                    std::cmp::Ordering::Greater
+                } else if a < b {
+                    std::cmp::Ordering::Less
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            })
             .unwrap()
             .0;
 
