@@ -509,7 +509,7 @@ mod tests {
             let features = Features::SparseSimple(features);
             regressor.learn(
                 &features,
-                &Label::Simple(SimpleLabel(0.5, yhat(_x))),
+                &Label::Simple(SimpleLabel(yhat(_x), 1.0)),
                 &mut depth_info,
                 0.into(),
             );            
