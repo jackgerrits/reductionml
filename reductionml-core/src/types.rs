@@ -66,7 +66,7 @@ pub enum PredictionType {
 }
 
 /// value, weight
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct SimpleLabel(pub f32, pub f32);
 
 impl From<f32> for SimpleLabel {
@@ -81,7 +81,7 @@ impl Default for SimpleLabel {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct BinaryLabel(pub bool);
 impl From<bool> for BinaryLabel {
     fn from(b: bool) -> Self {
@@ -89,7 +89,7 @@ impl From<bool> for BinaryLabel {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CBLabel {
     // action is 0-based
     pub action: usize,
@@ -97,6 +97,7 @@ pub struct CBLabel {
     pub probability: f32,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum Label {
     Simple(SimpleLabel),
     Binary(BinaryLabel),
@@ -113,7 +114,7 @@ pub enum LabelType {
     CB,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct CBAdfFeatures {
     pub shared: Option<SparseFeatures>,
     pub actions: Vec<SparseFeatures>,
@@ -162,7 +163,7 @@ macro_rules! impl_conversion_traits_feats {
     };
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Features<'a> {
     SparseSimple(SparseFeatures),
     SparseSimpleRef(&'a SparseFeatures),
@@ -265,11 +266,11 @@ macro_rules! impl_extra_traits {
 }
 
 /// This type must be masked by the num bits in use in the hash table.
-#[derive(Deserialize, Serialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Deserialize, Serialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct FeatureIndex(u32);
 impl_extra_traits!(FeatureIndex, u32);
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct ModelIndex(u8);
 impl_extra_traits!(ModelIndex, u8);
 
@@ -291,7 +292,7 @@ impl FeatureMask {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Debug)]
 pub struct NamespaceHash(u32);
 impl_extra_traits!(NamespaceHash, u32);
 

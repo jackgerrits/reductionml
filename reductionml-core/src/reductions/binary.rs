@@ -95,7 +95,12 @@ impl From<BinaryLabel> for SimpleLabel {
 
 #[typetag::serde]
 impl ReductionImpl for BinaryReduction {
-    fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction {
+    fn predict(
+        &self,
+        features: &Features,
+        depth_info: &mut DepthInfo,
+        model_offset: ModelIndex,
+    ) -> Prediction {
         let pred = self.regressor.predict(features, depth_info, 0.into());
         let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
 

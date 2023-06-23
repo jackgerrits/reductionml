@@ -243,16 +243,8 @@ fn parse_namespace_inline(
         (name, value)
     };
 
-    let (namespace_def, namespace_hash) = match namespace_name {
-        // TODO: consider different hash if hash_seed is not 0
-        " " => (Namespace::Default, 0.into()),
-        _ => {
-            let namespace_hash = murmur3_32(&mut Cursor::new(namespace_name), hash_seed)
-                .unwrap()
-                .into();
-            (Namespace::Named(namespace_hash), namespace_hash)
-        }
-    };
+    let namespace_def = Namespace::from_name(namespace_name, hash_seed);
+    let namespace_hash = namespace_def.hash(hash_seed);
 
     let dest = dest_namespace.get_or_create_namespace(namespace_def);
     let mut offset_counter = 0;
@@ -364,6 +356,7 @@ fn parse_text_line_internal<'a>(
 #[derive(Default)]
 pub struct VwTextParserFactory;
 impl TextModeParserFactory for VwTextParserFactory {
+    type Parser = VwTextParser;
     fn create(
         &self,
         features_type: FeaturesType,
@@ -371,18 +364,18 @@ impl TextModeParserFactory for VwTextParserFactory {
         hash_seed: u32,
         num_bits: u8,
         pool: std::sync::Arc<Pool<SparseFeatures>>,
-    ) -> Box<dyn TextModeParser> {
-        Box::new(VwTextParser {
+    ) -> Self::Parser {
+        VwTextParser {
             feature_type: features_type,
             label_type,
             hash_seed,
             num_bits,
             pool,
-        })
+        }
     }
 }
 
-struct VwTextParser {
+pub struct VwTextParser {
     feature_type: FeaturesType,
     label_type: LabelType,
     hash_seed: u32,

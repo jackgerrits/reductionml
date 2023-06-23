@@ -192,7 +192,12 @@ impl ReductionFactory for CoinRegressorFactory {
 
 #[typetag::serde]
 impl ReductionImpl for CoinRegressor {
-    fn predict(&self, features: &Features, _depth_info: &mut DepthInfo) -> Prediction {
+    fn predict(
+        &self,
+        features: &Features,
+        _depth_info: &mut DepthInfo,
+        model_offset: ModelIndex,
+    ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
         let mut prediction = 0.0;
         foreach_feature(
@@ -439,7 +444,7 @@ mod tests {
         let features = Features::SparseSimple(features);
 
         let mut depth_info = DepthInfo::new();
-        let prediction = coin.predict(&features, &mut depth_info);
+        let prediction = coin.predict(&features, &mut depth_info, 0.into());
         // Ensure the prediction is of variant Scalar
         assert!(matches!(prediction, Prediction::Scalar { .. }));
     }
@@ -488,7 +493,7 @@ mod tests {
             0.into(),
         );
 
-        let pred = coin.predict(&features, &mut depth_info);
+        let pred = coin.predict(&features, &mut depth_info, 0.into());
 
         assert!(matches!(pred, Prediction::Scalar { .. }));
         let pred1: &ScalarPrediction = pred.get_inner_ref().unwrap();

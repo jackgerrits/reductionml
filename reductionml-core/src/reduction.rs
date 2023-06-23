@@ -17,9 +17,9 @@ impl DepthInfo {
         self.offset = (*self.offset - (*num_models_below * *i)).into();
     }
 
-    // pub(crate) fn absolute_offset(&self) -> ModelIndex {
-    //     self.offset
-    // }
+    pub(crate) fn absolute_offset(&self) -> ModelIndex {
+        self.offset
+    }
 }
 
 impl ReductionWrapper {
@@ -30,7 +30,7 @@ impl ReductionWrapper {
         model_offset: ModelIndex,
     ) -> Prediction {
         depth_info.increment(self.num_models_below, model_offset);
-        let res = self.reduction.predict(features, depth_info);
+        let res = self.reduction.predict(features, depth_info, model_offset);
         depth_info.decrement(self.num_models_below, model_offset);
         res
     }
@@ -241,7 +241,12 @@ impl ReductionWrapper {
 
 #[typetag::serde(tag = "type")]
 pub trait ReductionImpl {
-    fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction;
+    fn predict(
+        &self,
+        features: &Features,
+        depth_info: &mut DepthInfo,
+        model_offset: ModelIndex,
+    ) -> Prediction;
     fn predict_then_learn(
         &mut self,
         features: &Features,
@@ -249,7 +254,7 @@ pub trait ReductionImpl {
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
-        let prediction = self.predict(features, depth_info);
+        let prediction = self.predict(features, depth_info, model_offset);
         self.learn(features, label, depth_info, model_offset);
         prediction
     }
