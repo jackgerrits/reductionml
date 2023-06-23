@@ -494,4 +494,58 @@ mod tests {
         let pred1: &ScalarPrediction = pred.get_inner_ref().unwrap();
         assert_relative_eq!(pred1.prediction, 0.5);
     }
+
+    fn test_learning_e2e(x: fn(i32) -> f32, yhat: fn(f32) -> f32, n: i32, mut regressor: CoinRegressor) {
+        for i in 0..n {
+            let mut features = SparseFeatures::new();
+            let _x = x(i); 
+
+            {
+                let ns = features.get_or_create_namespace(Namespace::Default);
+                ns.add_feature(0.into(), _x);
+            }
+    
+            let mut depth_info = DepthInfo::new();
+            let features = Features::SparseSimple(features);
+            regressor.learn(
+                &features,
+                &Label::Simple(SimpleLabel(0.5, yhat(_x))),
+                &mut depth_info,
+                0.into(),
+            );            
+        }
+
+        let test_set = [0.0, 1.0, 2.0];
+        for x in test_set {
+            let mut features = SparseFeatures::new();
+
+            {
+                let ns = features.get_or_create_namespace(Namespace::Default);
+                ns.add_feature(0.into(), x);
+            }
+    
+            let mut depth_info = DepthInfo::new();
+            let features = Features::SparseSimple(features);
+            let pred = regressor.predict(&features, &mut depth_info);
+            assert!(matches!(pred, Prediction::Scalar { .. }));
+
+            let pred_value: &ScalarPrediction = pred.get_inner_ref().unwrap();
+            assert_relative_eq!(pred_value.prediction, yhat(x));
+        }
+    }
+
+    #[test]
+    fn test_learning_const() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 100.0
+        }
+        fn yhat(x: f32) -> f32 { 1.0 }
+
+        let coin_config = CoinRegressorConfig::default();
+        let global_config = GlobalConfig::new(2, 0);
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
+
+        test_learning_e2e(x, yhat, 10000, coin);
+    } 
 }
