@@ -16,6 +16,5 @@ jobs:
           components: rustfmt
       - run: cargo fmt --check
       - run: cargo build
-      - run: cargo test
       # Includes integration tests which are ignored by default
-      - run: cargo test -- --ignored
+      - run: cargo test -- --include-ignored
