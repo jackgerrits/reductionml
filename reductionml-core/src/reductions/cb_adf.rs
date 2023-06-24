@@ -130,7 +130,12 @@ fn generate_ips_simple_label(label: &CBLabel, current_action_index: usize) -> Si
 
 #[typetag::serde]
 impl ReductionImpl for CBAdfReduction {
-    fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction {
+    fn predict(
+        &self,
+        features: &Features,
+        depth_info: &mut DepthInfo,
+        model_offset: ModelIndex,
+    ) -> Prediction {
         let cb_adf_features: &CBAdfFeatures = features.get_inner_ref().unwrap();
 
         let mut feats_to_reuse = self.object_pool.get_object();

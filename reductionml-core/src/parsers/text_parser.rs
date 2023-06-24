@@ -6,14 +6,16 @@ use crate::{
 };
 
 pub trait TextModeParserFactory {
+    type Parser: TextModeParser;
     fn create(
         &self,
         features_type: FeaturesType,
         label_type: LabelType,
         hash_seed: u32,
         num_bits: u8,
+        add_constant_feature: bool,
         pool: Arc<Pool<SparseFeatures>>,
-    ) -> Box<dyn TextModeParser>;
+    ) -> Self::Parser;
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -22,7 +24,6 @@ pub enum ParsedNamespaceInfo<'a> {
     Default,
 }
 
-// TODO: DSJSON parser
 pub trait TextModeParser: Sync {
     fn get_next_chunk(
         &self,

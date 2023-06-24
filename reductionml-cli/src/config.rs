@@ -66,7 +66,7 @@ impl Command for ConfigCommand {
                         .get_config_default();
                 let default_global = global_config::GlobalConfig::default();
                 let overall_config = json!({
-                    // "$schema": "https://raw.githubusercontent.com/reductionml/reductionml-core/main/config_schema.json",
+                    "$schema": "https://jackgerrits.github.io/reductionml/schema/config_schema.json",
                     "globalConfig": default_global,
                     "entryReduction": {
                         "typename": args.reduction,

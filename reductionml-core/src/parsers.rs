@@ -5,6 +5,8 @@ use murmur3::murmur3_32;
 pub use text_parser::*;
 mod vw_text_parser;
 pub use vw_text_parser::*;
+mod dsjson_parser;
+pub use dsjson_parser::*;
 
 use crate::{FeatureHash, NamespaceHash};
 

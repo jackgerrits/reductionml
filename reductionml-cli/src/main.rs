@@ -1,5 +1,13 @@
+use std::sync::Arc;
+
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
 use colored::Colorize;
+use reductionml_core::{
+    object_pool::Pool,
+    parsers::{TextModeParser, TextModeParserFactory},
+    sparse_namespaced_features::SparseFeatures,
+    FeaturesType, LabelType,
+};
 
 use crate::command::Command;
 
@@ -28,6 +36,42 @@ struct Cli {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum DataFormat {
     VWText,
+    Dsjson,
+}
+
+impl DataFormat {
+    pub fn get_parser(
+        &self,
+        features_type: FeaturesType,
+        label_type: LabelType,
+        hash_seed: u32,
+        add_constant_feature: bool,
+        num_bits: u8,
+        pool: Arc<Pool<SparseFeatures>>,
+    ) -> Box<dyn TextModeParser> {
+        match self {
+            DataFormat::VWText => Box::new(
+                reductionml_core::parsers::VwTextParserFactory::default().create(
+                    features_type,
+                    label_type,
+                    hash_seed,
+                    num_bits,
+                    add_constant_feature,
+                    pool,
+                ),
+            ),
+            DataFormat::Dsjson => Box::new(
+                reductionml_core::parsers::DsJsonParserFactory::default().create(
+                    features_type,
+                    label_type,
+                    hash_seed,
+                    num_bits,
+                    add_constant_feature,
+                    pool,
+                ),
+            ),
+        }
+    }
 }
 
 #[derive(Subcommand)]

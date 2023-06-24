@@ -11,17 +11,25 @@ pub struct GlobalConfig {
 
     #[serde(default)]
     hash_seed: u32,
+
+    #[serde(default = "default_true")]
+    add_constant_feature: bool,
 }
 
 fn default_num_bits() -> u8 {
     18
 }
 
+fn default_true() -> bool {
+    true
+}
+
 impl GlobalConfig {
-    pub fn new(num_bits: u8, hash_seed: u32) -> GlobalConfig {
+    pub fn new(num_bits: u8, hash_seed: u32, add_constant_feature: bool) -> GlobalConfig {
         GlobalConfig {
             num_bits,
             hash_seed,
+            add_constant_feature,
         }
     }
 
@@ -31,5 +39,9 @@ impl GlobalConfig {
 
     pub fn hash_seed(&self) -> u32 {
         self.hash_seed
+    }
+
+    pub fn add_constant_feature(&self) -> bool {
+        self.add_constant_feature
     }
 }

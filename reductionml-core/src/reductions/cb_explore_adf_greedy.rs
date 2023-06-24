@@ -125,7 +125,15 @@ impl CBExploreAdfGreedyReduction {
             .0
             .iter()
             .enumerate()
-            .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .min_by(|(_, (_, a)), (_, (_, b))| {
+                if a > b {
+                    std::cmp::Ordering::Greater
+                } else if a < b {
+                    std::cmp::Ordering::Less
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            })
             .unwrap()
             .0;
 
@@ -142,7 +150,12 @@ impl CBExploreAdfGreedyReduction {
 
 #[typetag::serde]
 impl ReductionImpl for CBExploreAdfGreedyReduction {
-    fn predict(&self, features: &Features, depth_info: &mut DepthInfo) -> Prediction {
+    fn predict(
+        &self,
+        features: &Features,
+        depth_info: &mut DepthInfo,
+        model_offset: ModelIndex,
+    ) -> Prediction {
         let pred = self.cb_adf.predict(features, depth_info, 0.into());
         let scores: ActionScoresPrediction = pred.try_into().unwrap();
         Prediction::ActionProbs(self.action_scores_to_probs(scores))

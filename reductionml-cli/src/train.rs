@@ -15,7 +15,6 @@ use prettytable::{format, Table};
 use reductionml_core::{
     metrics::{Metric, MetricValue},
     object_pool::{self, PoolReturnable},
-    parsers::{TextModeParserFactory, VwTextParserFactory},
     Features, Label,
 };
 
@@ -212,15 +211,14 @@ impl Command for TrainCommand {
         let mut counter: i32 = 0;
         let pool = workspace.features_pool().clone();
 
-        // TODO read format
-        let parser_factory = VwTextParserFactory::default();
-        let parser = parser_factory.create(
+        let parser = args.data_format.get_parser(
             workspace
                 .get_entry_reduction()
                 .types()
                 .input_features_type(),
             workspace.get_entry_reduction().types().input_label_type(),
             workspace.global_config().hash_seed(),
+            workspace.global_config().add_constant_feature(),
             workspace.global_config().num_bits(),
             pool.clone(),
         );

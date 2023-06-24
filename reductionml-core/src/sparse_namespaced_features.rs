@@ -1,8 +1,11 @@
+use std::io::Cursor;
+
 use crate::{
     hash::FNV_PRIME, object_pool::PoolReturnable, FeatureHash, FeatureIndex, FeatureMask,
     NamespaceHash,
 };
 use itertools::Itertools;
+use murmur3::murmur3_32;
 use serde::{Deserialize, Serialize};
 pub struct NamespacesIterator<'a> {
     namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
@@ -42,7 +45,7 @@ impl<'a> Iterator for NamespaceIterator<'a> {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct SparseFeaturesNamespace {
     namespace: Namespace,
     feature_indices: Vec<FeatureIndex>,
@@ -126,13 +129,37 @@ impl SparseFeaturesNamespace {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Namespace {
     Named(NamespaceHash),
     Default,
+    Constant,
 }
 
-#[derive(PartialEq, Clone)]
+impl Namespace {
+    pub fn from_name(namespace_name: &str, hash_seed: u32) -> Namespace {
+        match namespace_name {
+            // TODO: consider different hash if hash_seed is not 0
+            " " => Namespace::Default,
+            _ => {
+                let namespace_hash = murmur3_32(&mut Cursor::new(namespace_name), hash_seed)
+                    .expect("murmur3_32 should not fail")
+                    .into();
+                Namespace::Named(namespace_hash)
+            }
+        }
+    }
+
+    pub fn hash(&self, _hash_seed: u32) -> NamespaceHash {
+        match self {
+            Namespace::Named(hash) => *hash,
+            Namespace::Default => 0.into(),
+            Namespace::Constant => 0.into(),
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub struct SparseFeatures {
     namespaces: std::collections::HashMap<Namespace, SparseFeaturesNamespace>,
 }
@@ -154,11 +181,26 @@ fn cubic_feature_hash(i1: FeatureIndex, i2: FeatureIndex, i3: FeatureIndex) -> F
     (multiplied ^ u32::from(i3)).into()
 }
 
+static CONSTANT_FEATURE_INDEX: u32 = 11650396;
+
 impl SparseFeatures {
     pub fn namespaces(&self) -> NamespacesIterator {
         NamespacesIterator {
             namespaces: self.namespaces.iter(),
         }
+    }
+
+    /// Adds if not exists
+    pub fn add_constant_feature(&mut self, num_bits: u8) {
+        let ns = self.get_or_create_namespace(Namespace::Constant);
+        ns.add_feature(
+            FeatureHash::from(CONSTANT_FEATURE_INDEX).mask(FeatureMask::from_num_bits(num_bits)),
+            1.0,
+        );
+    }
+
+    pub fn constant_feature_exists(&self) -> bool {
+        self.get_namespace(Namespace::Constant).is_some()
     }
 
     pub fn quadratic_features(

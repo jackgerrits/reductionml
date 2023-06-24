@@ -158,6 +158,7 @@ mod tests {
         ns.add_feature(0.into(), 1.0);
         ns.add_feature(2.into(), 1.0);
         ns.add_feature(3.into(), 1.0);
+        features.add_constant_feature(4);
 
         let features = Features::SparseSimple(features);
 
