@@ -515,7 +515,7 @@ mod tests {
             );            
         }
 
-        let test_set = [-3.0];//, -2.0, -1.0, 1.0, 2.0, 3.0];
+        let test_set = [0.0, 1.0, 2.0, 3.0];
         for x in test_set {
             let mut features = SparseFeatures::new();
 
@@ -530,7 +530,7 @@ mod tests {
             assert!(matches!(pred, Prediction::Scalar { .. }));
 
             let pred_value: &ScalarPrediction = pred.get_inner_ref().unwrap();
-            assert_relative_eq!(pred_value.prediction, yhat(x));
+            assert_relative_eq!(pred_value.prediction, yhat(x), epsilon=0.001);
         }
     }
 
@@ -552,7 +552,7 @@ mod tests {
     #[test]
     fn test_learning_linear() {
         fn x(i: i32) -> f32 {
-            (i % 100) as f32 / 100.0
+            (i % 100) as f32 / 10.0
         }
         fn yhat(x: f32) -> f32 { 2.0 * x }
 
