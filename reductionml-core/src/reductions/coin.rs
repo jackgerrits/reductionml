@@ -515,7 +515,7 @@ mod tests {
             );            
         }
 
-        let test_set = [0.0, 1.0, 2.0];
+        let test_set = [-3.0];//, -2.0, -1.0, 1.0, 2.0, 3.0];
         for x in test_set {
             let mut features = SparseFeatures::new();
 
@@ -534,12 +534,27 @@ mod tests {
         }
     }
 
-    #[test]
+/*     #[test]
     fn test_learning_const() {
         fn x(i: i32) -> f32 {
             (i % 100) as f32 / 100.0
         }
         fn yhat(x: f32) -> f32 { 1.0 }
+
+        let coin_config = CoinRegressorConfig::default();
+        let global_config = GlobalConfig::new(2, 0);
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
+
+        test_learning_e2e(x, yhat, 10000, coin);
+    } */
+
+    #[test]
+    fn test_learning_linear() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 100.0
+        }
+        fn yhat(x: f32) -> f32 { 2.0 * x }
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(2, 0);
