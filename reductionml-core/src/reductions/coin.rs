@@ -515,7 +515,7 @@ mod tests {
     fn test_learning_e2e(x: fn(i32) -> f32, yhat: fn(f32) -> f32, n: i32, mut regressor: CoinRegressor) {
         for i in 0..n {
             let mut features = SparseFeatures::new();
-            features.add_constant_feature(2);
+            features.add_constant_feature(3);
             let _x = x(i); 
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
@@ -535,7 +535,7 @@ mod tests {
         let test_set = [0.0, 1.0, 2.0, 3.0];
         for x in test_set {
             let mut features = SparseFeatures::new();
-            features.add_constant_feature(2);
+            features.add_constant_feature(3);
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
                 ns.add_feature(0.into(), x);
@@ -579,6 +579,6 @@ mod tests {
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
-        test_learning_e2e(x, yhat, 10000, coin);
+        test_learning_e2e(x, yhat, 100000, coin);
     } 
 }
