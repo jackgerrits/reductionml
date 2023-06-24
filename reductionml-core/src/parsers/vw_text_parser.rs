@@ -1,4 +1,4 @@
-use core::f32;
+use core::{f32, num};
 use std::io::Cursor;
 
 use derive_more::TryInto;
@@ -43,9 +43,13 @@ impl GetInner<CBTextLabel> for TextLabel {
 // Idea - tag is not a concept here but for the cases where it was necessary (ccb) it will be folded into the feature type
 fn finalize_parsed_result_singleline<'a>(
     parsed: TextParseResult,
-    _num_bits: u8,
-    dest: SparseFeatures,
+    add_constant_feature: bool,
+    num_bits: u8,
+    mut dest: SparseFeatures,
 ) -> (Features<'a>, Option<Label>) {
+    if add_constant_feature {
+        dest.add_constant_feature(num_bits);
+    }
     let hashed_sparse_features = Features::SparseSimple(dest);
     match parsed.label {
         // TODO fix
@@ -64,6 +68,8 @@ fn finalize_parsed_result_multiline<'a, 'b, T, U>(
     parsed: U,
     expected_label: LabelType,
     expected_features: FeaturesType,
+    add_constant_feature: bool,
+    num_bits: u8,
 ) -> Result<(Features<'b>, Option<Label>)>
 where
     T: IntoIterator<Item = SparseFeatures> + Iterator<Item = SparseFeatures> + Clone,
@@ -85,7 +91,11 @@ where
             let shared_ex = if first_is_shared {
                 // Consume shared token
                 txt_labels_iter.next();
-                Some(feats_iter.next().unwrap())
+                let mut shared = feats_iter.next().unwrap();
+                if add_constant_feature {
+                    shared.add_constant_feature(num_bits);
+                }
+                Some(shared)
             } else {
                 None
             };
@@ -111,7 +121,12 @@ where
             Ok((
                 Features::SparseCBAdf(CBAdfFeatures {
                     shared: shared_ex,
-                    actions: feats_iter.collect(),
+                    actions: feats_iter
+                        .map(|mut x| {
+                            x.add_constant_feature(num_bits);
+                            x
+                        })
+                        .collect(),
                 }),
                 label.map(Label::CB),
             ))
@@ -363,6 +378,7 @@ impl TextModeParserFactory for VwTextParserFactory {
         label_type: LabelType,
         hash_seed: u32,
         num_bits: u8,
+        add_constant_feature: bool,
         pool: std::sync::Arc<Pool<SparseFeatures>>,
     ) -> Self::Parser {
         VwTextParser {
@@ -370,6 +386,7 @@ impl TextModeParserFactory for VwTextParserFactory {
             label_type,
             hash_seed,
             num_bits,
+            add_constant_feature,
             pool,
         }
     }
@@ -380,6 +397,7 @@ pub struct VwTextParser {
     label_type: LabelType,
     hash_seed: u32,
     num_bits: u8,
+    add_constant_feature: bool,
     pool: std::sync::Arc<Pool<SparseFeatures>>,
 }
 
@@ -468,6 +486,8 @@ impl TextModeParser for VwTextParser {
                 results.into_iter(),
                 self.label_type,
                 self.feature_type,
+                self.add_constant_feature,
+                self.num_bits,
             )
         } else {
             let mut dest = self.pool.get_object();
@@ -480,6 +500,7 @@ impl TextModeParser for VwTextParser {
             )?;
             Ok(finalize_parsed_result_singleline(
                 result,
+                self.add_constant_feature,
                 self.num_bits,
                 dest,
             ))

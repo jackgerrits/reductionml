@@ -218,6 +218,7 @@ impl Command for TrainCommand {
                 .input_features_type(),
             workspace.get_entry_reduction().types().input_label_type(),
             workspace.global_config().hash_seed(),
+            workspace.global_config().add_constant_feature(),
             workspace.global_config().num_bits(),
             pool.clone(),
         );

@@ -108,6 +108,7 @@ struct CoinRegressor {
     pairs: Option<Vec<(Namespace, Namespace)>>,
     triples: Option<Vec<(Namespace, Namespace, Namespace)>>,
     num_bits: u8,
+    expect_constant_feature: bool,
 }
 
 impl CoinRegressor {
@@ -127,7 +128,6 @@ impl CoinRegressor {
             Some((None, None)) => (None, None),
             None => (None, None),
         };
-        dbg!(global_config.num_bits());
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -151,6 +151,7 @@ impl CoinRegressor {
             pairs,
             triples,
             num_bits: global_config.num_bits(),
+            expect_constant_feature: global_config.add_constant_feature(),
         })
     }
 }
@@ -199,6 +200,15 @@ impl ReductionImpl for CoinRegressor {
         model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
+        assert!(
+            !(self.expect_constant_feature && !sparse_feats.constant_feature_exists()),
+            "Constant feature was expected but not present."
+        );
+        assert!(
+            !(!self.expect_constant_feature && sparse_feats.constant_feature_exists()),
+            "Constant feature was not expected but present."
+        );
+
         let mut prediction = 0.0;
         foreach_feature(
             0.into(),
@@ -229,6 +239,7 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
+        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -255,6 +266,7 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
+        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -435,7 +447,7 @@ mod tests {
     #[test]
     fn test_coin_betting_predict() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0);
+        let global_config = GlobalConfig::new(4, 0, false);
         let coin = CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         let mut features = SparseFeatures::new();
         let ns = features.get_or_create_namespace(Namespace::Default);
@@ -452,7 +464,7 @@ mod tests {
     #[test]
     fn test_learning() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(2, 0);
+        let global_config = GlobalConfig::new(2, 0, false);
         let mut coin =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 

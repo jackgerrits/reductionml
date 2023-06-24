@@ -133,6 +133,7 @@ impl SparseFeaturesNamespace {
 pub enum Namespace {
     Named(NamespaceHash),
     Default,
+    Constant,
 }
 
 impl Namespace {
@@ -153,6 +154,7 @@ impl Namespace {
         match self {
             Namespace::Named(hash) => *hash,
             Namespace::Default => 0.into(),
+            Namespace::Constant => 0.into(),
         }
     }
 }
@@ -179,11 +181,26 @@ fn cubic_feature_hash(i1: FeatureIndex, i2: FeatureIndex, i3: FeatureIndex) -> F
     (multiplied ^ u32::from(i3)).into()
 }
 
+static CONSTANT_FEATURE_INDEX: u32 = 11650396;
+
 impl SparseFeatures {
     pub fn namespaces(&self) -> NamespacesIterator {
         NamespacesIterator {
             namespaces: self.namespaces.iter(),
         }
+    }
+
+    /// Adds if not exists
+    pub fn add_constant_feature(&mut self, num_bits: u8) {
+        let ns = self.get_or_create_namespace(Namespace::Constant);
+        ns.add_feature(
+            FeatureHash::from(CONSTANT_FEATURE_INDEX).mask(FeatureMask::from_num_bits(num_bits)),
+            1.0,
+        );
+    }
+
+    pub fn constant_feature_exists(&self) -> bool {
+        self.get_namespace(Namespace::Constant).is_some()
     }
 
     pub fn quadratic_features(

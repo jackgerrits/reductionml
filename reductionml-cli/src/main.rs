@@ -45,6 +45,7 @@ impl DataFormat {
         features_type: FeaturesType,
         label_type: LabelType,
         hash_seed: u32,
+        add_constant_feature: bool,
         num_bits: u8,
         pool: Arc<Pool<SparseFeatures>>,
     ) -> Box<dyn TextModeParser> {
@@ -55,6 +56,7 @@ impl DataFormat {
                     label_type,
                     hash_seed,
                     num_bits,
+                    add_constant_feature,
                     pool,
                 ),
             ),
@@ -64,6 +66,7 @@ impl DataFormat {
                     label_type,
                     hash_seed,
                     num_bits,
+                    add_constant_feature,
                     pool,
                 ),
             ),

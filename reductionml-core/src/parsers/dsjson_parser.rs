@@ -23,6 +23,7 @@ impl TextModeParserFactory for DsJsonParserFactory {
         label_type: LabelType,
         hash_seed: u32,
         num_bits: u8,
+        add_constant_feature: bool,
         pool: std::sync::Arc<Pool<SparseFeatures>>,
     ) -> DsJsonParser {
         // Only supports CB
@@ -39,6 +40,7 @@ impl TextModeParserFactory for DsJsonParserFactory {
             _label_type: label_type,
             hash_seed,
             num_bits,
+            add_constant_feature,
             pool,
         }
     }
@@ -49,6 +51,7 @@ pub struct DsJsonParser {
     _label_type: LabelType,
     hash_seed: u32,
     num_bits: u8,
+    add_constant_feature: bool,
     pool: std::sync::Arc<Pool<SparseFeatures>>,
 }
 
@@ -182,12 +185,18 @@ impl TextModeParser for DsJsonParser {
 
         let mut shared_ex = self.pool.get_object();
         self.handle_features(&mut shared_ex, " ", &json["c"], &mut namespace_stack);
+        if self.add_constant_feature {
+            shared_ex.add_constant_feature(self.num_bits);
+        }
         assert!(namespace_stack.is_empty());
 
         let mut actions = Vec::new();
         for item in json["c"]["_multi"].as_array().unwrap() {
             let mut action = self.pool.get_object();
             self.handle_features(&mut action, " ", &item, &mut namespace_stack);
+            if self.add_constant_feature {
+                action.add_constant_feature(self.num_bits);
+            }
             actions.push(action);
             assert!(namespace_stack.is_empty());
         }
@@ -294,6 +303,7 @@ mod test {
             LabelType::CB,
             0,
             18,
+            false,
             pool,
         );
 
