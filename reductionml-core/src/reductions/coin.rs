@@ -572,7 +572,7 @@ mod tests {
         fn x(i: i32) -> f32 {
             (i % 100) as f32 / 10.0
         }
-        fn yhat(x: f32) -> f32 { 2.0 * x }
+        fn yhat(x: f32) -> f32 { 2.0 * x + 3.0 }
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(4, 0, true);
