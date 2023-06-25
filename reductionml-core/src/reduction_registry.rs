@@ -32,7 +32,8 @@ unsafe impl Send for ReductionRegistry {}
 
 impl ReductionRegistry {
     pub fn register(&mut self, factory: Box<dyn ReductionFactory>) {
-        self.registry.insert(factory.typename(), factory);
+        self.registry
+            .insert(factory.typename().as_ref().to_owned(), factory);
     }
 
     pub fn get(&self, typename: &str) -> Option<&dyn ReductionFactory> {

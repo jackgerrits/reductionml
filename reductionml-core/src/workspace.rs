@@ -83,12 +83,14 @@ impl Workspace {
 
     // experimental
     pub fn serialize_to_json(&self) -> Result<String> {
+        // TODO: rewrite weights to hide the internal index details
         serde_json::to_string(&self)
             .map_err(|e| Error::InvalidConfiguration(format!("Failed to serialize model: {e}")))
     }
 
     // experimental
     pub fn deserialize_from_json(json: &str) -> Result<Workspace> {
+        // TODO: convert back weights to hide the internal index details
         serde_json::from_str(json)
             .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse model: {e}")))
     }
@@ -142,7 +144,7 @@ mod tests {
                     "numBits": 4
                 },
                 "entryReduction": {
-                    "typename": "coin",
+                    "typename": "Coin",
                     "config": {
                         "alpha": 10
                     }

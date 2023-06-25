@@ -5,7 +5,7 @@ use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{
-    create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
+    create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
 
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
@@ -17,6 +17,7 @@ use serde_json::json;
 
 #[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct DebugConfig {
     #[serde(default = "default_cb_type")]
     id: String,
@@ -46,12 +47,12 @@ fn default_indent() -> usize {
 }
 
 fn default_next() -> JsonReductionConfig {
-    JsonReductionConfig::new("unknown".to_owned(), json!({}))
+    JsonReductionConfig::new("Unknown".try_into().unwrap(), json!({}))
 }
 
 impl ReductionConfig for DebugConfig {
-    fn typename(&self) -> String {
-        "debug".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "Debug".try_into().unwrap()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -73,7 +74,7 @@ struct DebugReduction {
 pub struct DebugReductionFactory;
 
 impl ReductionFactory for DebugReductionFactory {
-    impl_default_factory_functions!("debug", DebugConfig);
+    impl_default_factory_functions!("Debug", DebugConfig);
 
     fn create(
         &self,

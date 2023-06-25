@@ -47,7 +47,7 @@ impl ConfigSchema {
 
     pub fn add_reduction(&mut self, reduction_factory: &dyn ReductionFactory) {
         let typename_constant = schemars::schema::SchemaObject {
-            const_value: Some(reduction_factory.typename().into()),
+            const_value: Some(reduction_factory.typename().as_ref().into()),
             ..Default::default()
         };
 
@@ -67,7 +67,7 @@ impl ConfigSchema {
             Some(Box::new(Schema::Bool(false)));
 
         self.schema.definitions.insert(
-            reduction_factory.typename(),
+            reduction_factory.typename().as_ref().into(),
             Schema::Object(reduction_config_schema),
         );
 

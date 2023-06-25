@@ -5,7 +5,7 @@ use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{
-    create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
+    create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
 use crate::utils::GetInner;
 
@@ -28,6 +28,7 @@ enum CBType {
 
 #[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct CBAdfConfig {
     #[serde(default = "default_cb_type")]
     cb_type: CBType,
@@ -41,8 +42,8 @@ fn default_cb_type() -> CBType {
 }
 
 impl ReductionConfig for CBAdfConfig {
-    fn typename(&self) -> String {
-        "cb_adf".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "CbAdf".try_into().unwrap()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -51,7 +52,10 @@ impl ReductionConfig for CBAdfConfig {
 }
 
 fn default_regressor() -> JsonReductionConfig {
-    JsonReductionConfig::new("coin".to_owned(), json!(CoinRegressorConfig::default()))
+    JsonReductionConfig::new(
+        "Coin".try_into().unwrap(),
+        json!(CoinRegressorConfig::default()),
+    )
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -74,7 +78,7 @@ struct CBAdfReduction {
 pub struct CBAdfReductionFactory;
 
 impl ReductionFactory for CBAdfReductionFactory {
-    impl_default_factory_functions!("cb_adf", CBAdfConfig);
+    impl_default_factory_functions!("CbAdf", CBAdfConfig);
 
     fn create(
         &self,

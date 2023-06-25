@@ -9,7 +9,7 @@ use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
-use crate::reduction_factory::{ReductionConfig, ReductionFactory};
+use crate::reduction_factory::{PascalCaseString, ReductionConfig, ReductionFactory};
 use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
@@ -22,6 +22,7 @@ use serde_default::DefaultFromSerde;
 
 #[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct CoinRegressorConfig {
     #[serde(default = "default_alpha")]
     alpha: f32,
@@ -52,8 +53,8 @@ impl ReductionConfig for CoinRegressorConfig {
         self
     }
 
-    fn typename(&self) -> String {
-        "coin".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "Coin".try_into().unwrap()
     }
 }
 
@@ -160,7 +161,7 @@ impl CoinRegressor {
 pub struct CoinRegressorFactory;
 
 impl ReductionFactory for CoinRegressorFactory {
-    impl_default_factory_functions!("coin", CoinRegressorConfig);
+    impl_default_factory_functions!("Coin", CoinRegressorConfig);
 
     fn create(
         &self,

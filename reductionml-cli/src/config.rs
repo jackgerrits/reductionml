@@ -1,10 +1,12 @@
+use std::ops::Deref;
+
 use clap::{Args, ValueEnum};
 use reductionml_core::global_config;
 use serde_json::json;
 
 use crate::command::Command;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use clap::Subcommand;
 
@@ -48,9 +50,19 @@ impl Command for ConfigCommand {
         match &args.subcommand {
             ConfigSubCommand::Check(args) => {
                 // load json from file
-                let json = std::fs::read_to_string(&args.config).unwrap();
-                let _workspace =
-                    reductionml_core::workspace::Workspace::create_from_json(&json).unwrap();
+                let json = std::fs::read_to_string(&args.config).with_context(|| {
+                    format!(
+                        "Failed to read configuration file {}",
+                        args.config.to_string()
+                    )
+                })?;
+                let _workspace = reductionml_core::workspace::Workspace::create_from_json(&json)
+                    .with_context(|| {
+                        format!(
+                            "Failed to parse configuration file {}",
+                            args.config.to_string()
+                        )
+                    })?;
                 println!("ok");
                 Ok(())
             }
@@ -62,7 +74,24 @@ impl Command for ConfigCommand {
                         .as_ref()
                         .unwrap()
                         .get(&args.reduction)
-                        .unwrap()
+                        .with_context(|| {
+                            let available_reductions =
+                                reductionml_core::reduction_registry::REDUCTION_REGISTRY
+                                    .read()
+                                    .as_ref()
+                                    .as_ref()
+                                    .unwrap()
+                                    .deref()
+                                    .deref()
+                                    .iter()
+                                    .map(|s| s.typename().to_string())
+                                    .collect::<Vec<String>>()
+                                    .join(", ");
+                            format!(
+                                "Reduction \"{}\" does not exist. Available reductions are: {}",
+                                args.reduction, available_reductions
+                            )
+                        })?
                         .get_config_default();
                 let default_global = global_config::GlobalConfig::default();
                 let overall_config = json!({

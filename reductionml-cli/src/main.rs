@@ -108,36 +108,44 @@ struct InputConfigArg {
     input_model: Option<String>,
 }
 
+fn handle_args(cli: Cli) -> anyhow::Result<()> {
+    match &cli.command {
+        Commands::Config(args) => {
+            config::ConfigCommand::execute(args, cli.quiet)?;
+        }
+        Commands::Train(args) => {
+            train::TrainCommand::execute(args, cli.quiet)?;
+        }
+        Commands::CreateInvHashTable(args) => {
+            create_inv_hash_table::CreateInvHashTableCommand::execute(args, cli.quiet)?;
+        }
+        Commands::Test(args) => {
+            test::TestCommand::execute(args, cli.quiet)?;
+        }
+        Commands::ExportModel(args) => {
+            export_model::ExportModelCommand::execute(args, cli.quiet)?;
+        }
+        Commands::ImportModel(args) => {
+            import_model::ImportModelCommand::execute(args, cli.quiet)?;
+        }
+        Commands::ConvertData(args) => {
+            convert_data::ConvertDataCommand::execute(args, cli.quiet)?;
+        }
+        Commands::GenCompletions(args) => {
+            gen_completions::GenCompletionsCommand::execute(args, cli.quiet)?;
+        }
+        Commands::GenSchema(args) => {
+            gen_schema::GenSchemaCommand::execute(args, cli.quiet)?;
+        }
+    }
+    Ok(())
+}
+
 fn main() {
     eprintln!("{}: This CLI tool is not stable", "warning".yellow().bold());
     let cli = Cli::parse();
-    match &cli.command {
-        Commands::Config(args) => {
-            config::ConfigCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::Train(args) => {
-            train::TrainCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::CreateInvHashTable(args) => {
-            create_inv_hash_table::CreateInvHashTableCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::Test(args) => {
-            test::TestCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::ExportModel(args) => {
-            export_model::ExportModelCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::ImportModel(args) => {
-            import_model::ImportModelCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::ConvertData(args) => {
-            convert_data::ConvertDataCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::GenCompletions(args) => {
-            gen_completions::GenCompletionsCommand::execute(args, cli.quiet).unwrap();
-        }
-        Commands::GenSchema(args) => {
-            gen_schema::GenSchemaCommand::execute(args, cli.quiet).unwrap();
-        }
+    if let Err(e) = handle_args(cli) {
+        eprintln!("{}: {:?}", "error".red().bold(), e);
+        std::process::exit(1);
     }
 }

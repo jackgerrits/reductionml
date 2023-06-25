@@ -5,7 +5,7 @@ use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{
-    create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
+    create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
 
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
@@ -19,6 +19,7 @@ use super::CBAdfConfig;
 
 #[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct CBExploreAdfGreedyConfig {
     #[serde(default = "default_epsilon")]
     epsilon: f32,
@@ -33,12 +34,12 @@ fn default_epsilon() -> f32 {
 }
 
 fn default_cb_adf() -> JsonReductionConfig {
-    JsonReductionConfig::new("cb_adf".to_owned(), json!(CBAdfConfig::default()))
+    JsonReductionConfig::new("CbAdf".try_into().unwrap(), json!(CBAdfConfig::default()))
 }
 
 impl ReductionConfig for CBExploreAdfGreedyConfig {
-    fn typename(&self) -> String {
-        "cb_explore_adf_greedy".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "CbExploreAdfGreedy".try_into().unwrap()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -56,7 +57,7 @@ struct CBExploreAdfGreedyReduction {
 pub struct CBExploreAdfGreedyReductionFactory;
 
 impl ReductionFactory for CBExploreAdfGreedyReductionFactory {
-    impl_default_factory_functions!("cb_explore_adf_greedy", CBExploreAdfGreedyConfig);
+    impl_default_factory_functions!("CbExploreAdfGreedy", CBExploreAdfGreedyConfig);
 
     fn create(
         &self,

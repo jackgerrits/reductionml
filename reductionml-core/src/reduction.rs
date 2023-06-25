@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{types::*, ModelIndex};
+use crate::{reduction_factory::PascalCaseString, types::*, ModelIndex};
 
 pub struct DepthInfo {
     offset: ModelIndex,
@@ -209,7 +209,7 @@ impl ReductionTypeDescription {
 
 #[derive(Serialize, Deserialize)]
 pub struct ReductionWrapper {
-    typename: String,
+    typename: PascalCaseString,
     reduction: Box<dyn ReductionImpl>,
     type_description: ReductionTypeDescription,
     num_models_below: ModelIndex,
@@ -217,7 +217,7 @@ pub struct ReductionWrapper {
 
 impl ReductionWrapper {
     pub fn new(
-        typename: String,
+        typename: PascalCaseString,
         reduction: Box<dyn ReductionImpl>,
         type_description: ReductionTypeDescription,
         num_models_below: ModelIndex,
@@ -235,7 +235,7 @@ impl ReductionWrapper {
     }
 
     pub fn typename(&self) -> &str {
-        &self.typename
+        &self.typename.as_ref()
     }
 }
 

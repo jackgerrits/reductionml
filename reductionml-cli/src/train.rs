@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use clap::{Args, ValueHint};
 use colored::Colorize;
@@ -183,19 +183,36 @@ impl Command for TrainCommand {
         let mut workspace = match (&args.input_config.config, &args.input_config.input_model) {
             // Loading from json config
             (Some(config_file), None) => {
-                let json = std::fs::read_to_string(config_file).unwrap();
-                reductionml_core::workspace::Workspace::create_from_json(&json).unwrap()
+                let json = std::fs::read_to_string(config_file)
+                    .with_context(|| format!("Failed to read config file: {}", config_file))?;
+                reductionml_core::workspace::Workspace::create_from_json(&json).with_context(
+                    || {
+                        format!(
+                            "Failed to create workspace from config file: {}",
+                            config_file
+                        )
+                    },
+                )?
             }
             // Loading from model file
             (None, Some(input_model_file)) => {
-                let data = std::fs::read(input_model_file).unwrap();
-                reductionml_core::workspace::Workspace::create_from_model(&data).unwrap()
+                let data = std::fs::read(input_model_file).with_context(|| {
+                    format!("Failed to read input model file: {}", input_model_file)
+                })?;
+                reductionml_core::workspace::Workspace::create_from_model(&data).with_context(
+                    || {
+                        format!(
+                            "Failed to create workspace from input model file: {}",
+                            input_model_file
+                        )
+                    },
+                )?
             }
             _ => unreachable!(),
         };
 
-        let file = File::open(&args.data).unwrap();
-
+        let file = File::open(&args.data)
+            .with_context(|| format!("Failed to open data file: {}", args.data))?;
         eprintln!(
             "{}: Reading data file: {}",
             "info".cyan().bold(),
@@ -224,12 +241,14 @@ impl Command for TrainCommand {
         );
 
         let mut input_file = io::BufReader::new(file);
-        let mut predictions_file = if args.predictions.is_some() {
+        let mut predictions_file = if let Some(pred_file_name) = &args.predictions {
             eprintln!(
                 "{}: The format output in the predictions file is currently a placeholder",
                 "warning".yellow().bold()
             );
-            let file = File::create(args.predictions.as_ref().unwrap()).unwrap();
+            let file = File::create(pred_file_name).with_context(|| {
+                format!("Failed to create predictions file: {}", pred_file_name)
+            })?;
             Some(io::BufWriter::new(file))
         } else {
             None
