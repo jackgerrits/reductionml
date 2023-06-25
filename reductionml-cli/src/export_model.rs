@@ -9,7 +9,6 @@ use anyhow::Result;
 // TODO: add warning that weights are not printed in any nice way at the moment
 #[derive(Args)]
 pub(crate) struct ExportModelArgs {
-    #[arg(short, long)]
     input_model: String,
     // #[arg(short, long)]
     // output_file: String,
@@ -26,11 +25,8 @@ impl Command for ExportModelCommand {
         );
         let input_model_data = std::fs::read(&args.input_model).unwrap();
         let workspace = Workspace::create_from_model(&input_model_data).unwrap();
-        workspace.serialize_to_json().unwrap();
-        let json = serde_json::to_string_pretty(&workspace).unwrap();
-        println!("{}", json);
+        let json = workspace.serialize_to_json().unwrap();
+        println!("{}", serde_json::to_string_pretty(&json).unwrap());
         Ok(())
-
-        // todo!()
     }
 }
