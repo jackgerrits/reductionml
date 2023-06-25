@@ -15,16 +15,13 @@ There is built in support for CLI completions. To enable them, run the following
 ### Bash (optional)
 
 ```sh
-reductionml-cli gen-completions bash > /usr/share/bash-completion/completions/reductionml-cli
+reml gen-completions bash > /usr/share/bash-completion/completions/reml
 ```
 
 ### Fish (optional)
 
-I find the alias `reml` to be easier to type and remember.
-
 ```fish
-reductionml-cli gen-completions fish > ~/.config/fish/completions/reductionml-cli.fish
-alias --save reml reductionml-cli
+reml gen-completions fish > ~/.config/fish/completions/reml.fish
 ```
 
 ## First steps
@@ -33,8 +30,8 @@ The following will fetch a small 100 example dataset in VW text format. It will 
 
 ```sh
 curl https://raw.githubusercontent.com/VowpalWabbit/vowpal_wabbit/master/test/test-sets/0001.dat > rcv1_small.vwtxt
-reductionml-cli config new Coin > config.json
-reductionml-cli train --config config.json --data rcv1_small.vwtxt --metrics mse
+reml config new Coin > config.json
+reml train --config config.json --data rcv1_small.vwtxt --metrics mse
 ```
 
 Output:
