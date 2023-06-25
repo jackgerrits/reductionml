@@ -440,7 +440,7 @@ impl CoinRegressor {
 mod tests {
     use approx::assert_relative_eq;
 
-    use crate::sparse_namespaced_features::Namespace;
+    use crate::{sparse_namespaced_features::Namespace, interactions::NamespaceDef};
 
     use super::*;
 
@@ -587,6 +587,26 @@ mod tests {
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
+        test_learning_e2e(x, yhat, 100000, coin);
+    }
+
+    #[test]
+    fn test_learning_quadratic() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 10.0
+        }
+        fn yhat(x: f32) -> f32 {
+            x * x - 2.0 * x + 3.0
+        }
+
+        let mut coin_config = CoinRegressorConfig::default();
+        coin_config.interactions = Some(vec![vec![
+            NamespaceDef::Default,
+            NamespaceDef::Default
+        ]]);
+        let global_config = GlobalConfig::new(4, 0, true);
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         test_learning_e2e(x, yhat, 100000, coin);
     }
 }
