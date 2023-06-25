@@ -13,7 +13,6 @@ pub trait TextModeParserFactory {
         label_type: LabelType,
         hash_seed: u32,
         num_bits: u8,
-        add_constant_feature: bool,
         pool: Arc<Pool<SparseFeatures>>,
     ) -> Self::Parser;
 }

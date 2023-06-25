@@ -106,7 +106,7 @@ struct CoinRegressor {
     pairs: Vec<(Namespace, Namespace)>,
     triples: Vec<(Namespace, Namespace, Namespace)>,
     num_bits: u8,
-    expect_constant_feature: bool,
+    constant_feature_enabled: bool,
 }
 
 impl CoinRegressor {
@@ -140,7 +140,7 @@ impl CoinRegressor {
             pairs,
             triples,
             num_bits: global_config.num_bits(),
-            expect_constant_feature: global_config.add_constant_feature(),
+            constant_feature_enabled: global_config.constant_feature_enabled(),
         })
     }
 }
@@ -189,14 +189,6 @@ impl ReductionImpl for CoinRegressor {
         model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(
-            !(self.expect_constant_feature && !sparse_feats.constant_feature_exists()),
-            "Constant feature was expected but not present."
-        );
-        assert!(
-            !(!self.expect_constant_feature && sparse_feats.constant_feature_exists()),
-            "Constant feature was not expected but present."
-        );
 
         let mut prediction = 0.0;
         foreach_feature(
@@ -206,6 +198,7 @@ impl ReductionImpl for CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             |feat_val, weight_val| prediction += feat_val * weight_val,
         );
 
@@ -228,7 +221,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -255,7 +247,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -341,6 +332,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_predict,
         );
 
@@ -420,6 +412,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_update,
         );
     }

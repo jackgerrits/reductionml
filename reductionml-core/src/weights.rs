@@ -1,5 +1,5 @@
 use crate::{
-    sparse_namespaced_features::{Namespace, SparseFeatures},
+    sparse_namespaced_features::{constant_feature_index, Namespace, SparseFeatures},
     FeatureIndex, ModelIndex,
 };
 
@@ -20,6 +20,7 @@ pub fn foreach_feature<F, W>(
     pair_interactions: &[(Namespace, Namespace)],
     triple_interactions: &[(Namespace, Namespace, Namespace)],
     num_bits: u8,
+    constant_feature_enabled: bool,
     mut func: F,
 ) where
     F: FnMut(f32, f32),
@@ -47,6 +48,12 @@ pub fn foreach_feature<F, W>(
             }
         }
     }
+
+    if constant_feature_enabled {
+        let constant_feature_index = constant_feature_index(num_bits);
+        let model_weight = weights.weight_at(constant_feature_index, model_offset);
+        func(1.0, model_weight);
+    }
 }
 
 pub fn foreach_feature_with_state_mut<F, W>(
@@ -56,6 +63,7 @@ pub fn foreach_feature_with_state_mut<F, W>(
     pair_interactions: &[(Namespace, Namespace)],
     triple_interactions: &[(Namespace, Namespace, Namespace)],
     num_bits: u8,
+    constant_feature_enabled: bool,
     mut func: F,
 ) where
     F: FnMut(f32, &mut [f32]),
@@ -83,6 +91,12 @@ pub fn foreach_feature_with_state_mut<F, W>(
             }
         }
     }
+
+    if constant_feature_enabled {
+        let constant_feature_index = constant_feature_index(num_bits);
+        let model_weight = weights.state_at_mut(constant_feature_index, model_offset);
+        func(1.0, model_weight);
+    }
 }
 
 pub fn foreach_feature_with_state<F, W>(
@@ -92,6 +106,7 @@ pub fn foreach_feature_with_state<F, W>(
     pair_interactions: &[(Namespace, Namespace)],
     triple_interactions: &[(Namespace, Namespace, Namespace)],
     num_bits: u8,
+    constant_feature_enabled: bool,
     mut func: F,
 ) where
     F: FnMut(f32, &[f32]),
@@ -118,5 +133,11 @@ pub fn foreach_feature_with_state<F, W>(
                 func(value, model_weight);
             }
         }
+    }
+
+    if constant_feature_enabled {
+        let constant_feature_index = constant_feature_index(num_bits);
+        let model_weight = weights.state_at(constant_feature_index, model_offset);
+        func(1.0, model_weight);
     }
 }

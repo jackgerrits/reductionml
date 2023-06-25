@@ -15,7 +15,7 @@ pub struct GlobalConfig {
     hash_seed: u32,
 
     #[serde(default = "default_true")]
-    add_constant_feature: bool,
+    constant_feature_enabled: bool,
 
     #[serde(default)]
     interactions: Vec<Interaction>,
@@ -33,13 +33,13 @@ impl GlobalConfig {
     pub fn new(
         num_bits: u8,
         hash_seed: u32,
-        add_constant_feature: bool,
+        constant_feature_enabled: bool,
         interactions: &[Interaction],
     ) -> GlobalConfig {
         GlobalConfig {
             num_bits,
             hash_seed,
-            add_constant_feature,
+            constant_feature_enabled,
             interactions: interactions.to_vec(),
         }
     }
@@ -52,8 +52,8 @@ impl GlobalConfig {
         self.hash_seed
     }
 
-    pub fn add_constant_feature(&self) -> bool {
-        self.add_constant_feature
+    pub fn constant_feature_enabled(&self) -> bool {
+        self.constant_feature_enabled
     }
 
     pub fn interactions(&self) -> &[Interaction] {
