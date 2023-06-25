@@ -6,7 +6,7 @@ use std::process::Command; // Run programs
 
 #[test]
 fn invalid_config_fails_check() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("reductionml-cli")?;
+    let mut cmd = Command::cargo_bin("reml")?;
 
     let file = assert_fs::NamedTempFile::new("config.json")?;
     file.write_str("{}")?;
