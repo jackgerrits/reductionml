@@ -35,9 +35,9 @@ type InteractionPair = (Namespace, Namespace);
 type InteractionTriple = (Namespace, Namespace, Namespace);
 
 pub fn compile_interactions(
-    interactions: &Vec<Interaction>,
+    interactions: &[Interaction],
     hash_seed: u32,
-) -> (Option<Vec<InteractionPair>>, Option<Vec<InteractionTriple>>) {
+) -> (Vec<InteractionPair>, Vec<InteractionTriple>) {
     let pairs: Vec<(Namespace, Namespace)> = interactions
         .iter()
         .filter(|interaction| interaction.len() == 2)
@@ -63,13 +63,6 @@ pub fn compile_interactions(
     if pairs.len() + triples.len() != interactions.len() {
         panic!("Invalid interaction. Only pairs and triples are supported")
     }
-
-    let pairs = if !pairs.is_empty() { Some(pairs) } else { None };
-    let triples = if !triples.is_empty() {
-        Some(triples)
-    } else {
-        None
-    };
 
     (pairs, triples)
 }

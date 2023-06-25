@@ -35,9 +35,6 @@ pub struct CoinRegressorConfig {
 
     #[serde(default)]
     l2_lambda: f32,
-
-    #[serde(default)]
-    interactions: Option<Vec<Interaction>>,
 }
 
 const fn default_alpha() -> f32 {
@@ -106,8 +103,8 @@ struct CoinRegressor {
     max_label: f32,
     // TODO allow this to be chosen
     loss_function: LossFunctionHolder,
-    pairs: Option<Vec<(Namespace, Namespace)>>,
-    triples: Option<Vec<(Namespace, Namespace, Namespace)>>,
+    pairs: Vec<(Namespace, Namespace)>,
+    triples: Vec<(Namespace, Namespace, Namespace)>,
     num_bits: u8,
     expect_constant_feature: bool,
 }
@@ -118,17 +115,8 @@ impl CoinRegressor {
         global_config: &GlobalConfig,
         num_models_above: ModelIndex,
     ) -> Result<CoinRegressor> {
-        let (pairs, triples) = match config
-            .interactions
-            .as_ref()
-            .map(|x| compile_interactions(x, global_config.hash_seed()))
-        {
-            Some((Some(pairs), Some(triples))) => (Some(pairs), Some(triples)),
-            Some((None, Some(triples))) => (None, Some(triples)),
-            Some((Some(pairs), None)) => (Some(pairs), None),
-            Some((None, None)) => (None, None),
-            None => (None, None),
-        };
+        let (pairs, triples) =
+            compile_interactions(global_config.interactions(), global_config.hash_seed());
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -448,7 +436,7 @@ mod tests {
     #[test]
     fn test_coin_betting_predict() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0, false);
+        let global_config = GlobalConfig::new(4, 0, false, &Vec::new());
         let coin = CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         let mut features = SparseFeatures::new();
         let ns = features.get_or_create_namespace(Namespace::Default);
@@ -465,7 +453,7 @@ mod tests {
     #[test]
     fn test_learning() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(2, 0, false);
+        let global_config = GlobalConfig::new(2, 0, false, &Vec::new());
         let mut coin =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
