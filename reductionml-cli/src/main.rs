@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use clap::{Args, Parser, Subcommand, ValueEnum, ValueHint};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use reductionml_core::{
     object_pool::Pool,
     parsers::{TextModeParser, TextModeParserFactory},

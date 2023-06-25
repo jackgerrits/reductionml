@@ -1,7 +1,7 @@
 use crate::{command::Command, Cli};
 use clap::{Args, CommandFactory, ValueEnum};
 use clap_complete::{generate, Shell};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 
 use anyhow::Result;
 

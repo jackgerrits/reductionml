@@ -7,7 +7,7 @@ use std::{
 use anyhow::{Context, Result};
 
 use clap::{Args, ValueHint};
-use colored::Colorize;
+use owo_colors::OwoColorize;
 // use crossterm::{cursor, terminal, ExecutableCommand};
 
 use crossterm::{cursor, terminal, ExecutableCommand};

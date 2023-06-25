@@ -1,5 +1,5 @@
 use clap::Args;
-use colored::Colorize;
+use owo_colors::OwoColorize;
 use reductionml_core::workspace::Workspace;
 
 use crate::command::Command;

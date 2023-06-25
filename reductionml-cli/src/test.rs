@@ -1,5 +1,5 @@
 use clap::Args;
-use colored::Colorize;
+use owo_colors::OwoColorize;
 
 use crate::{command::Command, DataFormat};
 
