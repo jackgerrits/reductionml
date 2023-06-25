@@ -9,7 +9,7 @@ use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
-use crate::reduction_factory::{ReductionConfig, ReductionFactory};
+use crate::reduction_factory::{PascalCaseString, ReductionConfig, ReductionFactory};
 use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
 use crate::utils::bits_to_max_feature_index;
 use crate::utils::GetInner;
@@ -22,6 +22,7 @@ use serde_default::DefaultFromSerde;
 
 #[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone, JsonSchema)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 pub struct CoinRegressorConfig {
     #[serde(default = "default_alpha")]
     alpha: f32,
@@ -34,9 +35,6 @@ pub struct CoinRegressorConfig {
 
     #[serde(default)]
     l2_lambda: f32,
-
-    #[serde(default)]
-    interactions: Option<Vec<Interaction>>,
 }
 
 const fn default_alpha() -> f32 {
@@ -52,8 +50,8 @@ impl ReductionConfig for CoinRegressorConfig {
         self
     }
 
-    fn typename(&self) -> String {
-        "coin".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "Coin".try_into().unwrap()
     }
 }
 
@@ -105,10 +103,10 @@ struct CoinRegressor {
     max_label: f32,
     // TODO allow this to be chosen
     loss_function: LossFunctionHolder,
-    pairs: Option<Vec<(Namespace, Namespace)>>,
-    triples: Option<Vec<(Namespace, Namespace, Namespace)>>,
+    pairs: Vec<(Namespace, Namespace)>,
+    triples: Vec<(Namespace, Namespace, Namespace)>,
     num_bits: u8,
-    expect_constant_feature: bool,
+    constant_feature_enabled: bool,
 }
 
 impl CoinRegressor {
@@ -117,17 +115,8 @@ impl CoinRegressor {
         global_config: &GlobalConfig,
         num_models_above: ModelIndex,
     ) -> Result<CoinRegressor> {
-        let (pairs, triples) = match config
-            .interactions
-            .as_ref()
-            .map(|x| compile_interactions(x, global_config.hash_seed()))
-        {
-            Some((Some(pairs), Some(triples))) => (Some(pairs), Some(triples)),
-            Some((None, Some(triples))) => (None, Some(triples)),
-            Some((Some(pairs), None)) => (Some(pairs), None),
-            Some((None, None)) => (None, None),
-            None => (None, None),
-        };
+        let (pairs, triples) =
+            compile_interactions(global_config.interactions(), global_config.hash_seed());
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -151,7 +140,7 @@ impl CoinRegressor {
             pairs,
             triples,
             num_bits: global_config.num_bits(),
-            expect_constant_feature: global_config.add_constant_feature(),
+            constant_feature_enabled: global_config.constant_feature_enabled(),
         })
     }
 }
@@ -160,7 +149,7 @@ impl CoinRegressor {
 pub struct CoinRegressorFactory;
 
 impl ReductionFactory for CoinRegressorFactory {
-    impl_default_factory_functions!("coin", CoinRegressorConfig);
+    impl_default_factory_functions!("Coin", CoinRegressorConfig);
 
     fn create(
         &self,
@@ -200,14 +189,6 @@ impl ReductionImpl for CoinRegressor {
         model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(
-            !(self.expect_constant_feature && !sparse_feats.constant_feature_exists()),
-            "Constant feature was expected but not present."
-        );
-        assert!(
-            !(!self.expect_constant_feature && sparse_feats.constant_feature_exists()),
-            "Constant feature was not expected but present."
-        );
 
         let mut prediction = 0.0;
         foreach_feature(
@@ -217,6 +198,7 @@ impl ReductionImpl for CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             |feat_val, weight_val| prediction += feat_val * weight_val,
         );
 
@@ -239,7 +221,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -266,7 +247,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -352,6 +332,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_predict,
         );
 
@@ -431,6 +412,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_update,
         );
     }
@@ -447,7 +429,7 @@ mod tests {
     #[test]
     fn test_coin_betting_predict() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0, false);
+        let global_config = GlobalConfig::new(4, 0, false, &Vec::new());
         let coin = CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         let mut features = SparseFeatures::new();
         let ns = features.get_or_create_namespace(Namespace::Default);
@@ -464,7 +446,7 @@ mod tests {
     #[test]
     fn test_learning() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(2, 0, false);
+        let global_config = GlobalConfig::new(2, 0, false, &Vec::new());
         let mut coin =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 

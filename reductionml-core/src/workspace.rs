@@ -1,9 +1,11 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 use crate::{
+    dense_weights::{DenseWeights, DenseWeightsWithNDArray},
     error::{Error, Result},
     global_config::GlobalConfig,
     object_pool::Pool,
@@ -11,6 +13,7 @@ use crate::{
     reduction_factory::JsonReductionConfig,
     sparse_namespaced_features::SparseFeatures,
     types::{Features, Label, Prediction},
+    FeatureIndex, ModelIndex, StateIndex,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -34,8 +37,65 @@ pub struct Configuration {
     entry_reduction: JsonReductionConfig,
 }
 
+// We need to search until we find an object with the keys weights, feature_index_size, model_index_size, feature_state_size, model_index_size_shift, feature_state_size_shift
+fn rewrite_json_ndarray_to_sparse(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            if map.contains_key("weights")
+                && map.contains_key("feature_index_size")
+                && map.contains_key("model_index_size")
+                && map.contains_key("feature_state_size")
+                && map.contains_key("model_index_size_shift")
+                && map.contains_key("feature_state_size_shift")
+            {
+                let wts: DenseWeightsWithNDArray = serde_json::from_value(value.clone()).unwrap();
+                *value = serde_json::to_value(wts.to_dense_weights()).unwrap();
+                return;
+            }
+            for (_, v) in map {
+                rewrite_json_ndarray_to_sparse(v);
+            }
+        }
+        serde_json::Value::Array(vec) => {
+            for v in vec {
+                rewrite_json_ndarray_to_sparse(v);
+            }
+        }
+        _ => (),
+    }
+}
+
+fn rewrite_json_sparse_to_ndarray(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            if map.contains_key("weights")
+                && map.contains_key("feature_index_size")
+                && map.contains_key("model_index_size")
+                && map.contains_key("feature_state_size")
+                && map.contains_key("model_index_size_shift")
+                && map.contains_key("feature_state_size_shift")
+            {
+                let wts: DenseWeights = serde_json::from_value(value.clone()).unwrap();
+                *value =
+                    serde_json::to_value(DenseWeightsWithNDArray::from_dense_weights(wts)).unwrap();
+                return;
+            }
+            for (_, v) in map {
+                rewrite_json_sparse_to_ndarray(v);
+            }
+        }
+        serde_json::Value::Array(vec) => {
+            for v in vec {
+                rewrite_json_sparse_to_ndarray(v);
+            }
+        }
+        _ => (),
+    }
+}
+
 impl Workspace {
     pub fn create_from_json(json: &str) -> Result<Workspace> {
+        // TODO use serde_path_to_error for better error messages
         let config: Configuration = serde_json::from_str(json).map_err(|e| {
             Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
         })?;
@@ -82,14 +142,19 @@ impl Workspace {
     }
 
     // experimental
-    pub fn serialize_to_json(&self) -> Result<String> {
-        serde_json::to_string(&self)
-            .map_err(|e| Error::InvalidConfiguration(format!("Failed to serialize model: {e}")))
+    pub fn serialize_to_json(&self) -> Result<Value> {
+        let mut value = serde_json::to_value(self).unwrap();
+        rewrite_json_sparse_to_ndarray(&mut value);
+        Ok(value)
     }
 
     // experimental
-    pub fn deserialize_from_json(json: &str) -> Result<Workspace> {
-        serde_json::from_str(json)
+    pub fn deserialize_from_json(json: &Value) -> Result<Workspace> {
+        let mut value: serde_json::Value = serde_json::from_value(json.clone()).map_err(|e| {
+            Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
+        })?;
+        rewrite_json_ndarray_to_sparse(&mut value);
+        serde_json::from_value(value)
             .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse model: {e}")))
     }
 
@@ -142,7 +207,7 @@ mod tests {
                     "numBits": 4
                 },
                 "entryReduction": {
-                    "typename": "coin",
+                    "typename": "Coin",
                     "config": {
                         "alpha": 10
                     }
@@ -158,7 +223,6 @@ mod tests {
         ns.add_feature(0.into(), 1.0);
         ns.add_feature(2.into(), 1.0);
         ns.add_feature(3.into(), 1.0);
-        features.add_constant_feature(4);
 
         let features = Features::SparseSimple(features);
 

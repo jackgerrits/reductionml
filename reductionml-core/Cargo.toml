@@ -24,6 +24,7 @@ murmur3 = "0.5.2"
 fastmurmur3 = "0.1.2"
 smallvec = "1.10.0"
 serde_yaml = "0.9.21"
+approx = "0.5.1"
 
 [dev-dependencies]
 approx = "0.5.1"

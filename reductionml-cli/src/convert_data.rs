@@ -4,7 +4,7 @@ use reductionml_core::LabelType;
 
 use crate::{command::Command, DataFormat};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum LabelTypeWrapper {
@@ -47,6 +47,6 @@ pub(crate) struct ConvertDataCommand;
 impl Command for ConvertDataCommand {
     type Args = ConvertDataArgs;
     fn execute(_args: &ConvertDataArgs, _quiet: bool) -> Result<()> {
-        todo!()
+        Err(anyhow!("Not implemented"))
     }
 }

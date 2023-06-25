@@ -4,7 +4,7 @@ use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
 use crate::reduction_factory::{
-    create_reduction, JsonReductionConfig, ReductionConfig, ReductionFactory,
+    create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
 use crate::utils::GetInner;
 
@@ -16,7 +16,10 @@ use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 use serde_json::json;
+
 #[derive(Deserialize, Serialize, JsonSchema, DefaultFromSerde)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
 struct BinaryReductionConfig {
     #[serde(default = "default_regressor")]
     #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
@@ -24,7 +27,10 @@ struct BinaryReductionConfig {
 }
 
 fn default_regressor() -> JsonReductionConfig {
-    JsonReductionConfig::new("coin".to_owned(), json!(CoinRegressorConfig::default()))
+    JsonReductionConfig::new(
+        "Coin".try_into().unwrap(),
+        json!(CoinRegressorConfig::default()),
+    )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,8 +42,8 @@ struct BinaryReduction {
 pub struct BinaryReductionFactory;
 
 impl ReductionConfig for BinaryReductionConfig {
-    fn typename(&self) -> String {
-        "binary".to_owned()
+    fn typename(&self) -> PascalCaseString {
+        "Binary".try_into().unwrap()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -46,7 +52,7 @@ impl ReductionConfig for BinaryReductionConfig {
 }
 
 impl ReductionFactory for BinaryReductionFactory {
-    impl_default_factory_functions!("binary", BinaryReductionConfig);
+    impl_default_factory_functions!("Binary", BinaryReductionConfig);
     fn create(
         &self,
         config: &dyn ReductionConfig,

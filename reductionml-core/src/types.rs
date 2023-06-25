@@ -274,7 +274,7 @@ impl_extra_traits!(FeatureIndex, u32);
 pub struct ModelIndex(u8);
 impl_extra_traits!(ModelIndex, u8);
 
-#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
 pub struct StateIndex(u8);
 impl_extra_traits!(StateIndex, u8);
 
