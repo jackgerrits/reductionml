@@ -502,7 +502,6 @@ mod tests {
     ) {
         for i in 0..n {
             let mut features = SparseFeatures::new();
-            features.add_constant_feature(3);
             let _x = x(i);
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
@@ -515,17 +514,16 @@ mod tests {
                 &features,
                 &Label::Simple(SimpleLabel(yhat(_x), 1.0)),
                 &mut depth_info,
-                0.into(),
+                2.into(),
             );
         }
 
         let test_set = [0.0, 1.0, 2.0, 3.0];
         for x in test_set {
             let mut features = SparseFeatures::new();
-            features.add_constant_feature(3);
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
-                ns.add_feature(0.into(), x);
+                ns.add_feature(2.into(), x);
             }
 
             let mut depth_info = DepthInfo::new();
@@ -548,7 +546,7 @@ mod tests {
         }
 
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0, true);
+        let global_config = GlobalConfig::new(5, 0, true, &Vec::new());
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
@@ -565,14 +563,14 @@ mod tests {
         }
 
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0, true);
+        let global_config = GlobalConfig::new(5, 0, true, &Vec::new());
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
         test_learning_e2e(x, yhat, 100000, coin);
     }
 
-    #[test]
+     #[test]
     fn test_learning_quadratic() {
         fn x(i: i32) -> f32 {
             (i % 100) as f32 / 10.0
@@ -582,11 +580,11 @@ mod tests {
         }
 
         let mut coin_config = CoinRegressorConfig::default();
-        coin_config.interactions = Some(vec![vec![
+        let global_config = GlobalConfig::new(
+            5, 0, true, &vec!(vec![
             NamespaceDef::Default,
             NamespaceDef::Default
-        ]]);
-        let global_config = GlobalConfig::new(4, 0, true);
+        ]));
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         test_learning_e2e(x, yhat, 100000, coin);
