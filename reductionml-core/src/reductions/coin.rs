@@ -499,6 +499,7 @@ mod tests {
         yhat: fn(f32) -> f32,
         n: i32,
         mut regressor: CoinRegressor,
+        test_set: Vec<f32>,
     ) {
         for i in 0..n {
             let mut features = SparseFeatures::new();
@@ -519,7 +520,6 @@ mod tests {
             );
         }
 
-        let test_set = [0.0, 1.0, 2.0, 3.0];
         for x in test_set {
             let mut features = SparseFeatures::new();
             {
@@ -551,7 +551,7 @@ mod tests {
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
-        test_learning_e2e(x, yhat, 10000, coin);
+        test_learning_e2e(x, yhat, 10000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }
 
     #[test]
@@ -568,7 +568,7 @@ mod tests {
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
-        test_learning_e2e(x, yhat, 100000, coin);
+        test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }
 
     #[test]
@@ -589,6 +589,6 @@ mod tests {
         );
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
-        test_learning_e2e(x, yhat, 100000, coin);
+        test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }
 }
