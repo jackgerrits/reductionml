@@ -35,9 +35,6 @@ pub struct CoinRegressorConfig {
 
     #[serde(default)]
     l2_lambda: f32,
-
-    #[serde(default)]
-    interactions: Option<Vec<Interaction>>,
 }
 
 const fn default_alpha() -> f32 {
@@ -106,10 +103,10 @@ struct CoinRegressor {
     max_label: f32,
     // TODO allow this to be chosen
     loss_function: LossFunctionHolder,
-    pairs: Option<Vec<(Namespace, Namespace)>>,
-    triples: Option<Vec<(Namespace, Namespace, Namespace)>>,
+    pairs: Vec<(Namespace, Namespace)>,
+    triples: Vec<(Namespace, Namespace, Namespace)>,
     num_bits: u8,
-    expect_constant_feature: bool,
+    constant_feature_enabled: bool,
 }
 
 impl CoinRegressor {
@@ -118,17 +115,8 @@ impl CoinRegressor {
         global_config: &GlobalConfig,
         num_models_above: ModelIndex,
     ) -> Result<CoinRegressor> {
-        let (pairs, triples) = match config
-            .interactions
-            .as_ref()
-            .map(|x| compile_interactions(x, global_config.hash_seed()))
-        {
-            Some((Some(pairs), Some(triples))) => (Some(pairs), Some(triples)),
-            Some((None, Some(triples))) => (None, Some(triples)),
-            Some((Some(pairs), None)) => (Some(pairs), None),
-            Some((None, None)) => (None, None),
-            None => (None, None),
-        };
+        let (pairs, triples) =
+            compile_interactions(global_config.interactions(), global_config.hash_seed());
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -152,7 +140,7 @@ impl CoinRegressor {
             pairs,
             triples,
             num_bits: global_config.num_bits(),
-            expect_constant_feature: global_config.add_constant_feature(),
+            constant_feature_enabled: global_config.constant_feature_enabled(),
         })
     }
 }
@@ -201,14 +189,6 @@ impl ReductionImpl for CoinRegressor {
         model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(
-            !(self.expect_constant_feature && !sparse_feats.constant_feature_exists()),
-            "Constant feature was expected but not present."
-        );
-        assert!(
-            !(!self.expect_constant_feature && sparse_feats.constant_feature_exists()),
-            "Constant feature was not expected but present."
-        );
 
         let mut prediction = 0.0;
         foreach_feature(
@@ -218,6 +198,7 @@ impl ReductionImpl for CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             |feat_val, weight_val| prediction += feat_val * weight_val,
         );
 
@@ -240,7 +221,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -267,7 +247,6 @@ impl ReductionImpl for CoinRegressor {
         _model_offset: ModelIndex,
     ) {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        assert!(self.expect_constant_feature && sparse_feats.constant_feature_exists() || !self.expect_constant_feature && !sparse_feats.constant_feature_exists(), "Constant feature must be present iff add_constant_feature was passed in global config.");
         let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
@@ -353,6 +332,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_predict,
         );
 
@@ -432,6 +412,7 @@ impl CoinRegressor {
             &self.pairs,
             &self.triples,
             self.num_bits,
+            self.constant_feature_enabled,
             inner_update,
         );
     }
@@ -441,14 +422,14 @@ impl CoinRegressor {
 mod tests {
     use approx::assert_relative_eq;
 
-    use crate::sparse_namespaced_features::Namespace;
+    use crate::{interactions::NamespaceDef, sparse_namespaced_features::Namespace};
 
     use super::*;
 
     #[test]
     fn test_coin_betting_predict() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(4, 0, false);
+        let global_config = GlobalConfig::new(4, 0, false, &Vec::new());
         let coin = CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         let mut features = SparseFeatures::new();
         let ns = features.get_or_create_namespace(Namespace::Default);
@@ -465,7 +446,7 @@ mod tests {
     #[test]
     fn test_learning() {
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(2, 0, false);
+        let global_config = GlobalConfig::new(2, 0, false, &Vec::new());
         let mut coin =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
@@ -511,5 +492,103 @@ mod tests {
         assert!(matches!(pred, Prediction::Scalar { .. }));
         let pred1: &ScalarPrediction = pred.get_inner_ref().unwrap();
         assert_relative_eq!(pred1.prediction, 0.5);
+    }
+
+    fn test_learning_e2e(
+        x: fn(i32) -> f32,
+        yhat: fn(f32) -> f32,
+        n: i32,
+        mut regressor: CoinRegressor,
+        test_set: Vec<f32>,
+    ) {
+        for i in 0..n {
+            let mut features = SparseFeatures::new();
+            let _x = x(i);
+            {
+                let ns = features.get_or_create_namespace(Namespace::Default);
+                // TODO: 0 index is breaking quadratic test since 0^0 = 0
+                ns.add_feature(2.into(), _x);
+            }
+
+            let mut depth_info = DepthInfo::new();
+            let features = Features::SparseSimple(features);
+            regressor.learn(
+                &features,
+                &Label::Simple(SimpleLabel(yhat(_x), 1.0)),
+                &mut depth_info,
+                0.into(),
+            );
+        }
+
+        for x in test_set {
+            let mut features = SparseFeatures::new();
+            {
+                let ns = features.get_or_create_namespace(Namespace::Default);
+                ns.add_feature(2.into(), x);
+            }
+
+            let mut depth_info = DepthInfo::new();
+            let features = Features::SparseSimple(features);
+            let pred = regressor.predict(&features, &mut depth_info, 0.into());
+            assert!(matches!(pred, Prediction::Scalar { .. }));
+
+            let pred_value: &ScalarPrediction = pred.get_inner_ref().unwrap();
+            assert_relative_eq!(pred_value.prediction, yhat(x), epsilon = 0.1);
+        }
+    }
+
+    #[test]
+    fn test_learning_const() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 10.0
+        }
+        fn yhat(x: f32) -> f32 {
+            1.0
+        }
+
+        let coin_config = CoinRegressorConfig::default();
+        let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
+
+        test_learning_e2e(x, yhat, 10000, coin, vec![0.0, 1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_learning_linear() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 10.0
+        }
+        fn yhat(x: f32) -> f32 {
+            2.0 * x + 3.0
+        }
+
+        let coin_config = CoinRegressorConfig::default();
+        let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
+
+        test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_learning_quadratic() {
+        fn x(i: i32) -> f32 {
+            (i % 100) as f32 / 10.0
+        }
+        fn yhat(x: f32) -> f32 {
+            x * x - 2.0 * x + 3.0
+        }
+
+        let mut coin_config = CoinRegressorConfig::default();
+        let global_config = GlobalConfig::new(
+            4,
+            0,
+            true,
+            &vec![vec![NamespaceDef::Default, NamespaceDef::Default]],
+        );
+        let mut coin: CoinRegressor =
+            CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
+        test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }
 }
