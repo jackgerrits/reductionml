@@ -32,10 +32,8 @@ jobs:
           mdbook-version: 'latest'
 
       - run: |
-          cd book
-          mdbook build
-          cd ..
-          cp book/book
+          mdbook build book
+          mkdir -p static
           cp -r book/book static/book
 
       - uses: actions/upload-pages-artifact@v1

@@ -14,7 +14,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
+      - uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: 'latest'
       - run: cargo fmt --check
-      - run: cargo build
+      # Check docs builds
+      - run: mdbook build book
       # Includes integration tests which are ignored by default
       - run: cargo test -- --include-ignored
