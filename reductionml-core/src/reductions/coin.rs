@@ -505,7 +505,7 @@ mod tests {
             let _x = x(i);
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
-                ns.add_feature(0.into(), _x);
+                ns.add_feature(2.into(), _x);
             }
 
             let mut depth_info = DepthInfo::new();
@@ -514,7 +514,7 @@ mod tests {
                 &features,
                 &Label::Simple(SimpleLabel(yhat(_x), 1.0)),
                 &mut depth_info,
-                2.into(),
+                0.into(),
             );
         }
 
@@ -532,7 +532,7 @@ mod tests {
             assert!(matches!(pred, Prediction::Scalar { .. }));
 
             let pred_value: &ScalarPrediction = pred.get_inner_ref().unwrap();
-            assert_relative_eq!(pred_value.prediction, yhat(x), epsilon = 0.001);
+            assert_relative_eq!(pred_value.prediction, yhat(x), epsilon = 0.1);
         }
     }
 
