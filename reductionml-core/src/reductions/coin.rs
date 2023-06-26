@@ -505,6 +505,7 @@ mod tests {
             let _x = x(i);
             {
                 let ns = features.get_or_create_namespace(Namespace::Default);
+                // TODO: 0 index is breaking quadratic test since 0^0 = 0
                 ns.add_feature(2.into(), _x);
             }
 
