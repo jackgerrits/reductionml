@@ -8,7 +8,7 @@ use crate::sparse_namespaced_features::Namespace;
 
 #[derive(Serialize, Deserialize, Clone, JsonSchema, Debug)]
 pub enum NamespaceDef {
-    Named(String),
+    Name(String),
     Default,
 }
 
@@ -22,7 +22,7 @@ pub fn hash_interaction(interaction: &Interaction, hash_seed: u32) -> HashedInte
     interaction
         .iter()
         .map(|ns| match ns {
-            NamespaceDef::Named(name) => {
+            NamespaceDef::Name(name) => {
                 let namespace_hash = murmur3_32(&mut Cursor::new(name), hash_seed).unwrap();
                 Namespace::Named(namespace_hash.into())
             }
