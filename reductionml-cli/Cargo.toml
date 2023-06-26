@@ -3,6 +3,10 @@ name = "reductionml-cli"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "reml"
+path = "src/main.rs"
+
 [dependencies]
 reductionml-core = { path = "../reductionml-core", version = "0.1.0" }
 clap = { version = "4.3.0", features = ["derive"] }
