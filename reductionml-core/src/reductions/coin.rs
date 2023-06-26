@@ -547,7 +547,7 @@ mod tests {
         }
 
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(5, 0, true, &Vec::new());
+        let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
@@ -564,7 +564,7 @@ mod tests {
         }
 
         let coin_config = CoinRegressorConfig::default();
-        let global_config = GlobalConfig::new(5, 0, true, &Vec::new());
+        let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
         let mut coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
@@ -582,7 +582,7 @@ mod tests {
 
         let mut coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(
-            5,
+            4,
             0,
             true,
             &vec![vec![NamespaceDef::Default, NamespaceDef::Default]],
