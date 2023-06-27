@@ -8,7 +8,7 @@ ReductionML is a machine learning toolkit with solutions to a range of problems.
 
 Install:
 ```sh
-cargo install --git https://github.com/jackgerrits/reductionml
+cargo install reductionml-cli
 ```
 
 There is built in support for CLI completions. To enable them, run the following commands:
