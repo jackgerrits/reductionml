@@ -1,8 +1,14 @@
 [package]
 name = "reductionml-core"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
-
+license = "MIT"
+description = "Reduction based machine learning toolkit core library"
+homepage = "https://github.com/jackgerrits/reductionml"
+repository = "https://github.com/jackgerrits/reductionml"
+readme = "../readme.md"
+keywords = ["machine-learning", "reduction", "cli"]
+categories = ["science"]
 
 [dependencies]
 once_cell = "1.17.2"
