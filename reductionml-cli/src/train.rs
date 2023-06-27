@@ -317,8 +317,8 @@ impl Command for TrainCommand {
                         let label = label.unwrap();
                         let prediction = workspace.predict_then_learn(&features, &label);
                         if let Some(file) = predictions_file.as_mut() {
-                            // TODO: some canonical format for prediction values.
-                            writeln!(file, "{:?}", prediction).unwrap();
+                            writeln!(file, "{}", serde_json::to_string(&prediction).unwrap())
+                                .unwrap();
                         }
 
                         for metric in metrics.iter_mut() {

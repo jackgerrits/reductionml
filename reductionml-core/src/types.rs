@@ -24,13 +24,13 @@ macro_rules! impl_conversion_traits {
     };
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct ScalarPrediction {
     pub prediction: f32,
     pub raw_prediction: f32,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct BinaryPrediction(pub bool);
 impl From<bool> for BinaryPrediction {
     fn from(b: bool) -> Self {
@@ -38,13 +38,15 @@ impl From<bool> for BinaryPrediction {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize)]
 pub struct ActionScoresPrediction(pub Vec<(usize, f32)>);
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize)]
 pub struct ActionProbsPrediction(pub Vec<(usize, f32)>);
 
-#[derive(Debug, PartialEq, Clone, TryInto)]
+#[derive(Debug, PartialEq, Clone, TryInto, Serialize)]
+// Untagged for succintness in predictions files
+#[serde(untagged)]
 pub enum Prediction {
     Scalar(ScalarPrediction),
     Binary(BinaryPrediction),
