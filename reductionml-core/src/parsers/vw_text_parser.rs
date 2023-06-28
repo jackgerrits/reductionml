@@ -1,8 +1,7 @@
-use core::{f32, num};
-use std::io::Cursor;
+use core::f32;
 
 use derive_more::TryInto;
-use murmur3::murmur3_32;
+
 use smallvec::SmallVec;
 
 use crate::error::{Error, Result};
@@ -43,8 +42,8 @@ impl GetInner<CBTextLabel> for TextLabel {
 // Idea - tag is not a concept here but for the cases where it was necessary (ccb) it will be folded into the feature type
 fn finalize_parsed_result_singleline<'a>(
     parsed: TextParseResult,
-    num_bits: u8,
-    mut dest: SparseFeatures,
+    _num_bits: u8,
+    dest: SparseFeatures,
 ) -> (Features<'a>, Option<Label>) {
     let hashed_sparse_features = Features::SparseSimple(dest);
     match parsed.label {
@@ -64,7 +63,7 @@ fn finalize_parsed_result_multiline<'a, 'b, T, U>(
     parsed: U,
     expected_label: LabelType,
     expected_features: FeaturesType,
-    num_bits: u8,
+    _num_bits: u8,
 ) -> Result<(Features<'b>, Option<Label>)>
 where
     T: IntoIterator<Item = SparseFeatures> + Iterator<Item = SparseFeatures> + Clone,

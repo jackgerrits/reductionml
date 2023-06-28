@@ -138,7 +138,7 @@ impl ReductionImpl for CBAdfReduction {
         &self,
         features: &Features,
         depth_info: &mut DepthInfo,
-        model_offset: ModelIndex,
+        _model_offset: ModelIndex,
     ) -> Prediction {
         let cb_adf_features: &CBAdfFeatures = features.get_inner_ref().unwrap();
 

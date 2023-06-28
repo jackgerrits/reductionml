@@ -269,14 +269,7 @@ impl Command for TrainCommand {
         match args.thread_pool_size {
             Some(0) => {
                 let mut buffer = String::new();
-                loop {
-                    let chunk = if let Some(chunk) =
-                        parser.get_next_chunk(&mut input_file, buffer).unwrap()
-                    {
-                        chunk
-                    } else {
-                        break;
-                    };
+                while let Some(chunk) = parser.get_next_chunk(&mut input_file, buffer).unwrap() {
                     let (features, label) = parser.parse_chunk(&chunk).unwrap();
                     buffer = chunk;
                     process_example(
@@ -296,16 +289,9 @@ impl Command for TrainCommand {
                 std::thread::scope(|s| -> Result<()> {
                     s.spawn(|| {
                         let mut buffer = String::new();
-                        loop {
-
-                            let chunk = if let Some(chunk) = parser
-                            .get_next_chunk(&mut input_file, buffer)
-                            .unwrap()
-                            {
-                                chunk
-                            } else {
-                                break;
-                            };
+                        while let Some(chunk) =  parser
+                        .get_next_chunk(&mut input_file, buffer)
+                        .unwrap() {
                             let result = parser.parse_chunk(&chunk).unwrap();
                             tx.send(result).expect(
                                 "Receiver should not be disconnected before all lines have been sent.",

@@ -4,7 +4,7 @@ use std::ops::Deref;
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
-use crate::interactions::{compile_interactions, Interaction};
+use crate::interactions::compile_interactions;
 use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
@@ -186,7 +186,7 @@ impl ReductionImpl for CoinRegressor {
         &self,
         features: &Features,
         _depth_info: &mut DepthInfo,
-        model_offset: ModelIndex,
+        _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
 
@@ -542,13 +542,13 @@ mod tests {
         fn x(i: i32) -> f32 {
             (i % 100) as f32 / 10.0
         }
-        fn yhat(x: f32) -> f32 {
+        fn yhat(_x: f32) -> f32 {
             1.0
         }
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
         test_learning_e2e(x, yhat, 10000, coin, vec![0.0, 1.0, 2.0, 3.0]);
@@ -565,7 +565,7 @@ mod tests {
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
         test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
@@ -580,14 +580,14 @@ mod tests {
             x * x - 2.0 * x + 3.0
         }
 
-        let mut coin_config = CoinRegressorConfig::default();
+        let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(
             4,
             0,
             true,
             &vec![vec![NamespaceDef::Default, NamespaceDef::Default]],
         );
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }

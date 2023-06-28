@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,6 @@ use crate::{
     reduction_factory::JsonReductionConfig,
     sparse_namespaced_features::SparseFeatures,
     types::{Features, Label, Prediction},
-    FeatureIndex, ModelIndex, StateIndex,
 };
 
 #[derive(Serialize, Deserialize)]

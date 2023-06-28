@@ -113,7 +113,7 @@ impl ReductionFactory for DebugReductionFactory {
                 prediction: config.prediction,
                 features: config.features,
                 label: config.label,
-                next: next,
+                next,
             }),
             types,
             num_models_above,
@@ -152,7 +152,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -162,7 +162,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("prediction: {:?}", prediction),
             );
         }
@@ -180,7 +180,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -189,7 +189,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("label: {:?}", label),
             );
         }
@@ -201,7 +201,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("prediction: {:?}", prediction),
             );
         }
@@ -219,7 +219,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -228,7 +228,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("label: {:?}", label),
             );
         }

@@ -45,6 +45,6 @@ mod tests {
     fn validate_generated_schema() {
         let json_schema: Value = serde_json::from_str(&build_json_schema().unwrap()).unwrap();
         let mut scope = json_schema::Scope::new();
-        let _ = scope.compile_and_return(json_schema.clone(), true).unwrap();
+        let _ = scope.compile_and_return(json_schema, true).unwrap();
     }
 }
