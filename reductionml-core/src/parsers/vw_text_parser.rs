@@ -1,5 +1,4 @@
-use core::{f32};
-
+use core::f32;
 
 use derive_more::TryInto;
 

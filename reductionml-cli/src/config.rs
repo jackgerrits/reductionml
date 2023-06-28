@@ -51,17 +51,11 @@ impl Command for ConfigCommand {
             ConfigSubCommand::Check(args) => {
                 // load json from file
                 let json = std::fs::read_to_string(&args.config).with_context(|| {
-                    format!(
-                        "Failed to read configuration file {}",
-                        args.config
-                    )
+                    format!("Failed to read configuration file {}", args.config)
                 })?;
                 let _workspace = reductionml_core::workspace::Workspace::create_from_json(&json)
                     .with_context(|| {
-                        format!(
-                            "Failed to parse configuration file {}",
-                            args.config
-                        )
+                        format!("Failed to parse configuration file {}", args.config)
                     })?;
                 println!("ok");
                 Ok(())

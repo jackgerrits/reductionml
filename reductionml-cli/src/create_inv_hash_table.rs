@@ -3,8 +3,6 @@ use clap::Args;
 use crate::command::Command;
 use anyhow::anyhow;
 
-
-
 use anyhow::Result;
 
 #[derive(Args)]

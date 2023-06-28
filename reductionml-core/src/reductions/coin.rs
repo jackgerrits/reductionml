@@ -4,7 +4,7 @@ use std::ops::Deref;
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
-use crate::interactions::{compile_interactions};
+use crate::interactions::compile_interactions;
 use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,

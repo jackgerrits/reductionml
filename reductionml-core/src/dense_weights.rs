@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use approx::{AbsDiffEq};
+use approx::AbsDiffEq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
@@ -267,11 +267,9 @@ impl Weights for DenseWeights {
 
 #[cfg(test)]
 mod tests {
-    use approx::{assert_abs_diff_ne, assert_abs_diff_eq};
+    use approx::{assert_abs_diff_eq, assert_abs_diff_ne};
 
     use super::*;
-
-
 
     #[test]
     fn test_num_bits_to_represent() {
