@@ -68,7 +68,7 @@ pub enum PredictionType {
 }
 
 /// value, weight
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct SimpleLabel(pub f32, pub f32);
 
 impl From<f32> for SimpleLabel {
@@ -83,15 +83,16 @@ impl Default for SimpleLabel {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct BinaryLabel(pub bool);
+
 impl From<bool> for BinaryLabel {
     fn from(b: bool) -> Self {
         BinaryLabel(b)
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct CBLabel {
     // action is 0-based
     pub action: usize,
@@ -99,7 +100,7 @@ pub struct CBLabel {
     pub probability: f32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Label {
     Simple(SimpleLabel),
     Binary(BinaryLabel),

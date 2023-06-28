@@ -7,6 +7,8 @@ mod vw_text_parser;
 pub use vw_text_parser::*;
 mod dsjson_parser;
 pub use dsjson_parser::*;
+mod json_parser;
+pub use json_parser::*;
 
 use crate::{FeatureHash, NamespaceHash};
 
