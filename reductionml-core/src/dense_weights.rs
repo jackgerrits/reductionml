@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use approx::{assert_abs_diff_eq, assert_abs_diff_ne, assert_relative_eq, AbsDiffEq};
+use approx::{AbsDiffEq};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     error::{Error, Result},
-    inverse_hash_table::Feature,
     weights::Weights,
     FeatureIndex, ModelIndex, RawWeightsIndex, StateIndex,
 };

@@ -4,7 +4,7 @@ use std::ops::Deref;
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
-use crate::interactions::{compile_interactions, Interaction};
+use crate::interactions::{compile_interactions};
 use crate::loss_function::{LossFunction, LossFunctionType};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
@@ -186,7 +186,7 @@ impl ReductionImpl for CoinRegressor {
         &self,
         features: &Features,
         _depth_info: &mut DepthInfo,
-        model_offset: ModelIndex,
+        _model_offset: ModelIndex,
     ) -> Prediction {
         let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
 
