@@ -264,15 +264,36 @@ impl ReductionImpl for CoinRegressor {
         vec![]
     }
 
+    // TODO fix model index
     fn sensitivity(
         &self,
-        _features: &Features,
+        features: &Features,
         _label: f32,
         _prediction: f32,
         _weight: f32,
         _depth_info: DepthInfo,
     ) -> f32 {
-        todo!()
+        let mut score = 0.0;
+        let inner = |feat_value: f32, state: &[f32]| {
+            assert!(state.len() == 6);
+            let sqrtf_ng2 = state[W_G2].sqrt();
+            let uncertain =
+                (self.config.beta + sqrtf_ng2) / self.config.alpha + self.config.l2_lambda;
+            score += (1.0 / uncertain) * feat_value.signum();
+        };
+
+        let feat = features.get_inner_ref().unwrap();
+        foreach_feature_with_state(
+            ModelIndex::from(0),
+            feat,
+            &self.weights,
+            &self.pairs,
+            &self.triples,
+            self.num_bits,
+            self.constant_feature_enabled,
+            inner,
+        );
+        return score;
     }
 }
 
