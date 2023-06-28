@@ -542,13 +542,13 @@ mod tests {
         fn x(i: i32) -> f32 {
             (i % 100) as f32 / 10.0
         }
-        fn yhat(x: f32) -> f32 {
+        fn yhat(_x: f32) -> f32 {
             1.0
         }
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
         test_learning_e2e(x, yhat, 10000, coin, vec![0.0, 1.0, 2.0, 3.0]);
@@ -565,7 +565,7 @@ mod tests {
 
         let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
 
         test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
@@ -580,14 +580,14 @@ mod tests {
             x * x - 2.0 * x + 3.0
         }
 
-        let mut coin_config = CoinRegressorConfig::default();
+        let coin_config = CoinRegressorConfig::default();
         let global_config = GlobalConfig::new(
             4,
             0,
             true,
             &vec![vec![NamespaceDef::Default, NamespaceDef::Default]],
         );
-        let mut coin: CoinRegressor =
+        let coin: CoinRegressor =
             CoinRegressor::new(coin_config, &global_config, ModelIndex::from(1)).unwrap();
         test_learning_e2e(x, yhat, 100000, coin, vec![0.0, 1.0, 2.0, 3.0]);
     }

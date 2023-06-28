@@ -69,10 +69,9 @@ impl DsJsonParser {
         match json_value {
             Value::Null => panic!("Null is not supported"),
             Value::Bool(true) => {
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
@@ -84,10 +83,9 @@ impl DsJsonParser {
             }
             Value::Bool(false) => (),
             Value::Number(value) => {
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
@@ -98,10 +96,9 @@ impl DsJsonParser {
                 );
             }
             Value::String(value) => {
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
@@ -116,10 +113,9 @@ impl DsJsonParser {
             }
             Value::Array(value) => {
                 namespace_stack.push(Namespace::from_name(object_key, self.hash_seed));
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 for (anon_idx, v) in value.iter().enumerate() {
                     match v {
@@ -174,7 +170,7 @@ impl TextModeParser for DsJsonParser {
         Ok(Some(output_buffer))
     }
 
-    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
+    fn parse_chunk<'b>(&self, chunk: &str) -> Result<(Features<'b>, Option<Label>)> {
         let json: serde_json::Value =
             serde_json::from_str(chunk).expect("JSON was not well-formatted");
 
@@ -187,7 +183,7 @@ impl TextModeParser for DsJsonParser {
         let mut actions = Vec::new();
         for item in json["c"]["_multi"].as_array().unwrap() {
             let mut action = self.pool.get_object();
-            self.handle_features(&mut action, " ", &item, &mut namespace_stack);
+            self.handle_features(&mut action, " ", item, &mut namespace_stack);
             actions.push(action);
             assert!(namespace_stack.is_empty());
         }
@@ -215,7 +211,7 @@ impl TextModeParser for DsJsonParser {
                 shared: Some(shared_ex),
                 actions,
             }),
-            label.map(|x| Label::CB(x)),
+            label.map(Label::CB),
         ))
     }
 

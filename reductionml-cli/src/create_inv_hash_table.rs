@@ -29,7 +29,7 @@ pub(crate) struct CreateInvHashTableCommand;
 impl Command for CreateInvHashTableCommand {
     type Args = CreateInvHashTableArgs;
     fn execute(_args: &CreateInvHashTableArgs, _quiet: bool) -> Result<()> {
-        return Err(anyhow!("Not implemented"));
+        Err(anyhow!("Not implemented"))
         // let file = File::open(&args.data).unwrap();
         // let inv_hash_table = reductionml_core::inverse_hash_table::InverseHashTable::new();
 

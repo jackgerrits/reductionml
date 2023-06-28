@@ -235,7 +235,7 @@ impl ReductionWrapper {
     }
 
     pub fn typename(&self) -> &str {
-        &self.typename.as_ref()
+        self.typename.as_ref()
     }
 }
 
