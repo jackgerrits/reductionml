@@ -64,6 +64,8 @@ pub(crate) struct TrainArgs {
 
     /// Number of threads to use for the rayon thread pool. By default will use
     /// the number of logical cores.
+    /// When this is 0, a single thread will be used for parsing+training.
+    /// When this is 1, one thread will be used for parsing and one for training.
     #[arg(long)]
     #[arg(default_value = None)]
     thread_pool_size: Option<usize>,
@@ -225,7 +227,6 @@ impl Command for TrainCommand {
         );
         eprintln!("{}: Starting training...", "info".cyan().bold());
 
-        let mut counter: i32 = 0;
         let pool = workspace.features_pool().clone();
 
         let parser = args.data_format.get_parser(
@@ -253,101 +254,153 @@ impl Command for TrainCommand {
             None
         };
 
-        let mut metrics: Vec<Box<dyn Metric>> = if args.metrics.is_some() {
-            args.metrics
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|name| reductionml_core::metrics::get_metric(name).unwrap())
-                .collect()
-        } else {
-            vec![]
+        let mut metrics = vec![reductionml_core::metrics::get_metric("example_number").unwrap()];
+        if args.metrics.is_some() {
+            args.metrics.as_ref().unwrap().iter().for_each(|name| {
+                metrics.push(reductionml_core::metrics::get_metric(name).unwrap())
+            });
         };
 
-        let mut col_names: Vec<String> = vec!["Example #".into()];
-        col_names.extend(metrics.iter().map(|x| x.get_name()));
-        let mut manager = TrainResultManager::new(args.progress, col_names);
+        let mut manager = TrainResultManager::new(
+            args.progress,
+            metrics.iter().map(|x| x.get_name()).collect(),
+        );
 
-        let (tx, rx) = flume::bounded(args.queue_size);
-
-        let string_pool = object_pool::Pool::<String>::new();
-
-        std::thread::scope(|s| -> Result<()> {
-            s.spawn(|| {
+        match args.thread_pool_size {
+            Some(0) => {
+                let mut buffer = String::new();
                 loop {
-                    let mut batch = vec![];
-                    for _ in 0..args.read_batch_size {
-                        if let Some(chunk) = parser
-                            .get_next_chunk(&mut input_file, string_pool.get_object())
-                            .unwrap()
-                        {
-                            batch.push(chunk);
-                        } else {
-                            break;
-                        }
-                    }
-
-                    if batch.is_empty() {
+                    let chunk = if let Some(chunk) =
+                        parser.get_next_chunk(&mut input_file, buffer).unwrap()
+                    {
+                        chunk
+                    } else {
                         break;
-                    }
-
-                    // Must be collected so that original order is preserved.
-                    let batch: Vec<(Features<'_>, Option<Label>)> = batch
-                        .into_par_iter()
-                        .map(|line| {
-                            let res = parser.parse_chunk(&line).unwrap();
-                            string_pool.return_object(line);
-                            res
-                        })
-                        .collect();
-
-                    for item in batch {
-                        tx.send(item).expect(
-                            "Receiver should not be disconnected before all lines have been sent.",
-                        );
-                    }
-                }
-                std::mem::drop(tx);
-            });
-
-            loop {
-                let res = rx.recv();
-                match res {
-                    Ok((features, label)) => {
-                        let label = label.unwrap();
-                        let prediction = workspace.predict_then_learn(&features, &label);
-                        if let Some(file) = predictions_file.as_mut() {
-                            writeln!(file, "{}", serde_json::to_string(&prediction).unwrap())
-                                .unwrap();
-                        }
-
-                        for metric in metrics.iter_mut() {
-                            metric.add_point(&features, &label, &prediction);
-                        }
-                        counter += 1;
-
-                        let should_output = manager.inc_iteration();
-                        if should_output {
-                            let mut results = vec![MetricValue::Int(counter - 1)];
-                            results.extend(metrics.iter().map(|x| x.get_value()));
-                            manager.add_results(results);
-                            if !_quiet {
-                                manager.render_table_to_stdout();
-                            }
-                        }
-
-                        // Put feature objects back into the pool for reuse.
-                        features.clear_and_return_object(pool.as_ref());
-                    }
-                    Err(_) => break,
+                    };
+                    let (features, label) = parser.parse_chunk(&chunk).unwrap();
+                    buffer = chunk;
+                    process_example(
+                        label,
+                        &mut workspace,
+                        features,
+                        &mut predictions_file,
+                        &mut metrics,
+                        &mut manager,
+                        _quiet,
+                        &pool,
+                    );
                 }
             }
-            Ok(())
-        })?;
+            Some(1) => {
+                let (tx, rx) = flume::bounded(args.queue_size);
+                std::thread::scope(|s| -> Result<()> {
+                    s.spawn(|| {
+                        let mut buffer = String::new();
+                        loop {
 
-        let mut results = vec![MetricValue::Int(counter)];
-        results.extend(metrics.iter().map(|x| x.get_value()));
-        manager.add_results(results);
+                            let chunk = if let Some(chunk) = parser
+                            .get_next_chunk(&mut input_file, buffer)
+                            .unwrap()
+                            {
+                                chunk
+                            } else {
+                                break;
+                            };
+                            let result = parser.parse_chunk(&chunk).unwrap();
+                            tx.send(result).expect(
+                                "Receiver should not be disconnected before all lines have been sent.",
+                            );
+                            buffer = chunk;
+                        }
+                        std::mem::drop(tx);
+                    });
+
+                    loop {
+                        let res = rx.recv();
+                        match res {
+                            Ok((features, label)) => {
+                                process_example(
+                                    label,
+                                    &mut workspace,
+                                    features,
+                                    &mut predictions_file,
+                                    &mut metrics,
+                                    &mut manager,
+                                    _quiet,
+                                    &pool,
+                                );
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                    Ok(())
+                })?;
+            }
+            _ => {
+                let string_pool = object_pool::Pool::<String>::new();
+                let (tx, rx) = flume::bounded(args.queue_size);
+                std::thread::scope(|s| -> Result<()> {
+                    s.spawn(|| {
+                        loop {
+                            let mut batch = vec![];
+                            for _ in 0..args.read_batch_size {
+                                if let Some(chunk) = parser
+                                    .get_next_chunk(&mut input_file, string_pool.get_object())
+                                    .unwrap()
+                                {
+                                    batch.push(chunk);
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            if batch.is_empty() {
+                                break;
+                            }
+
+                            // Must be collected so that original order is preserved.
+                            let batch: Vec<(Features<'_>, Option<Label>)> = batch
+                                .into_par_iter()
+                                .map(|line| {
+                                    let res = parser.parse_chunk(&line).unwrap();
+                                    string_pool.return_object(line);
+                                    res
+                                })
+                                .collect();
+
+                            for item in batch {
+                                tx.send(item).expect(
+                                    "Receiver should not be disconnected before all lines have been sent.",
+                                );
+                            }
+                        }
+                        std::mem::drop(tx);
+                    });
+
+                    loop {
+                        let res = rx.recv();
+                        match res {
+                            Ok((features, label)) => {
+                                process_example(
+                                    label,
+                                    &mut workspace,
+                                    features,
+                                    &mut predictions_file,
+                                    &mut metrics,
+                                    &mut manager,
+                                    _quiet,
+                                    &pool,
+                                );
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                    Ok(())
+                })?;
+            }
+        }
+
+        manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
         if !_quiet {
             manager.render_table_to_stdout();
         }
@@ -359,4 +412,38 @@ impl Command for TrainCommand {
 
         Ok(())
     }
+}
+
+fn process_example(
+    label: Option<Label>,
+    workspace: &mut reductionml_core::workspace::Workspace,
+    features: Features<'_>,
+    predictions_file: &mut Option<io::BufWriter<File>>,
+    metrics: &mut Vec<Box<dyn Metric>>,
+    manager: &mut TrainResultManager,
+    _quiet: bool,
+    pool: &std::sync::Arc<
+        object_pool::Pool<reductionml_core::sparse_namespaced_features::SparseFeatures>,
+    >,
+) {
+    let label = label.unwrap();
+    let prediction = workspace.predict_then_learn(&features, &label);
+    if let Some(file) = predictions_file.as_mut() {
+        writeln!(file, "{}", serde_json::to_string(&prediction).unwrap()).unwrap();
+    }
+
+    for metric in metrics.iter_mut() {
+        metric.add_point(&features, &label, &prediction);
+    }
+
+    let should_output = manager.inc_iteration();
+    if should_output {
+        manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
+        if !_quiet {
+            manager.render_table_to_stdout();
+        }
+    }
+
+    // Put feature objects back into the pool for reuse.
+    features.clear_and_return_object(pool.as_ref());
 }
