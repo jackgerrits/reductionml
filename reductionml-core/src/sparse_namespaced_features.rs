@@ -1,8 +1,10 @@
 use std::io::Cursor;
 
 use crate::{
-    hash::{FNV_PRIME, hash_bytes}, object_pool::PoolReturnable, utils::bits_to_max_feature_index, FeatureHash,
-    FeatureIndex, FeatureMask, NamespaceHash,
+    hash::{hash_bytes, FNV_PRIME},
+    object_pool::PoolReturnable,
+    utils::bits_to_max_feature_index,
+    FeatureHash, FeatureIndex, FeatureMask, NamespaceHash,
 };
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};

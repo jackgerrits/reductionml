@@ -3,7 +3,7 @@ use std::io::Cursor;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{sparse_namespaced_features::Namespace, hash::hash_bytes};
+use crate::{hash::hash_bytes, sparse_namespaced_features::Namespace};
 
 #[derive(Serialize, Deserialize, Clone, JsonSchema, Debug)]
 pub enum NamespaceDef {

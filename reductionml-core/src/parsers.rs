@@ -6,7 +6,7 @@ pub use vw_text_parser::*;
 mod dsjson_parser;
 pub use dsjson_parser::*;
 
-use crate::{FeatureHash, NamespaceHash, hash::hash_bytes};
+use crate::{hash::hash_bytes, FeatureHash, NamespaceHash};
 
 pub enum ParsedFeature<'a> {
     Simple { name: &'a str },
