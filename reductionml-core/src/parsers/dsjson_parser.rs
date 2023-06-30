@@ -1,6 +1,6 @@
 use core::f32;
 
-use serde_json::Value;
+use serde_json_borrow::Value;
 
 use crate::error::Result;
 
@@ -95,12 +95,12 @@ impl DsJsonParser {
                     value.as_f64().unwrap() as f32,
                 );
             }
-            Value::String(value) => {
-                let current_ns = *namespace_stack
+            Value::Str(value) => {
+                let current_ns = namespace_stack
                     .last()
                     .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
-                let current_feats = features.get_or_create_namespace(current_ns);
+                let current_feats = features.get_or_create_namespace(*current_ns);
                 current_feats.add_feature(
                     ParsedFeature::SimpleWithStringValue {
                         name: object_key,
@@ -170,39 +170,34 @@ impl TextModeParser for DsJsonParser {
         Ok(Some(output_buffer))
     }
 
-    fn parse_chunk<'b>(&self, chunk: &str) -> Result<(Features<'b>, Option<Label>)> {
-        let json: serde_json::Value =
-            serde_json::from_str(chunk).expect("JSON was not well-formatted");
+    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
+        let json: Value = serde_json::from_str(chunk).expect("JSON was not well-formatted");
 
         let mut namespace_stack = Vec::new();
 
         let mut shared_ex = self.pool.get_object();
-        self.handle_features(&mut shared_ex, " ", &json["c"], &mut namespace_stack);
+        self.handle_features(&mut shared_ex, " ", &json.get("c"), &mut namespace_stack);
         assert!(namespace_stack.is_empty());
 
         let mut actions = Vec::new();
-        for item in json["c"]["_multi"].as_array().unwrap() {
+        for item in json.get("c").get("_multi").iter_array().unwrap() {
             let mut action = self.pool.get_object();
             self.handle_features(&mut action, " ", item, &mut namespace_stack);
             actions.push(action);
             assert!(namespace_stack.is_empty());
         }
 
-        let cost = json.get("_label_cost").map(|v| v.as_f64().unwrap() as f32);
-        let probability = json
-            .get("_label_probability")
-            .map(|v| v.as_f64().unwrap() as f32);
-        let action = json
-            .get("_labelIndex")
-            .map(|v| v.as_u64().unwrap() as usize);
-
-        let label = match (cost, probability, action) {
-            (Some(cost), Some(probability), Some(action)) => Some(CBLabel {
-                action,
-                cost,
-                probability,
+        let label = match (
+            json.get("_label_cost"),
+            json.get("_label_probability"),
+            json.get("_labelIndex"),
+        ) {
+            (Value::Number(cost), Value::Number(prob), Value::Number(action)) => Some(CBLabel {
+                action: action.as_u64().unwrap() as usize,
+                cost: cost.as_f64().unwrap() as f32,
+                probability: prob.as_f64().unwrap() as f32,
             }),
-            (None, None, None) => None,
+            (Value::Null, Value::Null, Value::Null) => None,
             _ => panic!("Invalid label, all 3 or none must be present"),
         };
 
