@@ -234,7 +234,7 @@ mod test {
         object_pool::Pool,
         parsers::{DsJsonParserFactory, TextModeParser, TextModeParserFactory},
         sparse_namespaced_features::Namespace,
-        utils::GetInner,
+        utils::AsInner,
         CBAdfFeatures, CBLabel, FeaturesType, LabelType,
     };
     #[test]
@@ -294,12 +294,12 @@ mod test {
         );
 
         let (features, label) = parser.parse_chunk(&json_obj.to_string()).unwrap();
-        let cb_label: &CBLabel = label.as_ref().unwrap().get_inner_ref().unwrap();
+        let cb_label: &CBLabel = label.as_ref().unwrap().as_inner().unwrap();
         assert_eq!(cb_label.action, 3);
         assert_relative_eq!(cb_label.cost, 0.0);
         assert_relative_eq!(cb_label.probability, 0.05);
 
-        let cb_feats: &CBAdfFeatures = features.get_inner_ref().unwrap();
+        let cb_feats: &CBAdfFeatures = features.as_inner().unwrap();
         assert_eq!(cb_feats.actions.len(), 1);
         assert!(cb_feats.shared.is_some());
         let shared = cb_feats.shared.as_ref().unwrap();

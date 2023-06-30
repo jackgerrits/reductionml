@@ -153,7 +153,7 @@ impl CBExploreAdfGreedyReduction {
 impl ReductionImpl for CBExploreAdfGreedyReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
@@ -164,7 +164,7 @@ impl ReductionImpl for CBExploreAdfGreedyReduction {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,

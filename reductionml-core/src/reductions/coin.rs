@@ -12,7 +12,7 @@ use crate::reduction::{
 use crate::reduction_factory::{PascalCaseString, ReductionConfig, ReductionFactory};
 use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
 use crate::utils::bits_to_max_feature_index;
-use crate::utils::GetInner;
+use crate::utils::AsInner;
 use crate::weights::{foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut};
 use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex};
 use schemars::schema::RootSchema;
@@ -184,11 +184,11 @@ impl ReductionFactory for CoinRegressorFactory {
 impl ReductionImpl for CoinRegressor {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         _depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
-        let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
+        let sparse_feats: &SparseFeatures = features.as_inner().unwrap();
 
         let mut prediction = 0.0;
         foreach_feature(
@@ -215,13 +215,13 @@ impl ReductionImpl for CoinRegressor {
 
     fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         _depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
-        let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
+        let sparse_feats: &SparseFeatures = features.as_inner().unwrap();
+        let simple_label: &SimpleLabel = label.as_inner().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
         self.max_label = simple_label.0.max(self.max_label);
@@ -241,13 +241,13 @@ impl ReductionImpl for CoinRegressor {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         _depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) {
-        let sparse_feats: &SparseFeatures = features.get_inner_ref().unwrap();
-        let simple_label: &SimpleLabel = label.get_inner_ref().unwrap();
+        let sparse_feats: &SparseFeatures = features.as_inner().unwrap();
+        let simple_label: &SimpleLabel = label.as_inner().unwrap();
 
         self.min_label = simple_label.0.min(self.min_label);
         self.max_label = simple_label.0.max(self.max_label);
@@ -282,7 +282,7 @@ impl ReductionImpl for CoinRegressor {
             score += (1.0 / uncertain) * feat_value.signum();
         };
 
-        let feat = features.get_inner_ref().unwrap();
+        let feat = features.as_inner().unwrap();
         foreach_feature_with_state(
             ModelIndex::from(0),
             feat,
@@ -456,10 +456,10 @@ mod tests {
         let ns = features.get_or_create_namespace(Namespace::Default);
         ns.add_feature(0.into(), 1.0);
 
-        let features = Features::SparseSimple(features);
+        let mut features = Features::SparseSimple(features);
 
         let mut depth_info = DepthInfo::new();
-        let prediction = coin.predict(&features, &mut depth_info, 0.into());
+        let prediction = coin.predict(&mut features, &mut depth_info, 0.into());
         // Ensure the prediction is of variant Scalar
         assert!(matches!(prediction, Prediction::Scalar { .. }));
     }
@@ -482,36 +482,36 @@ mod tests {
         }
 
         let mut depth_info = DepthInfo::new();
-        let features = Features::SparseSimple(features);
+        let mut features = Features::SparseSimple(features);
         coin.learn(
-            &features,
+            &mut features,
             &Label::Simple(SimpleLabel(0.5, 1.0)),
             &mut depth_info,
             0.into(),
         );
         coin.learn(
-            &features,
+            &mut features,
             &Label::Simple(SimpleLabel(0.5, 1.0)),
             &mut depth_info,
             0.into(),
         );
         coin.learn(
-            &features,
+            &mut features,
             &Label::Simple(SimpleLabel(0.5, 1.0)),
             &mut depth_info,
             0.into(),
         );
         coin.learn(
-            &features,
+            &mut features,
             &Label::Simple(SimpleLabel(0.5, 1.0)),
             &mut depth_info,
             0.into(),
         );
 
-        let pred = coin.predict(&features, &mut depth_info, 0.into());
+        let pred = coin.predict(&mut features, &mut depth_info, 0.into());
 
         assert!(matches!(pred, Prediction::Scalar { .. }));
-        let pred1: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        let pred1: &ScalarPrediction = pred.as_inner().unwrap();
         assert_relative_eq!(pred1.prediction, 0.5);
     }
 
@@ -532,9 +532,9 @@ mod tests {
             }
 
             let mut depth_info = DepthInfo::new();
-            let features = Features::SparseSimple(features);
+            let mut features = Features::SparseSimple(features);
             regressor.learn(
-                &features,
+                &mut features,
                 &Label::Simple(SimpleLabel(yhat(_x), 1.0)),
                 &mut depth_info,
                 0.into(),
@@ -549,11 +549,11 @@ mod tests {
             }
 
             let mut depth_info = DepthInfo::new();
-            let features = Features::SparseSimple(features);
-            let pred = regressor.predict(&features, &mut depth_info, 0.into());
+            let mut features = Features::SparseSimple(features);
+            let pred = regressor.predict(&mut features, &mut depth_info, 0.into());
             assert!(matches!(pred, Prediction::Scalar { .. }));
 
-            let pred_value: &ScalarPrediction = pred.get_inner_ref().unwrap();
+            let pred_value: &ScalarPrediction = pred.as_inner().unwrap();
             assert_relative_eq!(pred_value.prediction, yhat(x), epsilon = 0.1);
         }
     }

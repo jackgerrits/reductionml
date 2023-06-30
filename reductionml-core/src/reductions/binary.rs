@@ -6,7 +6,7 @@ use crate::reduction::{
 use crate::reduction_factory::{
     create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
-use crate::utils::GetInner;
+use crate::utils::AsInner;
 
 use crate::reductions::CoinRegressorConfig;
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
@@ -103,24 +103,24 @@ impl From<BinaryLabel> for SimpleLabel {
 impl ReductionImpl for BinaryReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
         let pred = self.regressor.predict(features, depth_info, 0.into());
-        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
 
         Prediction::Binary((scalar_pred.prediction > 0.0).into())
     }
 
     fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
-        let binary_label: &BinaryLabel = label.get_inner_ref().unwrap();
+        let binary_label: &BinaryLabel = label.as_inner().unwrap();
 
         let pred = self.regressor.predict_then_learn(
             features,
@@ -129,19 +129,19 @@ impl ReductionImpl for BinaryReduction {
             0.into(),
         );
 
-        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
 
         Prediction::Binary((scalar_pred.prediction > 0.0).into())
     }
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) {
-        let binary_label: &BinaryLabel = label.get_inner_ref().unwrap();
+        let binary_label: &BinaryLabel = label.as_inner().unwrap();
 
         self.regressor.learn(
             features,

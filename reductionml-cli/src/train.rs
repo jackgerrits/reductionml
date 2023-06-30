@@ -403,7 +403,7 @@ impl Command for TrainCommand {
 fn process_example(
     label: Option<Label>,
     workspace: &mut reductionml_core::workspace::Workspace,
-    features: Features<'_>,
+    mut features: Features<'_>,
     predictions_file: &mut Option<io::BufWriter<File>>,
     metrics: &mut Vec<Box<dyn Metric>>,
     manager: &mut TrainResultManager,
@@ -413,7 +413,7 @@ fn process_example(
     >,
 ) {
     let label = label.unwrap();
-    let prediction = workspace.predict_then_learn(&features, &label);
+    let prediction = workspace.predict_then_learn(&mut features, &label);
     if let Some(file) = predictions_file.as_mut() {
         writeln!(file, "{}", serde_json::to_string(&prediction).unwrap()).unwrap();
     }
