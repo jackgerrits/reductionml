@@ -1,12 +1,13 @@
 use std::{collections::BTreeSet, io::Cursor};
 
 use crate::{
-    hash::FNV_PRIME, object_pool::PoolReturnable, utils::bits_to_max_feature_index, FeatureHash,
-    FeatureIndex, FeatureMask, NamespaceHash,
+    hash::{hash_bytes, FNV_PRIME},
+    object_pool::PoolReturnable,
+    utils::bits_to_max_feature_index,
+    FeatureHash, FeatureIndex, FeatureMask, NamespaceHash,
 };
 use approx::AbsDiffEq;
 use itertools::Itertools;
-use murmur3::murmur3_32;
 use serde::{Deserialize, Serialize};
 pub struct NamespacesIterator<'a> {
     namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
@@ -164,9 +165,7 @@ impl Namespace {
             // TODO: consider different hash if hash_seed is not 0
             " " => Namespace::Default,
             _ => {
-                let namespace_hash = murmur3_32(&mut Cursor::new(namespace_name), hash_seed)
-                    .expect("murmur3_32 should not fail")
-                    .into();
+                let namespace_hash = hash_bytes(namespace_name.as_bytes(), hash_seed).into();
                 Namespace::Named(namespace_hash)
             }
         }
