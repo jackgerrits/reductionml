@@ -144,7 +144,7 @@ impl DebugReduction {
 impl ReductionImpl for DebugReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
@@ -171,7 +171,7 @@ impl ReductionImpl for DebugReduction {
 
     fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
@@ -210,7 +210,7 @@ impl ReductionImpl for DebugReduction {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,

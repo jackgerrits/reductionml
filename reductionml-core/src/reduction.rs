@@ -1,3 +1,4 @@
+use approx::assert_abs_diff_eq;
 use serde::{Deserialize, Serialize};
 
 use crate::{reduction_factory::PascalCaseString, types::*, ModelIndex};
@@ -25,42 +26,81 @@ impl DepthInfo {
 impl ReductionWrapper {
     pub fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
-        depth_info.increment(self.num_models_below, model_offset);
-        let res = self.reduction.predict(features, depth_info, model_offset);
-        depth_info.decrement(self.num_models_below, model_offset);
-        res
+        // TODO assert prediction matches expected type.
+        if cfg!(debug_assertions) {
+            let mut features_copy = features.clone();
+            depth_info.increment(self.num_models_below, model_offset);
+            let res = self.reduction.predict(features, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+
+            // This is an important check to ensure that a reduction put the features back in the
+            // same state as it found them.
+            assert_abs_diff_eq!(features, &mut features_copy);
+            res
+        } else {
+            depth_info.increment(self.num_models_below, model_offset);
+            let res = self.reduction.predict(features, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+            res
+        }
     }
     pub fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
-        depth_info.increment(self.num_models_below, model_offset);
-        let res = self
-            .reduction
-            .predict_then_learn(features, label, depth_info, model_offset);
-        depth_info.decrement(self.num_models_below, model_offset);
-        res
+        if cfg!(debug_assertions) {
+            let mut features_copy = features.clone();
+
+            depth_info.increment(self.num_models_below, model_offset);
+            let res = self
+                .reduction
+                .predict_then_learn(features, label, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+            // This is an important check to ensure that a reduction put the features back in the
+            // same state as it found them.
+            assert_abs_diff_eq!(features, &mut features_copy);
+            res
+        } else {
+            depth_info.increment(self.num_models_below, model_offset);
+            let res = self
+                .reduction
+                .predict_then_learn(features, label, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+            res
+        }
     }
     pub fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) {
-        // TODO assert label matches expected.
+        // TODO assert label matches expected type.
 
-        depth_info.increment(self.num_models_below, model_offset);
-        self.reduction
-            .learn(features, label, depth_info, model_offset);
-        depth_info.decrement(self.num_models_below, model_offset);
+        if cfg!(debug_assertions) {
+            let mut features_copy = features.clone();
+
+            depth_info.increment(self.num_models_below, model_offset);
+            self.reduction
+                .learn(features, label, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+            // This is an important check to ensure that a reduction put the features back in the
+            // same state as it found them.
+            assert_abs_diff_eq!(features, &mut features_copy);
+        } else {
+            depth_info.increment(self.num_models_below, model_offset);
+            self.reduction
+                .learn(features, label, depth_info, model_offset);
+            depth_info.decrement(self.num_models_below, model_offset);
+        }
     }
 
     pub fn children(&self) -> Vec<&ReductionWrapper> {
@@ -243,13 +283,13 @@ impl ReductionWrapper {
 pub trait ReductionImpl {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction;
     fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
@@ -261,7 +301,7 @@ pub trait ReductionImpl {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,

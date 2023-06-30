@@ -33,5 +33,7 @@ pub trait TextModeParser: Sync {
     fn extract_feature_names<'a>(
         &self,
         chunk: &'a str,
-    ) -> Result<std::collections::HashMap<ParsedNamespaceInfo<'a>, Vec<ParsedFeature<'a>>>>;
+    ) -> Result<std::collections::HashMap<ParsedNamespaceInfo<'a>, Vec<ParsedFeature<'a>>>> {
+        todo!()
+    }
 }

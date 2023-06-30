@@ -1,4 +1,4 @@
-use crate::{metrics::Metric, utils::GetInner, Features, ScalarPrediction, SimpleLabel};
+use crate::{metrics::Metric, utils::AsInner, Features, ScalarPrediction, SimpleLabel};
 
 use super::MetricValue;
 
@@ -29,8 +29,8 @@ impl Metric for MeanSquaredErrorMetric {
         label: &crate::types::Label,
         prediction: &crate::types::Prediction,
     ) {
-        let label: &SimpleLabel = label.get_inner_ref().unwrap();
-        let pred: &ScalarPrediction = prediction.get_inner_ref().unwrap();
+        let label: &SimpleLabel = label.as_inner().unwrap();
+        let pred: &ScalarPrediction = prediction.as_inner().unwrap();
         self.value += (label.0 - pred.prediction) * (label.0 - pred.prediction);
         self.count += 1;
     }

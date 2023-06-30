@@ -7,7 +7,7 @@ use crate::reduction::{
 use crate::reduction_factory::{
     create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
-use crate::utils::GetInner;
+use crate::utils::AsInner;
 
 use crate::reductions::CoinRegressorConfig;
 use crate::sparse_namespaced_features::SparseFeatures;
@@ -136,67 +136,58 @@ fn generate_ips_simple_label(label: &CBLabel, current_action_index: usize) -> Si
 impl ReductionImpl for CBAdfReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) -> Prediction {
-        let cb_adf_features: &CBAdfFeatures = features.get_inner_ref().unwrap();
-
-        let mut feats_to_reuse = self.object_pool.get_object();
-
-        if let Some(shared_feats) = &cb_adf_features.shared {
-            feats_to_reuse.append(shared_feats);
-        }
+        let cb_adf_features: &mut CBAdfFeatures = features.as_inner_mut().unwrap();
 
         let mut action_scores = ActionScoresPrediction::default();
-        for (counter, action) in cb_adf_features.actions.iter().enumerate() {
-            feats_to_reuse.append(action);
-            let wrapped_feats = feats_to_reuse.into();
-            let pred = self.regressor.predict(&wrapped_feats, depth_info, 0.into());
-            let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
-            action_scores.0.push((counter, scalar_pred.raw_prediction));
-            feats_to_reuse = SparseFeatures::try_from(wrapped_feats).unwrap();
-            feats_to_reuse.remove(action);
-        }
+        for (counter, mut action) in cb_adf_features.actions.iter_mut().enumerate() {
+            if let Some(shared_feats) = &cb_adf_features.shared {
+                action.append(shared_feats);
+            }
 
-        feats_to_reuse.clear_and_return_object(&self.object_pool);
+            let pred = self
+                .regressor
+                .predict(&mut action.into(), depth_info, 0.into());
+            let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
+            action_scores.0.push((counter, scalar_pred.raw_prediction));
+            if let Some(shared_feats) = &cb_adf_features.shared {
+                action.remove(shared_feats);
+            }
+        }
 
         action_scores.into()
     }
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,
     ) {
-        let cb_adf_features: &CBAdfFeatures = features.get_inner_ref().unwrap();
-        let cb_label: &CBLabel = label.get_inner_ref().unwrap();
+        let cb_adf_features: &mut CBAdfFeatures = features.as_inner_mut().unwrap();
+        let cb_label: &CBLabel = label.as_inner().unwrap();
 
         match self.cb_type {
             CBType::Ips => {
-                let mut feats_to_reuse = self.object_pool.get_object();
-
-                if let Some(shared_feats) = &cb_adf_features.shared {
-                    feats_to_reuse.append(shared_feats);
-                }
-
-                for (counter, action) in cb_adf_features.actions.iter().enumerate() {
-                    feats_to_reuse.append(action);
-                    let wrapped_feats = feats_to_reuse.into();
+                for (counter, action) in cb_adf_features.actions.iter_mut().enumerate() {
+                    if let Some(shared_feats) = &cb_adf_features.shared {
+                        action.append(shared_feats);
+                    }
 
                     self.regressor.learn(
-                        &wrapped_feats,
+                        &mut action.into(),
                         &(generate_ips_simple_label(cb_label, counter).into()),
                         depth_info,
                         0.into(),
                     );
-                    feats_to_reuse = SparseFeatures::try_from(wrapped_feats).unwrap();
-                    feats_to_reuse.remove(action);
+                    if let Some(shared_feats) = &cb_adf_features.shared {
+                        action.remove(shared_feats);
+                    }
                 }
-
-                feats_to_reuse.clear_and_return_object(&self.object_pool);
             }
             CBType::Mtr => {
                 self.mtr_state.action_sum += cb_adf_features.actions.len();
@@ -209,25 +200,22 @@ impl ReductionImpl for CBAdfReduction {
                     * (self.mtr_state.event_sum as f32 / self.mtr_state.action_sum as f32);
 
                 let simple_label = SimpleLabel(cost, weight);
-                match &cb_adf_features.shared {
+                match cb_adf_features.shared.as_mut() {
                     Some(shared_feats) => {
-                        let mut feats_obj = self.object_pool.get_object();
-                        feats_obj.append(shared_feats);
-                        feats_obj.append(cb_adf_features.actions.get(cb_label.action).unwrap());
+                        let action = cb_adf_features.actions.get(cb_label.action).unwrap();
+                        shared_feats.append(action);
                         self.regressor.learn(
-                            &Features::SparseSimpleRef(&feats_obj),
+                            &mut Features::SparseSimpleRef(shared_feats),
                             &simple_label.into(),
                             depth_info,
                             0.into(),
                         );
-                        feats_obj.clear_and_return_object(&self.object_pool);
+                        shared_feats.remove(action);
                     }
                     None => {
                         todo!()
                     }
                 }
-                // let mut feats_to_reuse =
-                //     self.object_pool.pull();
             }
         }
     }

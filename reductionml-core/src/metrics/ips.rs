@@ -1,4 +1,4 @@
-use crate::{metrics::Metric, utils::GetInner, ActionProbsPrediction, CBLabel, Features};
+use crate::{metrics::Metric, utils::AsInner, ActionProbsPrediction, CBLabel, Features};
 
 use super::MetricValue;
 
@@ -29,8 +29,8 @@ impl Metric for IpsMetric {
         label: &crate::types::Label,
         prediction: &crate::types::Prediction,
     ) {
-        let label: &CBLabel = label.get_inner_ref().unwrap();
-        let pred: &ActionProbsPrediction = prediction.get_inner_ref().unwrap();
+        let label: &CBLabel = label.as_inner().unwrap();
+        let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
 
         let p_log = label.probability;
         let p_pred = pred
