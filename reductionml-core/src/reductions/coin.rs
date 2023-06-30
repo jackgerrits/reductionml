@@ -282,7 +282,7 @@ impl ReductionImpl for CoinRegressor {
             score += (1.0 / uncertain) * feat_value.signum();
         };
 
-        let feat = features.get_inner_ref().unwrap();
+        let feat = features.as_inner().unwrap();
         foreach_feature_with_state(
             ModelIndex::from(0),
             feat,
