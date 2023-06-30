@@ -1,6 +1,4 @@
 **/target/
-lib/Cargo.lock
-/Cargo.lock
 .DS_Store
 node_modules/
 pkg/
