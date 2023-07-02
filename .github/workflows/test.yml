@@ -13,5 +13,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: build
       # Includes integration tests which are ignored by default
       - run: cargo test -- --include-ignored

@@ -15,5 +15,7 @@ jobs:
         with:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: test
       - run: cargo fmt --check
       - run: cargo build
