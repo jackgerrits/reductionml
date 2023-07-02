@@ -176,7 +176,7 @@ impl TextModeParser for DsJsonParser {
         let mut namespace_stack = Vec::new();
 
         let mut shared_ex = self.pool.get_object();
-        self.handle_features(&mut shared_ex, " ", &json.get("c"), &mut namespace_stack);
+        self.handle_features(&mut shared_ex, " ", json.get("c"), &mut namespace_stack);
         assert!(namespace_stack.is_empty());
 
         let mut actions = Vec::new();

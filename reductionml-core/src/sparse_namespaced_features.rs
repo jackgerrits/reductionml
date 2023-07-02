@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, io::Cursor};
+use std::collections::BTreeSet;
 
 use crate::{
     hash::{hash_bytes, FNV_PRIME},

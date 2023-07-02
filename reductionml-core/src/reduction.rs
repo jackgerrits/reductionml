@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{reduction_factory::PascalCaseString, types::*, ModelIndex};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct DepthInfo {
     offset: ModelIndex,
 }
@@ -294,8 +295,12 @@ pub trait ReductionImpl {
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
+        let depth_info_copy: DepthInfo = *depth_info;
         let prediction = self.predict(features, depth_info, model_offset);
+        let depth_info_copy2: DepthInfo = depth_info_copy;
         self.learn(features, label, depth_info, model_offset);
+        assert!(depth_info == &depth_info_copy2);
+        assert!(depth_info == &depth_info_copy);
         prediction
     }
 

@@ -16,7 +16,6 @@ fn build_json_schema() -> Result<String> {
     REDUCTION_REGISTRY
         .read()
         .as_ref()
-        .as_ref()
         .unwrap()
         .iter()
         .for_each(|x| {
