@@ -175,7 +175,7 @@ pub(crate) struct TrainCommand;
 
 impl Command for TrainCommand {
     type Args = TrainArgs;
-    fn execute(args: &TrainArgs, _quiet: bool) -> Result<()> {
+    fn execute(args: &TrainArgs, quiet: bool) -> Result<()> {
         if let Some(size) = args.thread_pool_size {
             rayon::ThreadPoolBuilder::new()
                 .num_threads(size)
@@ -279,7 +279,7 @@ impl Command for TrainCommand {
                         &mut predictions_file,
                         &mut metrics,
                         &mut manager,
-                        _quiet,
+                        quiet,
                         &pool,
                     );
                 }
@@ -312,7 +312,7 @@ impl Command for TrainCommand {
                                     &mut predictions_file,
                                     &mut metrics,
                                     &mut manager,
-                                    _quiet,
+                                    quiet,
                                     &pool,
                                 );
                             }
@@ -374,7 +374,7 @@ impl Command for TrainCommand {
                                     &mut predictions_file,
                                     &mut metrics,
                                     &mut manager,
-                                    _quiet,
+                                    quiet,
                                     &pool,
                                 );
                             }
@@ -387,7 +387,7 @@ impl Command for TrainCommand {
         }
 
         manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
-        if !_quiet {
+        if !quiet {
             manager.render_table_to_stdout();
         }
 
@@ -407,27 +407,29 @@ fn process_example(
     predictions_file: &mut Option<io::BufWriter<File>>,
     metrics: &mut Vec<Box<dyn Metric>>,
     manager: &mut TrainResultManager,
-    _quiet: bool,
+    quiet: bool,
     pool: &std::sync::Arc<
         object_pool::Pool<reductionml_core::sparse_namespaced_features::SparseFeatures>,
     >,
 ) {
     let label = label.unwrap();
-    let prediction = workspace.predict_then_learn(&mut features, &label);
-    if let Some(file) = predictions_file.as_mut() {
-        writeln!(file, "{}", serde_json::to_string(&prediction).unwrap()).unwrap();
-    }
+    if !quiet || predictions_file.is_some() {
+        let prediction = workspace.predict_then_learn(&mut features, &label);
+        if let Some(file) = predictions_file.as_mut() {
+            writeln!(file, "{}", serde_json::to_string(&prediction).unwrap()).unwrap();
+        }
 
-    for metric in metrics.iter_mut() {
-        metric.add_point(&features, &label, &prediction);
-    }
+        for metric in metrics.iter_mut() {
+            metric.add_point(&features, &label, &prediction);
+        }
 
-    let should_output = manager.inc_iteration();
-    if should_output {
-        manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
-        if !_quiet {
+        let should_output = manager.inc_iteration();
+        if should_output {
+            manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
             manager.render_table_to_stdout();
         }
+    } else {
+        workspace.learn(&mut features, &label);
     }
 
     // Put feature objects back into the pool for reuse.
