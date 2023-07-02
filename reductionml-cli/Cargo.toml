@@ -25,6 +25,8 @@ flume = "0.10.14"
 prettytable-rs = "^0.10"
 crossterm = "0.26.1"
 owo-colors = "3.5.0"
+atomic-wait = "1.1.0"
+num_cpus = "1.16"
 
 [dev-dependencies]
 valico = "4"
