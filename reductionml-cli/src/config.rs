@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use clap::{Args, ValueEnum};
 use reductionml_core::global_config;
 use serde_json::json;
@@ -65,7 +63,6 @@ impl Command for ConfigCommand {
                     reductionml_core::reduction_registry::REDUCTION_REGISTRY
                         .read()
                         .as_ref()
-                        .as_ref()
                         .unwrap()
                         .get(&args.reduction)
                         .with_context(|| {
@@ -73,10 +70,7 @@ impl Command for ConfigCommand {
                                 reductionml_core::reduction_registry::REDUCTION_REGISTRY
                                     .read()
                                     .as_ref()
-                                    .as_ref()
                                     .unwrap()
-                                    .deref()
-                                    .deref()
                                     .iter()
                                     .map(|s| s.typename().to_string())
                                     .collect::<Vec<String>>()

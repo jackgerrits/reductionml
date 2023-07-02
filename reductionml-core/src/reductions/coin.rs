@@ -293,7 +293,7 @@ impl ReductionImpl for CoinRegressor {
             self.constant_feature_enabled,
             inner,
         );
-        return score;
+        score
     }
 }
 

@@ -1,6 +1,5 @@
 use crate::error::Result;
 use crate::global_config::GlobalConfig;
-use crate::object_pool::{Pool, PoolReturnable};
 use crate::reduction::{
     DepthInfo, ReductionImpl, ReductionTypeDescriptionBuilder, ReductionWrapper,
 };
@@ -10,7 +9,6 @@ use crate::reduction_factory::{
 use crate::utils::AsInner;
 
 use crate::reductions::CoinRegressorConfig;
-use crate::sparse_namespaced_features::SparseFeatures;
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
@@ -68,8 +66,6 @@ struct MtrState {
 struct CBAdfReduction {
     cb_type: CBType,
     regressor: ReductionWrapper,
-    #[serde(skip)]
-    object_pool: Pool<SparseFeatures>,
     // TODO: have MTR state per interleaved model.
     mtr_state: MtrState,
 }
@@ -113,7 +109,6 @@ impl ReductionFactory for CBAdfReductionFactory {
             Box::new(CBAdfReduction {
                 cb_type: config.cb_type,
                 regressor,
-                object_pool: Default::default(),
                 mtr_state: Default::default(),
             }),
             types,
@@ -143,7 +138,7 @@ impl ReductionImpl for CBAdfReduction {
         let cb_adf_features: &mut CBAdfFeatures = features.as_inner_mut().unwrap();
 
         let mut action_scores = ActionScoresPrediction::default();
-        for (counter, mut action) in cb_adf_features.actions.iter_mut().enumerate() {
+        for (counter, action) in cb_adf_features.actions.iter_mut().enumerate() {
             if let Some(shared_feats) = &cb_adf_features.shared {
                 action.append(shared_feats);
             }
