@@ -6,7 +6,7 @@ ReductionML is a machine learning toolkit with solutions to a range of problems.
 
 ## Crates
 
-| | |
+| Crate |  |
 | --- | --- |
 | reductionml-core | [![Crates.io](https://img.shields.io/crates/v/reductionml-core)](https://crates.io/crates/reductionml-core) |
 | reductionml-cli | [![Crates.io](https://img.shields.io/crates/v/reductionml-cli)](https://crates.io/crates/reductionml-cli) |
