@@ -4,9 +4,16 @@
 
 ReductionML is a machine learning toolkit with solutions to a range of problems. It revolves around the concept of simplifying problems by breaking them down into more manageable components that already have solutions. This process is done by reductions as they reduce one problem to another. This approach draws inspiration from the VowpalWabbit, a project I hold in high regard and deeply value. In fact, if you are familiar with VowpalWabbit then you should be able to pick up ReductionML with ease.
 
+## Crates
+
+| Crate |  |
+| --- | --- |
+| reductionml-core | [![Crates.io](https://img.shields.io/crates/v/reductionml-core)](https://crates.io/crates/reductionml-core) |
+| reductionml-cli | [![Crates.io](https://img.shields.io/crates/v/reductionml-cli)](https://crates.io/crates/reductionml-cli) |
+
 ## Getting started
 
-Install:
+Install the `reml` tool:
 ```sh
 cargo install reductionml-cli
 ```
