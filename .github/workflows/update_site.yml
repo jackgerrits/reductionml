@@ -18,11 +18,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  site-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - run: |
           mkdir -p static/schema
           cargo run -- gen-schema > static/schema/config_schema.json
