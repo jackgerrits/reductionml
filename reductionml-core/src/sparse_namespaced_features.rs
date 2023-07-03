@@ -46,6 +46,17 @@ impl<'a> Iterator for NamespaceIterator<'a> {
             None
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indices.size_hint()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        match (self.indices.nth(n), self.values.nth(n)) {
+            (Some(i), Some(v)) => Some((*i, *v)),
+            _ => None,
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
