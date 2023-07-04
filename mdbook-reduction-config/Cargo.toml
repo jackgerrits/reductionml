@@ -1,0 +1,13 @@
+[package]
+name = "mdbook-reduction-config"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mdbook = "0.4.12"
+reductionml-core = { path = "../reductionml-core" }
+pulldown-cmark = "0.9.3"
+pulldown-cmark-to-cmark = "10.0.4"
+semver = "1.0.17"
+clap = { version = "4.3.0" }
+serde_json = "1.0.64"

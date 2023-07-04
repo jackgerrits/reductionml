@@ -4,3 +4,6 @@ language = "en"
 multilingual = false
 src = "src"
 title = "reductionml"
+
+[preprocessor.reduction-config-json]
+command = "cargo run --manifest-path=./Cargo.toml --bin mdbook-reduction-config"

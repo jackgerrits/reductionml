@@ -3,6 +3,7 @@
 members = [
     "reductionml-core",
     "reductionml-cli",
+    "mdbook-reduction-config",
 ]
 
 [profile.release]
