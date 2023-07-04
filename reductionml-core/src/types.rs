@@ -76,17 +76,34 @@ pub enum PredictionType {
 
 /// value, weight
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub struct SimpleLabel(pub f32, pub f32);
+pub struct SimpleLabel {
+    value: f32,
+    weight: f32,
+}
+
+impl SimpleLabel {
+    pub fn new(value: f32, weight: f32) -> Self {
+        SimpleLabel { value, weight }
+    }
+
+    pub fn value(&self) -> f32 {
+        self.value
+    }
+
+    pub fn weight(&self) -> f32 {
+        self.weight
+    }
+}
 
 impl From<f32> for SimpleLabel {
     fn from(f: f32) -> Self {
-        SimpleLabel(f, 1.0)
+        SimpleLabel::new(f, 1.0)
     }
 }
 
 impl Default for SimpleLabel {
     fn default() -> Self {
-        SimpleLabel(0.0, 1.0)
+        SimpleLabel::new(0.0, 1.0)
     }
 }
 

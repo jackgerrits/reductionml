@@ -56,7 +56,7 @@ fn finalize_parsed_result_singleline<'a>(
         // TODO fix
         Some(TextLabel::Simple(x, weight)) => (
             hashed_sparse_features,
-            Some(Label::Simple(SimpleLabel(x, weight.unwrap_or(1.0)))),
+            Some(Label::Simple(SimpleLabel::new(x, weight.unwrap_or(1.0)))),
         ),
         // TODO binary
         Some(_) => todo!(),
