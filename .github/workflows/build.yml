@@ -17,12 +17,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - run: cargo build
-      - run: cargo run -- gen-schema > ./config_schema/latest/schema.json
+      - run: cargo run -- gen-schema > ./schemas/config/latest/schema.json
       - name: Check if there are changes
         id: changes
         uses: UnicornGlobal/has-changes-action@v1.0.11
       - if: steps.changes.outputs.changed == 1
         run: |
           echo "There are uncommitted changes to the config schema"
-          echo "Update with `cargo run -- gen-schema > ./config_schema/latest/schema.json`"
+          echo "Update with `cargo run -- gen-schema > ./schemas/config/latest/schema.json`"
           exit 1
