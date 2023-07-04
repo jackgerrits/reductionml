@@ -37,7 +37,7 @@ struct Cli {
 enum DataFormat {
     VWText,
     Dsjson,
-    Json
+    Json,
 }
 
 impl DataFormat {
