@@ -1,0 +1,298 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Configuration",
+  "type": "object",
+  "required": [
+    "entryReduction",
+    "globalConfig"
+  ],
+  "properties": {
+    "$schema": {
+      "pattern": ".*"
+    },
+    "entryReduction": {
+      "$ref": "#/definitions/any_reduction_config"
+    },
+    "globalConfig": {
+      "$ref": "#/definitions/GlobalConfig"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Binary": {
+      "properties": {
+        "config": {
+          "title": "BinaryReductionConfig",
+          "type": "object",
+          "properties": {
+            "regressor": {
+              "default": {
+                "config": {
+                  "alpha": 4.0,
+                  "beta": 1.0,
+                  "l1Lambda": 0.0,
+                  "l2Lambda": 0.0
+                },
+                "typename": "Coin"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "Binary"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CBType": {
+      "type": "string",
+      "enum": [
+        "ips",
+        "mtr"
+      ]
+    },
+    "CbAdf": {
+      "properties": {
+        "config": {
+          "title": "CBAdfConfig",
+          "type": "object",
+          "properties": {
+            "cbType": {
+              "default": "ips",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CBType"
+                }
+              ]
+            },
+            "regressor": {
+              "default": {
+                "config": {
+                  "alpha": 4.0,
+                  "beta": 1.0,
+                  "l1Lambda": 0.0,
+                  "l2Lambda": 0.0
+                },
+                "typename": "Coin"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "CbAdf"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CbExploreAdfGreedy": {
+      "properties": {
+        "config": {
+          "title": "CBExploreAdfGreedyConfig",
+          "type": "object",
+          "properties": {
+            "cbAdf": {
+              "default": {
+                "config": {
+                  "cbType": "ips",
+                  "regressor": {
+                    "config": {
+                      "alpha": 4.0,
+                      "beta": 1.0,
+                      "l1Lambda": 0.0,
+                      "l2Lambda": 0.0
+                    },
+                    "typename": "Coin"
+                  }
+                },
+                "typename": "CbAdf"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            },
+            "epsilon": {
+              "default": 0.05000000074505806,
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "CbExploreAdfGreedy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Coin": {
+      "properties": {
+        "config": {
+          "title": "CoinRegressorConfig",
+          "type": "object",
+          "properties": {
+            "alpha": {
+              "default": 4.0,
+              "type": "number",
+              "format": "float"
+            },
+            "beta": {
+              "default": 1.0,
+              "type": "number",
+              "format": "float"
+            },
+            "l1Lambda": {
+              "default": 0.0,
+              "type": "number",
+              "format": "float"
+            },
+            "l2Lambda": {
+              "default": 0.0,
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "Coin"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Debug": {
+      "properties": {
+        "config": {
+          "title": "DebugConfig",
+          "type": "object",
+          "properties": {
+            "features": {
+              "default": false,
+              "type": "boolean"
+            },
+            "id": {
+              "default": "",
+              "type": "string"
+            },
+            "indent": {
+              "default": 0,
+              "type": "integer",
+              "format": "uint",
+              "minimum": 0.0
+            },
+            "label": {
+              "default": false,
+              "type": "boolean"
+            },
+            "next": {
+              "default": {
+                "config": {},
+                "typename": "Unknown"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            },
+            "prediction": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "Debug"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GlobalConfig": {
+      "type": "object",
+      "properties": {
+        "constantFeatureEnabled": {
+          "default": true,
+          "type": "boolean"
+        },
+        "hashSeed": {
+          "default": 0,
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "interactions": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/NamespaceDef"
+            }
+          }
+        },
+        "numBits": {
+          "default": 18,
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
+    },
+    "NamespaceDef": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "Default"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Name"
+          ],
+          "properties": {
+            "Name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "any_reduction_config": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Coin"
+        },
+        {
+          "$ref": "#/definitions/Binary"
+        },
+        {
+          "$ref": "#/definitions/CbExploreAdfGreedy"
+        },
+        {
+          "$ref": "#/definitions/Debug"
+        },
+        {
+          "$ref": "#/definitions/CbAdf"
+        }
+      ]
+    }
+  }
+}

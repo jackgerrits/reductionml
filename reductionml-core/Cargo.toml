@@ -24,11 +24,11 @@ parking_lot = "0.12.1"
 derive_more = "0.99.17"
 schemars = "0.8.12"
 itertools = "0.10.5"
-murmur3 = "0.5.2"
 smallvec = "1.10.0"
 serde_yaml = "0.9.21"
 approx = "0.5.1"
-serde_path_to_error = "0.1.11"
+twox-hash = "1.6.3"
+serde_json_borrow = "0.1.4"
 
 [dev-dependencies]
 approx = "0.5.1"

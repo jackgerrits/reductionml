@@ -2,7 +2,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 
-use crate::interactions::{self, Interaction};
+use crate::interactions::Interaction;
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde)]
 #[serde(rename_all = "camelCase")]
