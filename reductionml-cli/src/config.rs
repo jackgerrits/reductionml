@@ -103,7 +103,7 @@ impl Command for ConfigCommand {
                     }
                 };
                 let overall_config = json!({
-                    "$schema": format!("https://raw.githubusercontent.com/jackgerrits/reductionml/main/config_schema/{}/schema.json", schema_version),
+                    "$schema": format!("https://raw.githubusercontent.com/jackgerrits/reductionml/main/schemas/config/{}/schema.json", schema_version),
                     "globalConfig": default_global,
                     "entryReduction": {
                         "typename": args.reduction,
