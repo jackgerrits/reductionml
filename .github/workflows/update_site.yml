@@ -1,12 +1,9 @@
-name: Update pages
+name: Update site
 
 on:
   push:
     branches:
       - main
-
-env:
-  CARGO_TERM_COLOR: always
 
 permissions:
   contents: read
@@ -18,24 +15,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  site-upload:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-      - run: |
-          mkdir -p static/schema
-          cargo run -- gen-schema > static/schema/config_schema.json
-
       - uses: peaceiris/actions-mdbook@v1
         with:
           mdbook-version: 'latest'
-
       - run: |
           mdbook build book
-          mkdir -p static
+          mkdir -p static/
           cp -r book/book static/book
-
+          cp site/index.html static/index.html
       - uses: actions/upload-pages-artifact@v1
         with:
           path: static/

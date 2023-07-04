@@ -1,14 +1,11 @@
-use std::io::Cursor;
-
-use murmur3::murmur3_32;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::sparse_namespaced_features::Namespace;
+use crate::{hash::hash_bytes, sparse_namespaced_features::Namespace};
 
 #[derive(Serialize, Deserialize, Clone, JsonSchema, Debug)]
 pub enum NamespaceDef {
-    Named(String),
+    Name(String),
     Default,
 }
 
@@ -22,8 +19,8 @@ pub fn hash_interaction(interaction: &Interaction, hash_seed: u32) -> HashedInte
     interaction
         .iter()
         .map(|ns| match ns {
-            NamespaceDef::Named(name) => {
-                let namespace_hash = murmur3_32(&mut Cursor::new(name), hash_seed).unwrap();
+            NamespaceDef::Name(name) => {
+                let namespace_hash = hash_bytes(name.as_bytes(), hash_seed);
                 Namespace::Named(namespace_hash.into())
             }
             NamespaceDef::Default => Namespace::Default,

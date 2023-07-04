@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use approx::{assert_abs_diff_eq, assert_abs_diff_ne, assert_relative_eq, AbsDiffEq};
+use approx::AbsDiffEq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::{
     error::{Error, Result},
-    inverse_hash_table::Feature,
     weights::Weights,
     FeatureIndex, ModelIndex, RawWeightsIndex, StateIndex,
 };
@@ -266,82 +265,89 @@ impl Weights for DenseWeights {
 //   }
 // }
 
-#[test]
-fn test_num_bits_to_represent() {
-    assert_eq!(num_bits_to_represent(0), 0);
-    assert_eq!(num_bits_to_represent(1), 1);
-    assert_eq!(num_bits_to_represent(2), 2);
-    assert_eq!(num_bits_to_represent(3), 2);
-    assert_eq!(num_bits_to_represent(4), 3);
-    assert_eq!(num_bits_to_represent(5), 3);
-    assert_eq!(num_bits_to_represent(6), 3);
-    assert_eq!(num_bits_to_represent(7), 3);
-    assert_eq!(num_bits_to_represent(8), 4);
-    assert_eq!(num_bits_to_represent(9), 4);
-    assert_eq!(num_bits_to_represent(10), 4);
-    assert_eq!(num_bits_to_represent(11), 4);
-    assert_eq!(num_bits_to_represent(12), 4);
-    assert_eq!(num_bits_to_represent(13), 4);
-    assert_eq!(num_bits_to_represent(14), 4);
-    assert_eq!(num_bits_to_represent(15), 4);
-    assert_eq!(num_bits_to_represent(16), 5);
-    assert_eq!(num_bits_to_represent(17), 5);
-    assert_eq!(num_bits_to_represent(18), 5);
-    assert_eq!(num_bits_to_represent(19), 5);
-    assert_eq!(num_bits_to_represent(20), 5);
-    assert_eq!(num_bits_to_represent(21), 5);
-    assert_eq!(num_bits_to_represent(22), 5);
-    assert_eq!(num_bits_to_represent(23), 5);
-    assert_eq!(num_bits_to_represent(24), 5);
-    assert_eq!(num_bits_to_represent(25), 5);
-    assert_eq!(num_bits_to_represent(26), 5);
-    assert_eq!(num_bits_to_represent(27), 5);
-    assert_eq!(num_bits_to_represent(28), 5);
-    assert_eq!(num_bits_to_represent(29), 5);
-    assert_eq!(num_bits_to_represent(30), 5);
-    assert_eq!(num_bits_to_represent(31), 5);
-}
+#[cfg(test)]
+mod tests {
+    use approx::{assert_abs_diff_eq, assert_abs_diff_ne};
 
-#[test]
-fn weights_equality() {
-    let mut w1 = DenseWeights::new(
-        FeatureIndex::from(4),
-        ModelIndex::from(1),
-        StateIndex::from(1),
-    )
-    .unwrap();
-    let w2 = DenseWeights::new(
-        FeatureIndex::from(4),
-        ModelIndex::from(1),
-        StateIndex::from(1),
-    )
-    .unwrap();
+    use super::*;
 
-    assert_abs_diff_eq!(w1, w2);
-
-    *w1.weight_at_mut(FeatureIndex::from(0), ModelIndex::from(0)) = 1.0;
-
-    assert_abs_diff_ne!(w1, w2);
-}
-
-#[test]
-fn weights_roundtrip() {
-    let mut w1 = DenseWeights::new(
-        FeatureIndex::from(4),
-        ModelIndex::from(2),
-        StateIndex::from(3),
-    )
-    .unwrap();
-    for i in 0..4 {
-        *w1.weight_at_mut(FeatureIndex::from(i), ModelIndex::from(0)) = i as f32;
-        *w1.weight_at_mut(FeatureIndex::from(i), ModelIndex::from(1)) = i as f32 * 2 as f32;
-        w1.state_at_mut(FeatureIndex::from(i), ModelIndex::from(0))[1] = i as f32 * 3 as f32;
-        w1.state_at_mut(FeatureIndex::from(i), ModelIndex::from(1))[2] = i as f32 * 3 as f32;
+    #[test]
+    fn test_num_bits_to_represent() {
+        assert_eq!(num_bits_to_represent(0), 0);
+        assert_eq!(num_bits_to_represent(1), 1);
+        assert_eq!(num_bits_to_represent(2), 2);
+        assert_eq!(num_bits_to_represent(3), 2);
+        assert_eq!(num_bits_to_represent(4), 3);
+        assert_eq!(num_bits_to_represent(5), 3);
+        assert_eq!(num_bits_to_represent(6), 3);
+        assert_eq!(num_bits_to_represent(7), 3);
+        assert_eq!(num_bits_to_represent(8), 4);
+        assert_eq!(num_bits_to_represent(9), 4);
+        assert_eq!(num_bits_to_represent(10), 4);
+        assert_eq!(num_bits_to_represent(11), 4);
+        assert_eq!(num_bits_to_represent(12), 4);
+        assert_eq!(num_bits_to_represent(13), 4);
+        assert_eq!(num_bits_to_represent(14), 4);
+        assert_eq!(num_bits_to_represent(15), 4);
+        assert_eq!(num_bits_to_represent(16), 5);
+        assert_eq!(num_bits_to_represent(17), 5);
+        assert_eq!(num_bits_to_represent(18), 5);
+        assert_eq!(num_bits_to_represent(19), 5);
+        assert_eq!(num_bits_to_represent(20), 5);
+        assert_eq!(num_bits_to_represent(21), 5);
+        assert_eq!(num_bits_to_represent(22), 5);
+        assert_eq!(num_bits_to_represent(23), 5);
+        assert_eq!(num_bits_to_represent(24), 5);
+        assert_eq!(num_bits_to_represent(25), 5);
+        assert_eq!(num_bits_to_represent(26), 5);
+        assert_eq!(num_bits_to_represent(27), 5);
+        assert_eq!(num_bits_to_represent(28), 5);
+        assert_eq!(num_bits_to_represent(29), 5);
+        assert_eq!(num_bits_to_represent(30), 5);
+        assert_eq!(num_bits_to_represent(31), 5);
     }
 
-    let dwnd = DenseWeightsWithNDArray::from_dense_weights(w1.clone());
+    #[test]
+    fn weights_equality() {
+        let mut w1 = DenseWeights::new(
+            FeatureIndex::from(4),
+            ModelIndex::from(1),
+            StateIndex::from(1),
+        )
+        .unwrap();
+        let w2 = DenseWeights::new(
+            FeatureIndex::from(4),
+            ModelIndex::from(1),
+            StateIndex::from(1),
+        )
+        .unwrap();
 
-    let w2 = dwnd.to_dense_weights();
+        assert_abs_diff_eq!(w1, w2);
 
-    assert_abs_diff_eq!(w1, w2);
+        *w1.weight_at_mut(FeatureIndex::from(0), ModelIndex::from(0)) = 1.0;
+
+        assert_abs_diff_ne!(w1, w2);
+    }
+
+    #[test]
+    fn weights_roundtrip() {
+        let mut w1 = DenseWeights::new(
+            FeatureIndex::from(4),
+            ModelIndex::from(2),
+            StateIndex::from(3),
+        )
+        .unwrap();
+        for i in 0..4 {
+            *w1.weight_at_mut(FeatureIndex::from(i), ModelIndex::from(0)) = i as f32;
+            *w1.weight_at_mut(FeatureIndex::from(i), ModelIndex::from(1)) = i as f32 * 2_f32;
+            w1.state_at_mut(FeatureIndex::from(i), ModelIndex::from(0))[1] = i as f32 * 3_f32;
+            w1.state_at_mut(FeatureIndex::from(i), ModelIndex::from(1))[2] = i as f32 * 3_f32;
+        }
+
+        let dwnd = DenseWeightsWithNDArray::from_dense_weights(w1.clone());
+
+        let w2 = dwnd.to_dense_weights();
+
+        assert_abs_diff_eq!(w1, w2);
+    }
 }

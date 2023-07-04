@@ -1,0 +1,32 @@
+name: Build
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo build
+      - run: cargo run -- gen-schema > ./schemas/config/latest/schema.json
+      - name: Check if there are changes
+        id: changes
+        uses: UnicornGlobal/has-changes-action@v1.0.11
+      - if: steps.changes.outputs.changed == 1
+        run: |
+          echo "There are uncommitted changes to the config schema"
+          echo "Update with `cargo run -- gen-schema > ./schemas/config/latest/schema.json`"
+          exit 1
+      - uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: 'latest'
+      - run: mdbook build book

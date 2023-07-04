@@ -1,8 +1,7 @@
-use core::{f32, num};
-use std::io::Cursor;
+use core::f32;
 
 use derive_more::TryInto;
-use murmur3::murmur3_32;
+
 use smallvec::SmallVec;
 
 use crate::error::{Error, Result};
@@ -11,7 +10,7 @@ use crate::object_pool::Pool;
 use crate::parsers::ParsedFeature;
 use crate::sparse_namespaced_features::{Namespace, SparseFeatures};
 use crate::types::{Features, Label, LabelType};
-use crate::utils::GetInner;
+use crate::utils::AsInner;
 use crate::{CBAdfFeatures, CBLabel, FeatureMask, FeaturesType, SimpleLabel};
 
 use super::{ParsedNamespaceInfo, TextModeParser, TextModeParserFactory};
@@ -30,8 +29,14 @@ enum TextLabel {
     CB(CBTextLabel),
 }
 
-impl GetInner<CBTextLabel> for TextLabel {
-    fn get_inner_ref(&self) -> Option<&CBTextLabel> {
+impl AsInner<CBTextLabel> for TextLabel {
+    fn as_inner(&self) -> Option<&CBTextLabel> {
+        match self {
+            TextLabel::CB(f) => Some(f),
+            _ => None,
+        }
+    }
+    fn as_inner_mut(&mut self) -> Option<&mut CBTextLabel> {
         match self {
             TextLabel::CB(f) => Some(f),
             _ => None,
@@ -43,8 +48,8 @@ impl GetInner<CBTextLabel> for TextLabel {
 // Idea - tag is not a concept here but for the cases where it was necessary (ccb) it will be folded into the feature type
 fn finalize_parsed_result_singleline<'a>(
     parsed: TextParseResult,
-    num_bits: u8,
-    mut dest: SparseFeatures,
+    _num_bits: u8,
+    dest: SparseFeatures,
 ) -> (Features<'a>, Option<Label>) {
     let hashed_sparse_features = Features::SparseSimple(dest);
     match parsed.label {
@@ -64,7 +69,7 @@ fn finalize_parsed_result_multiline<'a, 'b, T, U>(
     parsed: U,
     expected_label: LabelType,
     expected_features: FeaturesType,
-    num_bits: u8,
+    _num_bits: u8,
 ) -> Result<(Features<'b>, Option<Label>)>
 where
     T: IntoIterator<Item = SparseFeatures> + Iterator<Item = SparseFeatures> + Clone,
@@ -78,7 +83,7 @@ where
             let first_label: &CBTextLabel = txt_labels_iter
                 .peek()
                 .ok_or(Error::InvalidArgument("".to_owned()))?
-                .get_inner_ref()
+                .as_inner()
                 .expect("Label should be CB");
             let first_is_shared = first_label.shared;
 
@@ -94,7 +99,7 @@ where
             // Find the labelled action.
             let mut label: Option<CBLabel> = None;
             for (counter, action_label) in txt_labels_iter.enumerate() {
-                let lbl: &CBTextLabel = action_label.get_inner_ref().expect("Label should be CB");
+                let lbl: &CBTextLabel = action_label.as_inner().expect("Label should be CB");
                 if let Some((_a, c, p)) = lbl.acp {
                     if label.is_some() {
                         return Err(Error::InvalidArgument(

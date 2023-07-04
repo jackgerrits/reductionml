@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    hash::{murmurhash3_32, FNV_PRIME},
+    hash::{hash_bytes, FNV_PRIME},
     parsers::ParsedFeature,
     FeatureHash, FeatureIndex,
 };
@@ -34,20 +34,20 @@ impl Feature {
     pub fn hash(&self, hash_seed: u32) -> FeatureHash {
         match &self {
             Feature::Simple { namespace, name } => {
-                let namespace_hash = murmurhash3_32(namespace.as_bytes(), hash_seed);
-                murmurhash3_32(name.as_bytes(), namespace_hash).into()
+                let namespace_hash = hash_bytes(namespace.as_bytes(), hash_seed);
+                hash_bytes(name.as_bytes(), namespace_hash).into()
             }
             Feature::SimpleWithStringValue {
                 namespace,
                 name,
                 value,
             } => {
-                let namespace_hash = murmurhash3_32(namespace.as_bytes(), hash_seed);
-                let name_key_hash = murmurhash3_32(name.as_bytes(), namespace_hash);
-                murmurhash3_32(value.as_bytes(), name_key_hash).into()
+                let namespace_hash = hash_bytes(namespace.as_bytes(), hash_seed);
+                let name_key_hash = hash_bytes(name.as_bytes(), namespace_hash);
+                hash_bytes(value.as_bytes(), name_key_hash).into()
             }
             Feature::Anonymous { namespace, offset } => {
-                let namespace_hash = murmurhash3_32(namespace.as_bytes(), hash_seed);
+                let namespace_hash = hash_bytes(namespace.as_bytes(), hash_seed);
                 (namespace_hash + offset).into()
             }
             // In a very cool property hashing of the interacted feature does not need to take into account bit masking until the very end

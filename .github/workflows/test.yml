@@ -1,4 +1,4 @@
-name: Check
+name: Test
 
 on: [push, pull_request]
 
@@ -7,18 +7,11 @@ env:
 
 jobs:
   test:
-    name: Check
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - uses: peaceiris/actions-mdbook@v1
-        with:
-          mdbook-version: 'latest'
-      - run: cargo fmt --check
-      # Check docs builds
-      - run: mdbook build book
+      - uses: Swatinem/rust-cache@v2
       # Includes integration tests which are ignored by default
       - run: cargo test -- --include-ignored

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,6 @@ use crate::{
     reduction_factory::JsonReductionConfig,
     sparse_namespaced_features::SparseFeatures,
     types::{Features, Label, Prediction},
-    FeatureIndex, ModelIndex, StateIndex,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -158,19 +157,19 @@ impl Workspace {
             .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse model: {e}")))
     }
 
-    pub fn predict(&self, features: &Features) -> Prediction {
+    pub fn predict(&self, features: &mut Features) -> Prediction {
         let mut depth_info = DepthInfo::new();
         self.entry_reduction
             .predict(features, &mut depth_info, 0.into())
     }
 
-    pub fn predict_then_learn(&mut self, features: &Features, label: &Label) -> Prediction {
+    pub fn predict_then_learn(&mut self, features: &mut Features, label: &Label) -> Prediction {
         let mut depth_info = DepthInfo::new();
         self.entry_reduction
             .predict_then_learn(features, label, &mut depth_info, 0.into())
     }
 
-    pub fn learn(&mut self, features: &Features, label: &Label) {
+    pub fn learn(&mut self, features: &mut Features, label: &Label) {
         let mut depth_info = DepthInfo::new();
         self.entry_reduction
             .learn(features, label, &mut depth_info, 0.into());
@@ -195,7 +194,7 @@ mod tests {
     use approx::assert_relative_eq;
     use serde_json::json;
 
-    use crate::{sparse_namespaced_features::SparseFeatures, utils::GetInner, ScalarPrediction};
+    use crate::{sparse_namespaced_features::SparseFeatures, utils::AsInner, ScalarPrediction};
 
     use super::*;
 
@@ -224,20 +223,20 @@ mod tests {
         ns.add_feature(2.into(), 1.0);
         ns.add_feature(3.into(), 1.0);
 
-        let features = Features::SparseSimple(features);
+        let mut features = Features::SparseSimple(features);
 
-        let pred = workspace.predict(&features);
-        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        let pred = workspace.predict(&mut features);
+        let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
         assert_relative_eq!(scalar_pred.prediction, 0.0);
 
         let label = Label::Simple(0.5.into());
 
         // For some reason two calls to learn are required to get a non-zero prediction for coin?
-        workspace.learn(&features, &label);
-        workspace.learn(&features, &label);
+        workspace.learn(&mut features, &label);
+        workspace.learn(&mut features, &label);
 
-        let pred = workspace.predict(&features);
-        let scalar_pred: &ScalarPrediction = pred.get_inner_ref().unwrap();
+        let pred = workspace.predict(&mut features);
+        let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
         assert_relative_eq!(scalar_pred.prediction, 0.5);
     }
 }

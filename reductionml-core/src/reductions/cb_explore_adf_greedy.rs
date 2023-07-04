@@ -153,9 +153,9 @@ impl CBExploreAdfGreedyReduction {
 impl ReductionImpl for CBExploreAdfGreedyReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
-        model_offset: ModelIndex,
+        _model_offset: ModelIndex,
     ) -> Prediction {
         let pred = self.cb_adf.predict(features, depth_info, 0.into());
         let scores: ActionScoresPrediction = pred.try_into().unwrap();
@@ -164,7 +164,7 @@ impl ReductionImpl for CBExploreAdfGreedyReduction {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         _model_offset: ModelIndex,

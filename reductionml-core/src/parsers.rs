@@ -1,14 +1,12 @@
 mod text_parser;
-use std::io::Cursor;
 
-use murmur3::murmur3_32;
 pub use text_parser::*;
 mod vw_text_parser;
 pub use vw_text_parser::*;
 mod dsjson_parser;
 pub use dsjson_parser::*;
 
-use crate::{FeatureHash, NamespaceHash};
+use crate::{hash::hash_bytes, FeatureHash, NamespaceHash};
 
 pub enum ParsedFeature<'a> {
     Simple { name: &'a str },
@@ -20,11 +18,11 @@ impl<'a> ParsedFeature<'a> {
     pub fn hash(&self, namespace_hash: NamespaceHash) -> FeatureHash {
         match &self {
             ParsedFeature::Simple { name } => {
-                FeatureHash::from(murmur3_32(&mut Cursor::new(name), *namespace_hash).unwrap())
+                FeatureHash::from(hash_bytes(name.as_bytes(), *namespace_hash))
             }
             ParsedFeature::SimpleWithStringValue { name, value } => {
-                let name_key_hash = murmur3_32(&mut Cursor::new(name), *namespace_hash).unwrap();
-                FeatureHash::from(murmur3_32(&mut Cursor::new(value), name_key_hash).unwrap())
+                let name_key_hash = hash_bytes(name.as_bytes(), *namespace_hash);
+                FeatureHash::from(hash_bytes(value.as_bytes(), name_key_hash))
             }
             ParsedFeature::Anonymous { offset } => (*namespace_hash + offset).into(),
         }

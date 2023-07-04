@@ -1,6 +1,6 @@
 use core::f32;
 
-use serde_json::Value;
+use serde_json_borrow::Value;
 
 use crate::error::Result;
 
@@ -69,10 +69,9 @@ impl DsJsonParser {
         match json_value {
             Value::Null => panic!("Null is not supported"),
             Value::Bool(true) => {
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
@@ -84,10 +83,9 @@ impl DsJsonParser {
             }
             Value::Bool(false) => (),
             Value::Number(value) => {
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
@@ -97,13 +95,12 @@ impl DsJsonParser {
                     value.as_f64().unwrap() as f32,
                 );
             }
-            Value::String(value) => {
+            Value::Str(value) => {
                 let current_ns = namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
-                let current_feats = features.get_or_create_namespace(current_ns);
+                let current_feats = features.get_or_create_namespace(*current_ns);
                 current_feats.add_feature(
                     ParsedFeature::SimpleWithStringValue {
                         name: object_key,
@@ -116,10 +113,9 @@ impl DsJsonParser {
             }
             Value::Array(value) => {
                 namespace_stack.push(Namespace::from_name(object_key, self.hash_seed));
-                let current_ns = namespace_stack
+                let current_ns = *namespace_stack
                     .last()
-                    .expect("namespace stack should not be empty here")
-                    .clone();
+                    .expect("namespace stack should not be empty here");
                 let current_ns_hash = current_ns.hash(self.hash_seed);
                 for (anon_idx, v) in value.iter().enumerate() {
                     match v {
@@ -175,38 +171,33 @@ impl TextModeParser for DsJsonParser {
     }
 
     fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
-        let json: serde_json::Value =
-            serde_json::from_str(chunk).expect("JSON was not well-formatted");
+        let json: Value = serde_json::from_str(chunk).expect("JSON was not well-formatted");
 
         let mut namespace_stack = Vec::new();
 
         let mut shared_ex = self.pool.get_object();
-        self.handle_features(&mut shared_ex, " ", &json["c"], &mut namespace_stack);
+        self.handle_features(&mut shared_ex, " ", json.get("c"), &mut namespace_stack);
         assert!(namespace_stack.is_empty());
 
         let mut actions = Vec::new();
-        for item in json["c"]["_multi"].as_array().unwrap() {
+        for item in json.get("c").get("_multi").iter_array().unwrap() {
             let mut action = self.pool.get_object();
-            self.handle_features(&mut action, " ", &item, &mut namespace_stack);
+            self.handle_features(&mut action, " ", item, &mut namespace_stack);
             actions.push(action);
             assert!(namespace_stack.is_empty());
         }
 
-        let cost = json.get("_label_cost").map(|v| v.as_f64().unwrap() as f32);
-        let probability = json
-            .get("_label_probability")
-            .map(|v| v.as_f64().unwrap() as f32);
-        let action = json
-            .get("_labelIndex")
-            .map(|v| v.as_u64().unwrap() as usize);
-
-        let label = match (cost, probability, action) {
-            (Some(cost), Some(probability), Some(action)) => Some(CBLabel {
-                action,
-                cost,
-                probability,
+        let label = match (
+            json.get("_label_cost"),
+            json.get("_label_probability"),
+            json.get("_labelIndex"),
+        ) {
+            (Value::Number(cost), Value::Number(prob), Value::Number(action)) => Some(CBLabel {
+                action: action.as_u64().unwrap() as usize,
+                cost: cost.as_f64().unwrap() as f32,
+                probability: prob.as_f64().unwrap() as f32,
             }),
-            (None, None, None) => None,
+            (Value::Null, Value::Null, Value::Null) => None,
             _ => panic!("Invalid label, all 3 or none must be present"),
         };
 
@@ -215,7 +206,7 @@ impl TextModeParser for DsJsonParser {
                 shared: Some(shared_ex),
                 actions,
             }),
-            label.map(|x| Label::CB(x)),
+            label.map(Label::CB),
         ))
     }
 
@@ -238,7 +229,7 @@ mod test {
         object_pool::Pool,
         parsers::{DsJsonParserFactory, TextModeParser, TextModeParserFactory},
         sparse_namespaced_features::Namespace,
-        utils::GetInner,
+        utils::AsInner,
         CBAdfFeatures, CBLabel, FeaturesType, LabelType,
     };
     #[test]
@@ -298,12 +289,12 @@ mod test {
         );
 
         let (features, label) = parser.parse_chunk(&json_obj.to_string()).unwrap();
-        let cb_label: &CBLabel = label.as_ref().unwrap().get_inner_ref().unwrap();
+        let cb_label: &CBLabel = label.as_ref().unwrap().as_inner().unwrap();
         assert_eq!(cb_label.action, 3);
         assert_relative_eq!(cb_label.cost, 0.0);
         assert_relative_eq!(cb_label.probability, 0.05);
 
-        let cb_feats: &CBAdfFeatures = features.get_inner_ref().unwrap();
+        let cb_feats: &CBAdfFeatures = features.as_inner().unwrap();
         assert_eq!(cb_feats.actions.len(), 1);
         assert!(cb_feats.shared.is_some());
         let shared = cb_feats.shared.as_ref().unwrap();

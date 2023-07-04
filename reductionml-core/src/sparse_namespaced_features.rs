@@ -1,11 +1,13 @@
-use std::io::Cursor;
+use std::collections::BTreeSet;
 
 use crate::{
-    hash::FNV_PRIME, object_pool::PoolReturnable, utils::bits_to_max_feature_index, FeatureHash,
-    FeatureIndex, FeatureMask, NamespaceHash,
+    hash::{hash_bytes, FNV_PRIME},
+    object_pool::PoolReturnable,
+    utils::bits_to_max_feature_index,
+    FeatureHash, FeatureIndex, FeatureMask, NamespaceHash,
 };
+use approx::AbsDiffEq;
 use itertools::Itertools;
-use murmur3::murmur3_32;
 use serde::{Deserialize, Serialize};
 pub struct NamespacesIterator<'a> {
     namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
@@ -17,6 +19,7 @@ pub struct NamespaceIterator<'a> {
     values: std::slice::Iter<'a, f32>,
 }
 
+// TODO this should be skipping inactive namespaces.
 impl<'a> Iterator for NamespacesIterator<'a> {
     type Item = (Namespace, NamespaceIterator<'a>);
     fn next(&mut self) -> Option<Self::Item> {
@@ -43,6 +46,17 @@ impl<'a> Iterator for NamespaceIterator<'a> {
             None
         }
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.indices.size_hint()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        match (self.indices.nth(n), self.values.nth(n)) {
+            (Some(i), Some(v)) => Some((*i, *v)),
+            _ => None,
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -50,7 +64,28 @@ pub struct SparseFeaturesNamespace {
     namespace: Namespace,
     feature_indices: Vec<FeatureIndex>,
     feature_values: Vec<f32>,
+    /// active is an optimization for usage solely in the SparseFeatures struct
+    /// it is used to avoid iterating over the namespace when it is not active
+    /// and also allow for object reuse
     active: bool,
+}
+
+impl AbsDiffEq for SparseFeaturesNamespace {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        core::f32::EPSILON
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        self.namespace == other.namespace
+            && self.feature_indices == other.feature_indices
+            && self
+                .feature_values
+                .iter()
+                .zip(other.feature_values.iter())
+                .all(|(a, b)| a.abs_diff_eq(b, epsilon))
+    }
 }
 
 impl SparseFeaturesNamespace {
@@ -129,7 +164,7 @@ impl SparseFeaturesNamespace {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Serialize, Deserialize, PartialOrd, Ord, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Namespace {
     Named(NamespaceHash),
     Default,
@@ -141,9 +176,7 @@ impl Namespace {
             // TODO: consider different hash if hash_seed is not 0
             " " => Namespace::Default,
             _ => {
-                let namespace_hash = murmur3_32(&mut Cursor::new(namespace_name), hash_seed)
-                    .expect("murmur3_32 should not fail")
-                    .into();
+                let namespace_hash = hash_bytes(namespace_name.as_bytes(), hash_seed).into();
                 Namespace::Named(namespace_hash)
             }
         }
@@ -168,11 +201,49 @@ impl Default for SparseFeatures {
     }
 }
 
+impl AbsDiffEq for SparseFeatures {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        core::f32::EPSILON
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        let left_ns: BTreeSet<Namespace> = self
+            .namespaces
+            .iter()
+            .filter_map(|(ns, ns_vals)| if ns_vals.is_active() { Some(ns) } else { None })
+            .cloned()
+            .collect();
+
+        let right_ns = other
+            .namespaces
+            .iter()
+            .filter_map(|(ns, ns_vals)| if ns_vals.is_active() { Some(ns) } else { None })
+            .cloned()
+            .collect();
+        if left_ns != right_ns {
+            return false;
+        }
+
+        for ns in left_ns {
+            let ns_vals = self.namespaces.get(&ns).unwrap();
+            let other_ns_vals = other.namespaces.get(&ns).unwrap();
+            if !ns_vals.abs_diff_eq(other_ns_vals, epsilon) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+// Essentially Fowler–Noll–Vo hash function
 fn quadratic_feature_hash(i1: FeatureIndex, i2: FeatureIndex) -> FeatureHash {
     let multiplied = (FNV_PRIME as u64).wrapping_mul(u32::from(i1) as u64) as u32;
     (multiplied ^ u32::from(i2)).into()
 }
 
+// Essentially Fowler–Noll–Vo hash function
 fn cubic_feature_hash(i1: FeatureIndex, i2: FeatureIndex, i3: FeatureIndex) -> FeatureHash {
     let multiplied = (FNV_PRIME as u64).wrapping_mul(u32::from(i1) as u64) as u32;
     let multiplied = (FNV_PRIME as u64).wrapping_mul((multiplied ^ u32::from(i2)) as u64) as u32;

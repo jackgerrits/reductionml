@@ -1,7 +1,11 @@
+use atomic_wait::{wait, wake_one};
+use std::sync::atomic::AtomicU32;
 use std::{
+    cell::UnsafeCell,
     fs::File,
     io::{self, stdout, Write},
     str::FromStr,
+    sync::{atomic::Ordering, Arc},
 };
 
 use anyhow::{Context, Result};
@@ -19,7 +23,6 @@ use reductionml_core::{
 };
 
 use crate::{command::Command, DataFormat, InputConfigArg};
-use rayon::prelude::*;
 
 // TODO: multipass
 // TODO: test file for metrics
@@ -55,18 +58,15 @@ pub(crate) struct TrainArgs {
     metrics: Option<Vec<String>>,
 
     #[arg(long)]
-    #[arg(default_value = "128")]
-    read_batch_size: usize,
-
-    #[arg(long)]
     #[arg(default_value = "512")]
     queue_size: usize,
 
     /// Number of threads to use for the rayon thread pool. By default will use
-    /// the number of logical cores.
+    /// the number of logical cores - 2.
+    /// When this is 0, a single thread will be used for parsing+training.
     #[arg(long)]
     #[arg(default_value = None)]
-    thread_pool_size: Option<usize>,
+    num_parse_threads: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -108,6 +108,47 @@ impl FromStr for OutputPeriod {
         }
     }
 }
+
+struct ParseResult<'a> {
+    // 0 not ready, 1 ready
+    ready: AtomicU32,
+    result: UnsafeCell<Option<Result<(Features<'a>, Option<Label>)>>>,
+    input: UnsafeCell<Option<String>>,
+}
+
+impl<'a> ParseResult<'a> {
+    fn new(input: String) -> ParseResult<'a> {
+        ParseResult {
+            ready: AtomicU32::new(0),
+            result: UnsafeCell::new(None),
+            input: UnsafeCell::new(Some(input)),
+        }
+    }
+
+    fn get_input(&self) -> String {
+        assert!(self.ready.load(Ordering::SeqCst) == 0);
+        unsafe { (*self.input.get()).take().unwrap() }
+    }
+
+    fn await_result(&self) -> Result<(Features<'a>, Option<Label>)> {
+        while self.ready.load(Ordering::Relaxed) == 0 {
+            wait(&self.ready, 0);
+        }
+        assert!(self.ready.load(Ordering::SeqCst) == 1);
+        unsafe { (*self.result.get()).take().unwrap() }
+    }
+
+    fn set_result(&self, result: Result<(Features<'a>, Option<Label>)>) {
+        assert!(self.ready.load(Ordering::SeqCst) == 0);
+        unsafe {
+            *self.result.get() = Some(result);
+        }
+        self.ready.store(1, Ordering::SeqCst);
+        wake_one(&self.ready);
+    }
+}
+
+unsafe impl Sync for ParseResult<'_> {}
 
 struct TrainResultManager {
     iteration: u32,
@@ -173,13 +214,7 @@ pub(crate) struct TrainCommand;
 
 impl Command for TrainCommand {
     type Args = TrainArgs;
-    fn execute(args: &TrainArgs, _quiet: bool) -> Result<()> {
-        if let Some(size) = args.thread_pool_size {
-            rayon::ThreadPoolBuilder::new()
-                .num_threads(size)
-                .build_global()?;
-        }
-
+    fn execute(args: &TrainArgs, quiet: bool) -> Result<()> {
         let mut workspace = match (&args.input_config.config, &args.input_config.input_model) {
             // Loading from json config
             (Some(config_file), None) => {
@@ -225,7 +260,6 @@ impl Command for TrainCommand {
         );
         eprintln!("{}: Starting training...", "info".cyan().bold());
 
-        let mut counter: i32 = 0;
         let pool = workspace.features_pool().clone();
 
         let parser = args.data_format.get_parser(
@@ -253,102 +287,104 @@ impl Command for TrainCommand {
             None
         };
 
-        let mut metrics: Vec<Box<dyn Metric>> = if args.metrics.is_some() {
-            args.metrics
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|name| reductionml_core::metrics::get_metric(name).unwrap())
-                .collect()
-        } else {
-            vec![]
+        let mut metrics = vec![reductionml_core::metrics::get_metric("example_number").unwrap()];
+        if args.metrics.is_some() {
+            args.metrics.as_ref().unwrap().iter().for_each(|name| {
+                metrics.push(reductionml_core::metrics::get_metric(name).unwrap())
+            });
         };
 
-        let mut col_names: Vec<String> = vec!["Example #".into()];
-        col_names.extend(metrics.iter().map(|x| x.get_name()));
-        let mut manager = TrainResultManager::new(args.progress, col_names);
+        let mut manager = TrainResultManager::new(
+            args.progress,
+            metrics.iter().map(|x| x.get_name()).collect(),
+        );
 
-        let (tx, rx) = flume::bounded(args.queue_size);
+        let num_parse_threads = match args.num_parse_threads {
+            Some(n) => n,
+            None => (num_cpus::get() as i32 - 2).max(0) as usize,
+        };
 
-        let string_pool = object_pool::Pool::<String>::new();
-
-        std::thread::scope(|s| -> Result<()> {
-            s.spawn(|| {
-                loop {
-                    let mut batch = vec![];
-                    for _ in 0..args.read_batch_size {
-                        if let Some(chunk) = parser
-                            .get_next_chunk(&mut input_file, string_pool.get_object())
-                            .unwrap()
-                        {
-                            batch.push(chunk);
-                        } else {
-                            break;
-                        }
-                    }
-
-                    if batch.is_empty() {
-                        break;
-                    }
-
-                    // Must be collected so that original order is preserved.
-                    let batch: Vec<(Features<'_>, Option<Label>)> = batch
-                        .into_par_iter()
-                        .map(|line| {
-                            let res = parser.parse_chunk(&line).unwrap();
-                            string_pool.return_object(line);
-                            res
-                        })
-                        .collect();
-
-                    for item in batch {
-                        tx.send(item).expect(
-                            "Receiver should not be disconnected before all lines have been sent.",
-                        );
-                    }
-                }
-                std::mem::drop(tx);
-            });
-
-            loop {
-                let res = rx.recv();
-                match res {
-                    Ok((features, label)) => {
-                        let label = label.unwrap();
-                        let prediction = workspace.predict_then_learn(&features, &label);
-                        if let Some(file) = predictions_file.as_mut() {
-                            // TODO: some canonical format for prediction values.
-                            writeln!(file, "{:?}", prediction).unwrap();
-                        }
-
-                        for metric in metrics.iter_mut() {
-                            metric.add_point(&features, &label, &prediction);
-                        }
-                        counter += 1;
-
-                        let should_output = manager.inc_iteration();
-                        if should_output {
-                            let mut results = vec![MetricValue::Int(counter - 1)];
-                            results.extend(metrics.iter().map(|x| x.get_value()));
-                            manager.add_results(results);
-                            if !_quiet {
-                                manager.render_table_to_stdout();
-                            }
-                        }
-
-                        // Put feature objects back into the pool for reuse.
-                        features.clear_and_return_object(pool.as_ref());
-                    }
-                    Err(_) => break,
+        match num_parse_threads {
+            0 => {
+                let mut buffer = String::new();
+                while let Some(chunk) = parser.get_next_chunk(&mut input_file, buffer).unwrap() {
+                    let (features, label) = parser.parse_chunk(&chunk).unwrap();
+                    buffer = chunk;
+                    process_example(
+                        label,
+                        &mut workspace,
+                        features,
+                        &mut predictions_file,
+                        &mut metrics,
+                        &mut manager,
+                        quiet,
+                        &pool,
+                    );
                 }
             }
-            Ok(())
-        })?;
+            n => {
+                let string_pool = object_pool::Pool::<String>::new();
+                let (parse_sender, parse_receiver) = flume::bounded(args.queue_size);
+                let (learn_sender, learn_receiver) = flume::bounded(args.queue_size);
+                std::thread::scope(|s| -> Result<()> {
+                    // Input thread
+                    s.spawn(|| {
+                        loop {
+                            if let Some(chunk) = parser
+                                .get_next_chunk(&mut input_file, string_pool.get_object())
+                                .unwrap()
+                            {
+                                let res = Arc::new(ParseResult::new(chunk));
+                                parse_sender.send(res.clone()).unwrap();
+                                learn_sender.send(res).unwrap();
+                            } else {
+                                break;
+                            }
+                        }
+                        std::mem::drop(parse_sender);
+                        std::mem::drop(learn_sender);
+                    });
 
-        let mut results = vec![MetricValue::Int(counter)];
-        results.extend(metrics.iter().map(|x| x.get_value()));
-        manager.add_results(results);
-        if !_quiet {
+                    for _ in 0..n {
+                        s.spawn(|| loop {
+                            match parse_receiver.recv() {
+                                Ok(res) => {
+                                    let input = res.get_input();
+                                    let parsed = parser.parse_chunk(&input);
+                                    string_pool.return_object(input);
+                                    res.set_result(parsed.map_err(|e| anyhow::anyhow!(e)));
+                                }
+                                Err(_) => break,
+                            }
+                        });
+                    }
+
+                    loop {
+                        let res = learn_receiver.recv();
+                        match res {
+                            Ok(result) => {
+                                let (features, label) = result.await_result().unwrap();
+                                process_example(
+                                    label,
+                                    &mut workspace,
+                                    features,
+                                    &mut predictions_file,
+                                    &mut metrics,
+                                    &mut manager,
+                                    quiet,
+                                    &pool,
+                                );
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                    Ok(())
+                })?;
+            }
+        }
+
+        if !quiet {
+            manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
             manager.render_table_to_stdout();
         }
 
@@ -359,4 +395,40 @@ impl Command for TrainCommand {
 
         Ok(())
     }
+}
+
+fn process_example(
+    label: Option<Label>,
+    workspace: &mut reductionml_core::workspace::Workspace,
+    mut features: Features<'_>,
+    predictions_file: &mut Option<io::BufWriter<File>>,
+    metrics: &mut Vec<Box<dyn Metric>>,
+    manager: &mut TrainResultManager,
+    quiet: bool,
+    pool: &std::sync::Arc<
+        object_pool::Pool<reductionml_core::sparse_namespaced_features::SparseFeatures>,
+    >,
+) {
+    let label = label.unwrap();
+    if !quiet || predictions_file.is_some() {
+        let prediction = workspace.predict_then_learn(&mut features, &label);
+        if let Some(file) = predictions_file.as_mut() {
+            writeln!(file, "{}", serde_json::to_string(&prediction).unwrap()).unwrap();
+        }
+
+        for metric in metrics.iter_mut() {
+            metric.add_point(&features, &label, &prediction);
+        }
+
+        let should_output = manager.inc_iteration();
+        if should_output {
+            manager.add_results(metrics.iter().map(|x| x.get_value()).collect());
+            manager.render_table_to_stdout();
+        }
+    } else {
+        workspace.learn(&mut features, &label);
+    }
+
+    // Put feature objects back into the pool for reuse.
+    features.clear_and_return_object(pool.as_ref());
 }

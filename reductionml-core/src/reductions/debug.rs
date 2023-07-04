@@ -113,7 +113,7 @@ impl ReductionFactory for DebugReductionFactory {
                 prediction: config.prediction,
                 features: config.features,
                 label: config.label,
-                next: next,
+                next,
             }),
             types,
             num_models_above,
@@ -144,7 +144,7 @@ impl DebugReduction {
 impl ReductionImpl for DebugReduction {
     fn predict(
         &self,
-        features: &Features,
+        features: &mut Features,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
     ) -> Prediction {
@@ -152,7 +152,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -162,7 +162,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("prediction: {:?}", prediction),
             );
         }
@@ -171,7 +171,7 @@ impl ReductionImpl for DebugReduction {
 
     fn predict_then_learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
@@ -180,7 +180,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -189,7 +189,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("label: {:?}", label),
             );
         }
@@ -201,7 +201,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "predict_then_learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("prediction: {:?}", prediction),
             );
         }
@@ -210,7 +210,7 @@ impl ReductionImpl for DebugReduction {
 
     fn learn(
         &mut self,
-        features: &Features,
+        features: &mut Features,
         label: &Label,
         depth_info: &mut DepthInfo,
         model_offset: ModelIndex,
@@ -219,7 +219,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("features: {:?}", features),
             );
         }
@@ -228,7 +228,7 @@ impl ReductionImpl for DebugReduction {
             self.print_debug(
                 "learn",
                 model_offset,
-                &depth_info,
+                depth_info,
                 &format!("label: {:?}", label),
             );
         }

@@ -177,7 +177,7 @@ pub fn parse_config(config: &JsonReductionConfig) -> Result<Box<dyn ReductionCon
     match REDUCTION_REGISTRY
         .read()
         .unwrap()
-        .get(&config.typename.as_ref())
+        .get(config.typename.as_ref())
     {
         Some(factory) => factory.parse_config(config.json_value()),
         None => Err(crate::error::Error::InvalidArgument(format!(

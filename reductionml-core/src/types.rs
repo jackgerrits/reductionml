@@ -1,7 +1,8 @@
+use approx::AbsDiffEq;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    object_pool::PoolReturnable, sparse_namespaced_features::SparseFeatures, utils::GetInner,
+    object_pool::PoolReturnable, sparse_namespaced_features::SparseFeatures, utils::AsInner,
 };
 use derive_more::TryInto;
 use std::ops::Deref;
@@ -13,8 +14,14 @@ macro_rules! impl_conversion_traits {
             }
         }
 
-        impl GetInner<$structname> for $target_type {
-            fn get_inner_ref(&self) -> Option<&$structname> {
+        impl AsInner<$structname> for $target_type {
+            fn as_inner(&self) -> Option<&$structname> {
+                match self {
+                    $target_type::$enum_variant(f) => Some(f),
+                    _ => None,
+                }
+            }
+            fn as_inner_mut(&mut self) -> Option<&mut $structname> {
                 match self {
                     $target_type::$enum_variant(f) => Some(f),
                     _ => None,
@@ -24,13 +31,13 @@ macro_rules! impl_conversion_traits {
     };
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct ScalarPrediction {
     pub prediction: f32,
     pub raw_prediction: f32,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct BinaryPrediction(pub bool);
 impl From<bool> for BinaryPrediction {
     fn from(b: bool) -> Self {
@@ -38,13 +45,15 @@ impl From<bool> for BinaryPrediction {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize)]
 pub struct ActionScoresPrediction(pub Vec<(usize, f32)>);
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Serialize)]
 pub struct ActionProbsPrediction(pub Vec<(usize, f32)>);
 
-#[derive(Debug, PartialEq, Clone, TryInto)]
+#[derive(Debug, PartialEq, Clone, TryInto, Serialize)]
+// Untagged for succintness in predictions files
+#[serde(untagged)]
 pub enum Prediction {
     Scalar(ScalarPrediction),
     Binary(BinaryPrediction),
@@ -120,6 +129,36 @@ pub struct CBAdfFeatures {
     pub actions: Vec<SparseFeatures>,
 }
 
+impl AbsDiffEq for CBAdfFeatures {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        core::f32::EPSILON
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        if let (Some(shared), Some(other_shared)) = (&self.shared, &other.shared) {
+            if !shared.abs_diff_eq(other_shared, epsilon) {
+                return false;
+            }
+        } else if let (None, None) = (&self.shared, &other.shared) {
+            // ok
+        } else {
+            return false;
+        }
+
+        if self.actions.len() != other.actions.len() {
+            return false;
+        }
+        for (a, b) in self.actions.iter().zip(other.actions.iter()) {
+            if !a.abs_diff_eq(b, epsilon) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl PoolReturnable<SparseFeatures> for CBAdfFeatures {
     fn clear_and_return_object(self, pool: &crate::object_pool::Pool<SparseFeatures>) {
         if let Some(shared) = self.shared {
@@ -145,14 +184,22 @@ macro_rules! impl_conversion_traits_feats {
         //     }
         // }
 
-        impl<'a> From<&'a $structname> for Features<'a> {
-            fn from(f: &'a $structname) -> Features<'a> {
+        impl<'a> From<&'a mut $structname> for Features<'a> {
+            fn from(f: &'a mut $structname) -> Features<'a> {
                 Features::$enum_variant_ref(f)
             }
         }
 
-        impl GetInner<$structname> for Features<'_> {
-            fn get_inner_ref(&self) -> Option<&$structname> {
+        impl AsInner<$structname> for Features<'_> {
+            fn as_inner(&self) -> Option<&$structname> {
+                match self {
+                    Features::$enum_variant(f) => Some(f),
+                    Features::$enum_variant_ref(f) => Some(f),
+                    _ => None,
+                }
+            }
+
+            fn as_inner_mut(&mut self) -> Option<&mut $structname> {
                 match self {
                     Features::$enum_variant(f) => Some(f),
                     Features::$enum_variant_ref(f) => Some(f),
@@ -163,12 +210,53 @@ macro_rules! impl_conversion_traits_feats {
     };
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum Features<'a> {
     SparseSimple(SparseFeatures),
-    SparseSimpleRef(&'a SparseFeatures),
+    SparseSimpleRef(&'a mut SparseFeatures),
     SparseCBAdf(CBAdfFeatures),
-    SparseCBAdfRef(&'a CBAdfFeatures),
+    SparseCBAdfRef(&'a mut CBAdfFeatures),
+}
+
+impl<'a> Features<'a> {
+    pub fn clone(&self) -> Features<'static> {
+        match self {
+            Features::SparseSimple(f) => Features::SparseSimple(f.clone()),
+            Features::SparseSimpleRef(f) => Features::SparseSimple((*f).clone()),
+            Features::SparseCBAdf(f) => Features::SparseCBAdf(f.clone()),
+            Features::SparseCBAdfRef(f) => Features::SparseCBAdf((*f).clone()),
+        }
+    }
+}
+
+impl<'a> AbsDiffEq for Features<'a> {
+    type Epsilon = f32;
+
+    fn default_epsilon() -> Self::Epsilon {
+        core::f32::EPSILON
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        match (self, other) {
+            (
+                Features::SparseSimple(_) | Features::SparseSimpleRef(_),
+                Features::SparseSimple(_) | Features::SparseSimpleRef(_),
+            ) => {
+                let left: &SparseFeatures = self.as_inner().unwrap();
+                let right: &SparseFeatures = other.as_inner().unwrap();
+                left.abs_diff_eq(right, epsilon)
+            }
+            (
+                Features::SparseCBAdf(_) | Features::SparseCBAdfRef(_),
+                Features::SparseCBAdf(_) | Features::SparseCBAdfRef(_),
+            ) => {
+                let left: &CBAdfFeatures = self.as_inner().unwrap();
+                let right: &CBAdfFeatures = other.as_inner().unwrap();
+                left.abs_diff_eq(right, epsilon)
+            }
+            (_, _) => false,
+        }
+    }
 }
 
 // impl_conversion_traits!(Features, SparseSimple, SparseFeatures);
@@ -292,7 +380,7 @@ impl FeatureMask {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Debug)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Ord, Eq, Hash, Deserialize, Serialize, Debug)]
 pub struct NamespaceHash(u32);
 impl_extra_traits!(NamespaceHash, u32);
 

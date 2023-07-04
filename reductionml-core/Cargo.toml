@@ -1,8 +1,14 @@
 [package]
 name = "reductionml-core"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
-
+license = "MIT"
+description = "Reduction based machine learning toolkit core library"
+homepage = "https://github.com/jackgerrits/reductionml"
+repository = "https://github.com/jackgerrits/reductionml"
+readme = "../readme.md"
+keywords = ["machine-learning", "reduction", "cli"]
+categories = ["science"]
 
 [dependencies]
 once_cell = "1.17.2"
@@ -11,7 +17,6 @@ serde_default = "0.1.0"
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 thiserror = "1.0"
 typetag = "0.2"
-serde_bytes = "0.11.9"
 byteorder = "1.4.3"
 fast-float = "0.2.0"
 flexbuffers = "2.0.0"
@@ -19,12 +24,12 @@ parking_lot = "0.12.1"
 derive_more = "0.99.17"
 schemars = "0.8.12"
 itertools = "0.10.5"
-rayon = "1.7.0"
-murmur3 = "0.5.2"
-fastmurmur3 = "0.1.2"
 smallvec = "1.10.0"
 serde_yaml = "0.9.21"
 approx = "0.5.1"
+twox-hash = "1.6.3"
+serde_json_borrow = "0.1.4"
+
 
 [dev-dependencies]
 approx = "0.5.1"
