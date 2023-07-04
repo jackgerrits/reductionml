@@ -37,6 +37,7 @@ struct Cli {
 enum DataFormat {
     VWText,
     Dsjson,
+    Json
 }
 
 impl DataFormat {
@@ -60,6 +61,15 @@ impl DataFormat {
             ),
             DataFormat::Dsjson => Box::new(
                 reductionml_core::parsers::DsJsonParserFactory::default().create(
+                    features_type,
+                    label_type,
+                    hash_seed,
+                    num_bits,
+                    pool,
+                ),
+            ),
+            DataFormat::Json => Box::new(
+                reductionml_core::parsers::JsonParserFactory::default().create(
                     features_type,
                     label_type,
                     hash_seed,
