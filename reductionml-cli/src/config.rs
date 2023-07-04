@@ -1,4 +1,5 @@
 use clap::{Args, ValueEnum};
+use owo_colors::OwoColorize;
 use reductionml_core::global_config;
 use serde_json::json;
 
@@ -22,8 +23,11 @@ pub(crate) struct ConfigCheckArgs {
 #[derive(Args)]
 pub(crate) struct ConfigNewArgs {
     reduction: String,
-    // #[arg(short, long)]
-    // format: String,
+
+    /// Use the latest version of the config schema.
+    /// If not supplied defaults to the package version.
+    #[arg(long)]
+    latest: bool,
 }
 
 #[derive(Subcommand)]
@@ -82,8 +86,24 @@ impl Command for ConfigCommand {
                         })?
                         .get_config_default();
                 let default_global = global_config::GlobalConfig::default();
+                const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
+                let schema_version = if args.latest {
+                    "latest"
+                } else {
+                    match VERSION {
+                        Some(version) => version,
+                        None => {
+                            eprintln!(
+                                "{}: Unable to determine package version, defaulting to latest schema version.",
+                                "warning".yellow().bold()
+                            );
+                            "latest"
+                        }
+                    }
+                };
                 let overall_config = json!({
-                    "$schema": "https://jackgerrits.github.io/reductionml/schema/config_schema.json",
+                    "$schema": format!("https://raw.githubusercontent.com/jackgerrits/reductionml/main/config_schema/{}/schema.json", schema_version),
                     "globalConfig": default_global,
                     "entryReduction": {
                         "typename": args.reduction,
