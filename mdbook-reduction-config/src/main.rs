@@ -1,11 +1,10 @@
 use clap::{Arg, ArgMatches, Command};
-use core::panic;
 use mdbook::book::{Book, Chapter};
 use mdbook::errors::Error;
 use mdbook::preprocess::{CmdPreprocessor, Preprocessor, PreprocessorContext};
 use mdbook::BookItem;
-use pulldown_cmark::{CodeBlockKind, CowStr, Event, Parser, Tag};
-use pulldown_cmark_to_cmark::{cmark, cmark_resume};
+use pulldown_cmark::{Event, Parser, Tag};
+use pulldown_cmark_to_cmark::cmark_resume;
 use reductionml_core::reduction_registry::REDUCTION_REGISTRY;
 use semver::{Version, VersionReq};
 use std::io;
@@ -19,6 +18,41 @@ pub fn make_app() -> Command {
                 .arg(Arg::new("renderer").required(true))
                 .about("Check whether a renderer is supported by this preprocessor"),
         )
+}
+
+fn get_type(prop: &serde_json::Value) -> String {
+    match prop {
+        serde_json::Value::Bool(_) => "bool".to_string(),
+        serde_json::Value::Number(_) => "number".to_string(),
+        serde_json::Value::String(_) => "string".to_string(),
+        serde_json::Value::Array(_) => "array".to_string(),
+        serde_json::Value::Object(_) => "reduction".to_string(),
+        serde_json::Value::Null => "null".to_string(),
+    }
+}
+
+fn get_default_value(prop: &serde_json::Value) -> String {
+    match prop {
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        serde_json::Value::String(value) => value.to_string(),
+        serde_json::Value::Array(_) => todo!(),
+        // For now we will assume this always corresponds to a reduction
+        serde_json::Value::Object(obj) => obj.get("typename").unwrap().as_str().unwrap().to_owned(),
+        serde_json::Value::Null => "null".to_string(),
+    }
+}
+
+fn generate_md_events_for_prop<'a>(key: &'a str, prop: &serde_json::Value) -> Vec<Event<'a>> {
+    let mut events = vec![];
+    events.push(Event::Start(Tag::Item));
+    events.push(Event::Code(key.into()));
+    events.push(Event::Text("(".into()));
+    events.push(Event::Code(get_type(prop).into()));
+    events.push(Event::Text("), default = ".into()));
+    events.push(Event::Code(get_default_value(prop).into()));
+    events.push(Event::End(Tag::Item));
+    events
 }
 
 fn rewrite_reduction_config(chapter: &mut Chapter) {
@@ -37,47 +71,22 @@ fn rewrite_reduction_config(chapter: &mut Chapter) {
                     .get(reduction_name)
                     .unwrap()
                     .get_config_default();
-                for (_, value) in reduction_config.as_object_mut().unwrap().iter_mut() {
-                    *value = match value {
-                        serde_json::Value::Bool(value) => {
-                            serde_json::Value::String(format!("bool, default={}", value))
-                        }
-                        serde_json::Value::Number(value) => {
-                            serde_json::Value::String(format!("number, default={}", value))
-                        }
-                        serde_json::Value::String(value) => {
-                            serde_json::Value::String(format!("string, default={}", value))
-                        }
-                        serde_json::Value::Array(value) => {
-                            serde_json::Value::String("array".to_owned())
-                        }
-                        serde_json::Value::Object(value) => {
-                            serde_json::Value::String("object".to_owned())
-                        }
-                        _ => panic!("not supported"),
-                    }
+
+                state = cmark_resume(
+                    std::iter::once(Event::Start(Tag::List(None))),
+                    &mut buf,
+                    state.take(),
+                )
+                .unwrap()
+                .into();
+                for (key, value) in reduction_config.as_object_mut().unwrap().iter_mut() {
+                    let events = generate_md_events_for_prop(key, value);
+                    state = cmark_resume(events.into_iter(), &mut buf, state.take())
+                        .unwrap()
+                        .into();
                 }
-                let reduction_config = serde_json::to_string_pretty(&reduction_config).unwrap();
                 state = cmark_resume(
-                    std::iter::once(Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(
-                        CowStr::Borrowed("json"),
-                    )))),
-                    &mut buf,
-                    state.take(),
-                )
-                .unwrap()
-                .into();
-                state = cmark_resume(
-                    std::iter::once(Event::Text(CowStr::Borrowed(&reduction_config))),
-                    &mut buf,
-                    state.take(),
-                )
-                .unwrap()
-                .into();
-                state = cmark_resume(
-                    std::iter::once(Event::End(Tag::CodeBlock(CodeBlockKind::Fenced(
-                        CowStr::Borrowed("json"),
-                    )))),
+                    std::iter::once(Event::End(Tag::List(None))),
                     &mut buf,
                     state.take(),
                 )
@@ -110,7 +119,7 @@ impl Preprocessor for ReductionConfigPreprocessor {
         "reduction-config-preprocessor"
     }
 
-    fn run(&self, ctx: &PreprocessorContext, mut book: Book) -> Result<Book, Error> {
+    fn run(&self, _ctx: &PreprocessorContext, mut book: Book) -> Result<Book, Error> {
         book.for_each_mut(|x| {
             if let BookItem::Chapter(chapter) = x {
                 rewrite_reduction_config(chapter);
