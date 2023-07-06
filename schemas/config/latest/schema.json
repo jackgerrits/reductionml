@@ -339,13 +339,13 @@
           "$ref": "#/definitions/CbExploreAdfSquareCb"
         },
         {
-          "$ref": "#/definitions/CbExploreAdfGreedy"
-        },
-        {
           "$ref": "#/definitions/CbAdf"
         },
         {
           "$ref": "#/definitions/Coin"
+        },
+        {
+          "$ref": "#/definitions/CbExploreAdfGreedy"
         }
       ]
     }
