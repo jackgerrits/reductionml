@@ -20,9 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: taiki-e/install-action@just
-      - uses: peaceiris/actions-mdbook@v1
-        with:
-          mdbook-version: 'latest'
+      - uses: taiki-e/install-action@mdbook
       - run: just build-site
       - uses: actions/upload-pages-artifact@v1
         with:
