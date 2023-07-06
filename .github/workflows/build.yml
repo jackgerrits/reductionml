@@ -19,7 +19,7 @@ jobs:
       - run: cargo build
       - run: |
           cargo run --bin reml -- gen-schema > ./schemas/config/latest/schema.json
-          git diff --exit-code
+          git diff --exit-code ./schemas/config/latest/schema.json
       - uses: taiki-e/install-action@just
       - uses: taiki-e/install-action@mdbook
       - run: just build-site
