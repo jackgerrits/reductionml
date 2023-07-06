@@ -31,7 +31,7 @@ impl Metric for MeanSquaredErrorMetric {
     ) {
         let label: &SimpleLabel = label.as_inner().unwrap();
         let pred: &ScalarPrediction = prediction.as_inner().unwrap();
-        self.value += (label.0 - pred.prediction) * (label.0 - pred.prediction);
+        self.value += (label.value() - pred.prediction) * (label.value() - pred.prediction);
         self.count += 1;
     }
 

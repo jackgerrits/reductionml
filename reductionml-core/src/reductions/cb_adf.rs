@@ -200,7 +200,7 @@ impl ReductionImpl for CBAdfReduction {
                 let weight = 1.0 / prob
                     * (self.mtr_state.event_sum as f32 / self.mtr_state.action_sum as f32);
 
-                let simple_label = SimpleLabel(cost, weight);
+                let simple_label = SimpleLabel::new(cost, weight);
                 match cb_adf_features.shared.as_mut() {
                     Some(shared_feats) => {
                         let action = cb_adf_features.actions.get(cb_label.action).unwrap();
