@@ -59,13 +59,13 @@ impl LossFunction for SquaredLoss {
     }
 
     fn first_derivative(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32 {
-        let mut pred = prediction;
-
-        if prediction < min_label {
-            pred = min_label;
+        let pred = if prediction < min_label {
+            min_label
         } else if prediction > max_label {
-            pred = max_label;
-        }
+            max_label
+        } else {
+            prediction
+        };
 
         2.0 * (pred - label)
     }

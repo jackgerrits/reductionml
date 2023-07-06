@@ -175,6 +175,7 @@ impl Namespace {
         match namespace_name {
             // TODO: consider different hash if hash_seed is not 0
             " " => Namespace::Default,
+            ":default" => Namespace::Default,
             _ => {
                 let namespace_hash = hash_bytes(namespace_name.as_bytes(), hash_seed).into();
                 Namespace::Named(namespace_hash)
@@ -402,6 +403,10 @@ impl SparseFeatures {
                 }
             }
         }
+    }
+
+    pub fn empty(&self) -> bool {
+        self.namespaces.is_empty() || self.namespaces.values().all(|ns| !ns.is_active())
     }
 }
 

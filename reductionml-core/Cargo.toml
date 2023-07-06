@@ -30,6 +30,5 @@ approx = "0.5.1"
 twox-hash = "1.6.3"
 serde_json_borrow = "0.1.4"
 
-
 [dev-dependencies]
 approx = "0.5.1"

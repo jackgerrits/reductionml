@@ -12,4 +12,10 @@ pub enum Error {
     ParserError(String),
 }
 
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Error::ParserError(error.to_string())
+    }
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
