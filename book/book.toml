@@ -7,3 +7,9 @@ title = "reductionml"
 
 [preprocessor.reduction-config-json]
 command = "cargo run --manifest-path=./Cargo.toml --bin mdbook-reduction-config"
+
+[output.html]
+git-repository-url = "https://github.com/jackgerrits/reductionml"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/jackgerrits/reductionml/edit/main/book/{path}"
+site-url = "/reductionml/book"

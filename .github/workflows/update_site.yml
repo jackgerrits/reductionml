@@ -19,16 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: taiki-e/install-action@just
       - uses: peaceiris/actions-mdbook@v1
         with:
           mdbook-version: 'latest'
-      - run: |
-          mdbook build book
-          mkdir -p static/
-          cp -r book/book static/book
-          cp site/index.html static/index.html
+      - run: just build-site
       - uses: actions/upload-pages-artifact@v1
         with:
-          path: static/
+          path: site-dist/
       - id: deployment
         uses: actions/deploy-pages@v2
