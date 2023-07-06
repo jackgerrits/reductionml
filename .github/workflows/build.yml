@@ -17,12 +17,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - run: cargo build
-      - run: cargo run -- gen-schema > ./schemas/config/latest/schema.json
-      - name: Check if there are changes
-        id: changes
-        uses: UnicornGlobal/has-changes-action@v1.0.11
-      - if: steps.changes.outputs.changed == 1
-        run: |
-          echo "There are uncommitted changes to the config schema"
-          echo "Update with `cargo run -- gen-schema > ./schemas/config/latest/schema.json`"
-          exit 1
+      - run: |
+          cargo run --bin reml -- gen-schema > ./schemas/config/latest/schema.json
+          git diff --exit-code ./schemas/config/latest/schema.json
+      - uses: taiki-e/install-action@just
+      - uses: taiki-e/install-action@mdbook
+      - run: just build-site

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::RwLock;
 
 use once_cell::sync::Lazy;
@@ -24,7 +24,7 @@ pub static REDUCTION_REGISTRY: Lazy<RwLock<ReductionRegistry>> = Lazy::new(|| {
 
 #[derive(Default)]
 pub struct ReductionRegistry {
-    registry: HashMap<String, Box<dyn ReductionFactory>>,
+    registry: BTreeMap<String, Box<dyn ReductionFactory>>,
 }
 
 // impl Send for ReductionRegistry {}
