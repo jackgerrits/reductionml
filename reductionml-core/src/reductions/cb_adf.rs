@@ -16,8 +16,8 @@ use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 use serde_json::json;
 
-#[derive(Serialize, Deserialize, Clone, Copy, JsonSchema)]
-enum CBType {
+#[derive(Serialize, Deserialize, Clone, Copy, JsonSchema, PartialEq)]
+pub enum CBType {
     #[serde(rename = "ips")]
     Ips,
     #[serde(rename = "mtr")]
@@ -33,6 +33,12 @@ pub struct CBAdfConfig {
     #[serde(default = "default_regressor")]
     #[schemars(schema_with = "crate::config_schema::gen_json_reduction_config_schema")]
     regressor: JsonReductionConfig,
+}
+
+impl CBAdfConfig {
+    pub fn cb_type(&self) -> CBType {
+        self.cb_type
+    }
 }
 
 fn default_cb_type() -> CBType {
