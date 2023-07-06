@@ -34,7 +34,8 @@ fn get_type(prop: &serde_json::Value) -> String {
 fn get_default_value(prop: &serde_json::Value) -> String {
     match prop {
         serde_json::Value::Bool(value) => value.to_string(),
-        serde_json::Value::Number(value) => value.to_string(),
+        // TODO: fix this for integers.
+        serde_json::Value::Number(value) => ((value.as_f64().unwrap() *100.0).round() /100.0).to_string(),
         serde_json::Value::String(value) => value.to_string(),
         serde_json::Value::Array(_) => todo!(),
         // For now we will assume this always corresponds to a reduction

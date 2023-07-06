@@ -14,7 +14,7 @@ Interactions are specified in the global config. For example, the following is a
 {
     "globalConfig": {
         "interactions": [
-            ["Default", {"Named": "namespace"}]
+            ["Default", {"Nam": "namespace"}]
         ]
     }
 }

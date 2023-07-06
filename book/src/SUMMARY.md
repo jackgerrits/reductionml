@@ -19,4 +19,5 @@
 - [Coin](./coin.md)
 - [CbAdf](./cb_adf.md)
 - [CbExploreAdfGreedy](./cb_explore_adf_greedy.md)
+- [CbExploreAdfSquareCb](./cb_explore_adf_square_cb.md)
 
