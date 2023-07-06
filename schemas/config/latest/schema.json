@@ -138,6 +138,58 @@
       },
       "additionalProperties": false
     },
+    "CbExploreAdfSquareCb": {
+      "properties": {
+        "config": {
+          "title": "CBExploreAdfSquareCBConfig",
+          "type": "object",
+          "properties": {
+            "cbAdf": {
+              "default": {
+                "config": {
+                  "cbType": "ips",
+                  "regressor": {
+                    "config": {
+                      "alpha": 4.0,
+                      "beta": 1.0,
+                      "l1Lambda": 0.0,
+                      "l2Lambda": 0.0
+                    },
+                    "typename": "Coin"
+                  }
+                },
+                "typename": "CbAdf"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            },
+            "gammaExponent": {
+              "default": 0.5,
+              "type": "number",
+              "format": "float"
+            },
+            "gammaScale": {
+              "default": 10.0,
+              "type": "number",
+              "format": "float"
+            },
+            "uniformEpsilon": {
+              "default": 0.0,
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "CbExploreAdfSquareCb"
+        }
+      },
+      "additionalProperties": false
+    },
     "Coin": {
       "properties": {
         "config": {
@@ -278,19 +330,22 @@
     "any_reduction_config": {
       "oneOf": [
         {
-          "$ref": "#/definitions/Coin"
+          "$ref": "#/definitions/Debug"
         },
         {
           "$ref": "#/definitions/Binary"
         },
         {
+          "$ref": "#/definitions/CbExploreAdfSquareCb"
+        },
+        {
           "$ref": "#/definitions/CbExploreAdfGreedy"
         },
         {
-          "$ref": "#/definitions/Debug"
+          "$ref": "#/definitions/CbAdf"
         },
         {
-          "$ref": "#/definitions/CbAdf"
+          "$ref": "#/definitions/Coin"
         }
       ]
     }

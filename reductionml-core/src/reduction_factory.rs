@@ -16,7 +16,7 @@ use crate::{
 
 // This intentionally does not derive JsonSchema
 // Use gen_json_reduction_config_schema instead with schema_with
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonReductionConfig {
     typename: PascalCaseString,
@@ -62,7 +62,7 @@ impl JsonReductionConfig {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PascalCaseString(String);
 
 impl TryFrom<String> for PascalCaseString {
@@ -131,8 +131,6 @@ impl Display for PascalCaseString {
 
 pub trait ReductionConfig: Any {
     fn as_any(&self) -> &dyn Any;
-
-    // TODO ensure this returns a camelcase string
     fn typename(&self) -> PascalCaseString;
 }
 
@@ -158,8 +156,9 @@ macro_rules! impl_default_factory_functions {
         fn typename(&self) -> PascalCaseString {
             $typename.try_into().unwrap()
         }
+
         fn parse_config(&self, value: &serde_json::Value) -> Result<Box<dyn ReductionConfig>> {
-            let res: $config_type = serde_json::from_value(value.clone()).unwrap();
+            let res: $config_type = serde_json::from_value(value.clone())?;
             Ok(Box::new(res))
         }
 
