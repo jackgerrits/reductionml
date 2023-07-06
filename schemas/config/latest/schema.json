@@ -330,22 +330,22 @@
     "any_reduction_config": {
       "oneOf": [
         {
-          "$ref": "#/definitions/Debug"
-        },
-        {
           "$ref": "#/definitions/Binary"
-        },
-        {
-          "$ref": "#/definitions/CbExploreAdfSquareCb"
         },
         {
           "$ref": "#/definitions/CbAdf"
         },
         {
+          "$ref": "#/definitions/CbExploreAdfGreedy"
+        },
+        {
+          "$ref": "#/definitions/CbExploreAdfSquareCb"
+        },
+        {
           "$ref": "#/definitions/Coin"
         },
         {
-          "$ref": "#/definitions/CbExploreAdfGreedy"
+          "$ref": "#/definitions/Debug"
         }
       ]
     }
