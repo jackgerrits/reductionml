@@ -179,10 +179,14 @@ impl ReductionImpl for CBExploreAdfGreedyReduction {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use approx::assert_relative_eq;
 
     use crate::{
         interactions::NamespaceDef,
+        object_pool::Pool,
+        parsers::{JsonParserFactory, TextModeParser, TextModeParserFactory},
         sparse_namespaced_features::{Namespace, SparseFeatures},
         utils::AsInner,
     };
@@ -237,6 +241,62 @@ mod tests {
         let prediction = cb_explore_adf_greedy.predict_then_learn(
             &mut features,
             &label,
+            &mut depth_info,
+            0.into(),
+        );
+        let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
+        assert!(pred.0.len() == 2);
+    }
+
+    #[test]
+    fn test_greedy_predict_json() {
+        let cb_adf_greedy_config = CBExploreAdfGreedyConfig::default();
+        let global_config = GlobalConfig::new(8, 0, false, &Vec::new());
+        let factory = CBExploreAdfGreedyReductionFactory::default();
+        let mut cb_explore_adf_greedy = factory
+            .create(&cb_adf_greedy_config, &global_config, 1.into())
+            .unwrap();
+
+        let pool = Arc::new(Pool::new());
+        let json_parser_factory = JsonParserFactory::default();
+        let json_parser = json_parser_factory.create(
+            FeaturesType::SparseCBAdf,
+            LabelType::CB,
+            0,
+            global_config.num_bits(),
+            pool.clone(),
+        );
+
+        let input = json!({
+            "label": {
+                "action": 0,
+                "cost": 1.0,
+                "probability": 1.0
+            },
+            "shared": {
+                "shared_ns": {
+                    "test": 1.0,
+                }
+            },
+            "actions": [
+                {
+                    "action_ns": {
+                        "test1": 1.0
+                    }
+                },
+                {
+                    "action_ns": {
+                        "test2": 1.0
+                    }
+                }
+            ]
+        });
+        let (mut features, label) = json_parser.parse_chunk(&input.to_string()).unwrap();
+
+        let mut depth_info = DepthInfo::new();
+        let prediction = cb_explore_adf_greedy.predict_then_learn(
+            &mut features,
+            &label.unwrap(),
             &mut depth_info,
             0.into(),
         );
