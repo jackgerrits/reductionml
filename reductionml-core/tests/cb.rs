@@ -1,14 +1,18 @@
 use std::sync::Arc;
 
 use reductionml_core::{
+    global_config::GlobalConfig,
     interactions::NamespaceDef,
     object_pool::Pool,
     parsers::{JsonParserFactory, TextModeParser, TextModeParserFactory},
+    reduction::DepthInfo,
+    reduction_factory::ReductionFactory,
+    reductions::{CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory},
     sparse_namespaced_features::{Namespace, SparseFeatures},
-    utils::AsInner, reductions::{CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory}, global_config::GlobalConfig, reduction_factory::ReductionFactory, ActionProbsPrediction, reduction::DepthInfo, Label, CBLabel, CBAdfFeatures, Features, FeaturesType, LabelType,
+    utils::AsInner,
+    ActionProbsPrediction, CBAdfFeatures, CBLabel, Features, FeaturesType, Label, LabelType,
 };
 use serde_json::json;
-
 
 #[test]
 fn test_greedy_predict() {
@@ -55,12 +59,8 @@ fn test_greedy_predict() {
     let mut features = Features::SparseCBAdf(features);
     let label = Label::CB(label);
     let mut depth_info = DepthInfo::new();
-    let prediction = cb_explore_adf_greedy.predict_then_learn(
-        &mut features,
-        &label,
-        &mut depth_info,
-        0.into(),
-    );
+    let prediction =
+        cb_explore_adf_greedy.predict_then_learn(&mut features, &label, &mut depth_info, 0.into());
     let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
     assert!(pred.0.len() == 2);
 }
