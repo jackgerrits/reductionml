@@ -3,6 +3,7 @@
 members = [
     "reductionml-core",
     "reductionml-cli",
+    "reductionml-python",
     "mdbook-reduction-config",
 ]
 
