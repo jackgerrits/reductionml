@@ -1,0 +1,27 @@
+name: Python test
+
+on:
+  push:
+    branches:
+      - main
+      - '*'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: Swatinem/rust-cache@v2
+    - run: pip install pytest
+    - uses: PyO3/maturin-action@v1
+      with:
+        command: build
+        args: --manifest-path reductionml-python/Cargo.toml
+    - run: pip install --no-index --find-links target/wheels reductionml_python
+    - run: pytest reductionml-python/tests/

@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci -m reductionml-python/Cargo.toml github
 #
-name: Python
+name: Python dist
 
 on:
   push:
