@@ -3,7 +3,7 @@ requires = ["maturin>=1.1,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "reductionml-python"
+name = "reductionml"
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Rust",
@@ -13,4 +13,6 @@ classifiers = [
 
 
 [tool.maturin]
+python-source = "python"
 features = ["pyo3/extension-module"]
+module-name = "reductionml._reductionml"

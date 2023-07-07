@@ -5,9 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "reductionml_python"
+name = "reductionml"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.19.0"
+pyo3 = { version = "0.19.0", features = ["extension-module"] }
 reductionml-core = { path = "../reductionml-core", version = "0.0.1" }

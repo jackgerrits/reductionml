@@ -1,4 +1,4 @@
-import reductionml_python
+import reductionml
 
 def test_package():
-    assert reductionml_python.sum_as_string(1, 2) == "3"
+    assert reductionml.sum_as_string(1, 2) == "3"
