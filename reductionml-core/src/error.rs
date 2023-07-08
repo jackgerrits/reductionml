@@ -10,12 +10,10 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("Parser error: {0}")]
     ParserError(String),
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(error: serde_json::Error) -> Self {
-        Error::ParserError(error.to_string())
-    }
+    #[error("Invalid JSON: {0}")]
+    InvalidJson(#[from] serde_json::Error),
+    #[error("Invalid YAML: {0}")]
+    InvalidYaml(#[from] serde_yaml::Error),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
