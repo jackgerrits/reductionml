@@ -64,7 +64,7 @@
           "type": "object",
           "properties": {
             "cbType": {
-              "default": "ips",
+              "default": "mtr",
               "allOf": [
                 {
                   "$ref": "#/definitions/CBType"
