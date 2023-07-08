@@ -241,7 +241,7 @@ fn test_learning_e2e(
 
 
 #[test]
-fn test_stationary_deterministic_actions_single_context() {
+fn test_cb_stationary_deterministic_actions_single_context() {
     fn context(i: i32) -> String {
         "Tom".to_string()
     }
