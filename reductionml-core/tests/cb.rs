@@ -220,10 +220,8 @@ fn test_learning_e2e(
             let (mut features, _) = json_parser
                 .parse_chunk(&ex_pred(&ctx, action0, action1))
                 .unwrap();
-            let mut depth_info = DepthInfo::new();
-            let prediction = learner.predict(&mut features, &mut depth_info, 0.into());
+            let prediction = learner.predict(&mut features, &mut DepthInfo::new(), 0.into());
             let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
-            assert!(0 == 0);
             for (action, prob) in pred.0.iter() {
                 if action.eq(expected) {
                     assert!(prob > &0.5)
