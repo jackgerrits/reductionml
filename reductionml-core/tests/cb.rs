@@ -187,7 +187,7 @@ fn test_learning_e2e(
     action0: &str,
     action1: &str,
     chosen: fn(&str, i32) -> (i32, f32),
-    r: fn(&str, &str) -> f32,
+    r: fn(&str, &str, i32) -> f32,
     n: i32,
     learners: &mut [ReductionWrapper],
     global_config: &GlobalConfig,
@@ -207,7 +207,7 @@ fn test_learning_e2e(
         for i in 0..n {
             let ctx = context(i);
             let (chosen_action, p) = chosen(&ctx, i);
-            let reward = r(&ctx, &actions[usize::try_from(chosen_action).unwrap()]);
+            let reward = r(&ctx, &actions[usize::try_from(chosen_action).unwrap()], i);
             let (mut features, label) = json_parser.parse_chunk(
                 &ex_learn(&ctx, action0, action1, chosen_action, p, reward)).unwrap();
 
@@ -243,12 +243,12 @@ fn test_learning_e2e(
 #[test]
 fn test_cb_stationary_deterministic_actions_single_context() {
     fn context(i: i32) -> String {
-        "Tom".to_string()
+        "Tom".to_owned()
     }
     fn chosen(context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
-    fn r(context: &str, action: &str) -> f32 {
+    fn r(context: &str, action: &str, i: i32) -> f32 {
         if action == "Politics" { 1.0 } else { 0.0 }
     }
 
@@ -264,9 +264,84 @@ fn test_cb_stationary_deterministic_actions_single_context() {
         "Sports",
         chosen,
         r,
-        10000,
+        1000,
         &mut learners,
         &global_config,
         &[("Tom".to_owned(), 0)]
+        );
+}
+
+#[test]
+fn test_cb_stationary_deterministic_actions_with_personalization() {
+    fn context(i: i32) -> String {
+        if i % 4 < 2 { "Tom".to_owned() } else { "Anna".to_owned() }
+    }
+    fn chosen(context: &str, i: i32) -> (i32, f32) {
+        (i % 2, 0.5)
+    }
+    fn r(context: &str, action: &str, i: i32) -> f32 {
+        if context == "Tom" && action == "Politics" { 1.0 }
+        else if context == "Tom" && action == "Sports" { 0.0 }
+        else if context == "Anna" && action == "Politics" { 0.0 }
+        else { 1.0 }
+    }
+
+    let global_config = GlobalConfig::new(4, 0, true, &vec![vec![NamespaceDef::Name("shared".to_owned()), NamespaceDef::Name("action".to_owned())]]);
+    let mut learners = [
+        CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+    ];
+
+    test_learning_e2e(
+        context,
+        "Politics",
+        "Sports",
+        chosen,
+        r,
+        1000,
+        &mut learners,
+        &global_config,
+        &[("Tom".to_owned(), 0), ("Anna".to_owned(), 1)]
+        );
+}
+
+#[test]
+fn test_cb_nonstationary_deterministic_actions_with_personalization() {
+    fn context(i: i32) -> String {
+        if i % 4 < 2 { "Tom".to_owned() } else { "Anna".to_owned() }
+    }
+    fn chosen(context: &str, i: i32) -> (i32, f32) {
+        (i % 2, 0.5)
+    }
+    fn r(context: &str, action: &str, i: i32) -> f32 {
+        if i < 1000 {
+            if context == "Tom" && action == "Politics" { 1.0 }
+            else if context == "Tom" && action == "Sports" { 0.0 }
+            else if context == "Anna" && action == "Politics" { 0.0 }
+            else { 1.0 }
+        } else {
+            if context == "Tom" && action == "Politics" { 0.0 }
+            else if context == "Tom" && action == "Sports" { 1.0 }
+            else if context == "Anna" && action == "Politics" { 1.0 }
+            else { 0.0 }            
+        }
+    }
+
+    let global_config = GlobalConfig::new(4, 0, true, &vec![vec![NamespaceDef::Name("shared".to_owned()), NamespaceDef::Name("action".to_owned())]]);
+    let mut learners = [
+        CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+    ];
+
+    test_learning_e2e(
+        context,
+        "Politics",
+        "Sports",
+        chosen,
+        r,
+        2000,
+        &mut learners,
+        &global_config,
+        &[("Tom".to_owned(), 1), ("Anna".to_owned(), 0)]
         );
 }
