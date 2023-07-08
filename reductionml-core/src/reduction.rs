@@ -9,7 +9,7 @@ pub struct DepthInfo {
 }
 
 impl DepthInfo {
-    pub(crate) fn new() -> DepthInfo {
+    pub fn new() -> DepthInfo {
         DepthInfo { offset: 0.into() }
     }
     pub(crate) fn increment(&mut self, num_models_below: ModelIndex, i: ModelIndex) {

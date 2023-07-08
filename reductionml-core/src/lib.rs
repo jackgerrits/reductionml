@@ -18,6 +18,6 @@ pub mod types;
 pub mod weights;
 pub mod workspace;
 
-pub(crate) mod utils;
+pub mod utils;
 
 pub use types::*;
