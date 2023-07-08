@@ -5,7 +5,7 @@
 - [Introduction](./introduction.md)
 - [Configuration](./configuration.md)
 - [Model serialization](./model_serialization.md)
-- [Supported data formats](./reading_data.md)
+- [Input formats](./input_formats.md)
 
 # Reference
 
