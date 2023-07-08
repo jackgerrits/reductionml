@@ -8,7 +8,10 @@ use reductionml_core::{
     reduction::DepthInfo,
     reduction::ReductionWrapper,
     reduction_factory::ReductionFactory,
-    reductions::{CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory, CBExploreAdfSquareCBConfig, CBExploreAdfSquareCBReductionFactory},
+    reductions::{
+        CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory, CBExploreAdfSquareCBConfig,
+        CBExploreAdfSquareCBReductionFactory,
+    },
     sparse_namespaced_features::{Namespace, SparseFeatures},
     utils::AsInner,
     ActionProbsPrediction, CBAdfFeatures, CBLabel, Features, FeaturesType, Label, LabelType,
@@ -128,59 +131,57 @@ fn ex_learn(
     action1: &str,
     chosen: i32,
     p: f32,
-    reward: f32) -> String {
-        json!({
-            "label": {
-                "action": chosen,
-                "cost": -reward,
-                "probability": p
-            },
+    reward: f32,
+) -> String {
+    json!({
+        "label": {
+            "action": chosen,
+            "cost": -reward,
+            "probability": p
+        },
+        "shared": {
             "shared": {
-                "shared": {
-                    "f": context,
+                "f": context,
+            }
+        },
+        "actions": [
+            {
+                "action": {
+                    "f": action0
                 }
             },
-            "actions": [
-                {
-                    "action": {
-                        "f": action0
-                    }
-                },
-                {
-                    "action": {
-                        "f": action1
-                    }
+            {
+                "action": {
+                    "f": action1
                 }
-            ]
-        }).to_string()
+            }
+        ]
+    })
+    .to_string()
 }
 
-fn ex_pred(
-    context: &str,
-    action0: &str,
-    action1: &str
-    ) -> String {
-        json!({
+fn ex_pred(context: &str, action0: &str, action1: &str) -> String {
+    json!({
+        "shared": {
             "shared": {
-                "shared": {
-                    "f": context,
+                "f": context,
+            }
+        },
+        "actions": [
+            {
+                "action": {
+                    "f": action0
                 }
             },
-            "actions": [
-                {
-                    "action": {
-                        "f": action0
-                    }
-                },
-                {
-                    "action": {
-                        "f": action1
-                    }
+            {
+                "action": {
+                    "f": action1
                 }
-            ]
-        }).to_string()
+            }
+        ]
+    })
+    .to_string()
 }
-
 
 fn test_learning_e2e(
     context: fn(i32) -> String,
@@ -191,7 +192,7 @@ fn test_learning_e2e(
     n: i32,
     learners: &mut [ReductionWrapper],
     global_config: &GlobalConfig,
-    test_set: &[(String, usize)]
+    test_set: &[(String, usize)],
 ) {
     for mut learner in learners.iter_mut() {
         let pool = Arc::new(Pool::new());
@@ -208,37 +209,29 @@ fn test_learning_e2e(
             let ctx = context(i);
             let (chosen_action, p) = chosen(&ctx, i);
             let reward = r(&ctx, &actions[usize::try_from(chosen_action).unwrap()], i);
-            let (mut features, label) = json_parser.parse_chunk(
-                &ex_learn(&ctx, action0, action1, chosen_action, p, reward)).unwrap();
+            let (mut features, label) = json_parser
+                .parse_chunk(&ex_learn(&ctx, action0, action1, chosen_action, p, reward))
+                .unwrap();
 
             let mut depth_info = DepthInfo::new();
-            learner.learn(
-                &mut features,
-                &label.unwrap(),
-                &mut depth_info,
-                0.into(),
-            );
+            learner.learn(&mut features, &label.unwrap(), &mut depth_info, 0.into());
         }
         for (ctx, expected) in test_set {
-            let (mut features, _) = json_parser.parse_chunk(
-                &ex_pred(&ctx, action0, action1)).unwrap();
+            let (mut features, _) = json_parser
+                .parse_chunk(&ex_pred(&ctx, action0, action1))
+                .unwrap();
             let mut depth_info = DepthInfo::new();
-            let prediction = learner.predict(
-                &mut features,
-                &mut depth_info,
-                0.into(),
-            );
+            let prediction = learner.predict(&mut features, &mut depth_info, 0.into());
             let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
-            assert!(0==0);
+            assert!(0 == 0);
             for (action, prob) in pred.0.iter() {
                 if action.eq(expected) {
                     assert!(prob > &0.5)
                 }
             }
-        }              
+        }
     }
 }
-
 
 #[test]
 fn test_cb_stationary_deterministic_actions_single_context() {
@@ -249,13 +242,29 @@ fn test_cb_stationary_deterministic_actions_single_context() {
         (i % 2, 0.5)
     }
     fn r(context: &str, action: &str, i: i32) -> f32 {
-        if action == "Politics" { 1.0 } else { 0.0 }
+        if action == "Politics" {
+            1.0
+        } else {
+            0.0
+        }
     }
 
     let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
     let mut learners = [
-        CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
-        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfGreedyReductionFactory::default()
+            .create(
+                &CBExploreAdfGreedyConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default()
+            .create(
+                &CBExploreAdfSquareCBConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
     ];
 
     test_learning_e2e(
@@ -267,29 +276,58 @@ fn test_cb_stationary_deterministic_actions_single_context() {
         1000,
         &mut learners,
         &global_config,
-        &[("Tom".to_owned(), 0)]
-        );
+        &[("Tom".to_owned(), 0)],
+    );
 }
 
 #[test]
 fn test_cb_stationary_deterministic_actions_with_personalization() {
     fn context(i: i32) -> String {
-        if i % 4 < 2 { "Tom".to_owned() } else { "Anna".to_owned() }
+        if i % 4 < 2 {
+            "Tom".to_owned()
+        } else {
+            "Anna".to_owned()
+        }
     }
     fn chosen(context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
     fn r(context: &str, action: &str, i: i32) -> f32 {
-        if context == "Tom" && action == "Politics" { 1.0 }
-        else if context == "Tom" && action == "Sports" { 0.0 }
-        else if context == "Anna" && action == "Politics" { 0.0 }
-        else { 1.0 }
+        if context == "Tom" && action == "Politics" {
+            1.0
+        } else if context == "Tom" && action == "Sports" {
+            0.0
+        } else if context == "Anna" && action == "Politics" {
+            0.0
+        } else {
+            1.0
+        }
     }
 
-    let global_config = GlobalConfig::new(4, 0, true, &vec![vec![NamespaceDef::Name("shared".to_owned()), NamespaceDef::Name("action".to_owned())]]);
+    let global_config = GlobalConfig::new(
+        4,
+        0,
+        true,
+        &vec![vec![
+            NamespaceDef::Name("shared".to_owned()),
+            NamespaceDef::Name("action".to_owned()),
+        ]],
+    );
     let mut learners = [
-        CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
-        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfGreedyReductionFactory::default()
+            .create(
+                &CBExploreAdfGreedyConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default()
+            .create(
+                &CBExploreAdfSquareCBConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
     ];
 
     test_learning_e2e(
@@ -301,36 +339,70 @@ fn test_cb_stationary_deterministic_actions_with_personalization() {
         1000,
         &mut learners,
         &global_config,
-        &[("Tom".to_owned(), 0), ("Anna".to_owned(), 1)]
-        );
+        &[("Tom".to_owned(), 0), ("Anna".to_owned(), 1)],
+    );
 }
 
 #[test]
 fn test_cb_nonstationary_deterministic_actions_with_personalization() {
     fn context(i: i32) -> String {
-        if i % 4 < 2 { "Tom".to_owned() } else { "Anna".to_owned() }
+        if i % 4 < 2 {
+            "Tom".to_owned()
+        } else {
+            "Anna".to_owned()
+        }
     }
     fn chosen(context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
     fn r(context: &str, action: &str, i: i32) -> f32 {
         if i < 1000 {
-            if context == "Tom" && action == "Politics" { 1.0 }
-            else if context == "Tom" && action == "Sports" { 0.0 }
-            else if context == "Anna" && action == "Politics" { 0.0 }
-            else { 1.0 }
+            if context == "Tom" && action == "Politics" {
+                1.0
+            } else if context == "Tom" && action == "Sports" {
+                0.0
+            } else if context == "Anna" && action == "Politics" {
+                0.0
+            } else {
+                1.0
+            }
         } else {
-            if context == "Tom" && action == "Politics" { 0.0 }
-            else if context == "Tom" && action == "Sports" { 1.0 }
-            else if context == "Anna" && action == "Politics" { 1.0 }
-            else { 0.0 }            
+            if context == "Tom" && action == "Politics" {
+                0.0
+            } else if context == "Tom" && action == "Sports" {
+                1.0
+            } else if context == "Anna" && action == "Politics" {
+                1.0
+            } else {
+                0.0
+            }
         }
     }
 
-    let global_config = GlobalConfig::new(4, 0, true, &vec![vec![NamespaceDef::Name("shared".to_owned()), NamespaceDef::Name("action".to_owned())]]);
+    let global_config = GlobalConfig::new(
+        4,
+        0,
+        true,
+        &vec![vec![
+            NamespaceDef::Name("shared".to_owned()),
+            NamespaceDef::Name("action".to_owned()),
+        ]],
+    );
     let mut learners = [
-        CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
-        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfGreedyReductionFactory::default()
+            .create(
+                &CBExploreAdfGreedyConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default()
+            .create(
+                &CBExploreAdfSquareCBConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
     ];
 
     test_learning_e2e(
@@ -342,6 +414,6 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
         2000,
         &mut learners,
         &global_config,
-        &[("Tom".to_owned(), 1), ("Anna".to_owned(), 0)]
-        );
+        &[("Tom".to_owned(), 1), ("Anna".to_owned(), 0)],
+    );
 }
