@@ -241,7 +241,7 @@ fn test_learning_e2e(
 
 
 #[test]
-fn test_learning_const() {
+fn test_stationary_deterministic_actions_single_context() {
     fn context(i: i32) -> String {
         "Tom".to_string()
     }
@@ -256,7 +256,7 @@ fn test_learning_const() {
     let factory = CBExploreAdfGreedyReductionFactory::default();
     let mut learners = [
         CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
- //       CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
+        CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
     ];
 
     test_learning_e2e(
