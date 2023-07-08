@@ -1,6 +1,6 @@
 use clap::{Args, ValueEnum};
 use owo_colors::OwoColorize;
-use reductionml_core::global_config;
+use reductionml_core::{global_config, workspace::Configuration};
 use serde_json::json;
 
 use crate::command::Command;
@@ -55,10 +55,10 @@ impl Command for ConfigCommand {
                 let json = std::fs::read_to_string(&args.config).with_context(|| {
                     format!("Failed to read configuration file {}", args.config)
                 })?;
-                let _workspace = reductionml_core::workspace::Workspace::create_from_json(&json)
-                    .with_context(|| {
-                        format!("Failed to parse configuration file {}", args.config)
-                    })?;
+                let _workspace = reductionml_core::workspace::Workspace::new(
+                    Configuration::from_json_str(&json)?,
+                )
+                .with_context(|| format!("Failed to parse configuration file {}", args.config))?;
                 println!("ok");
                 Ok(())
             }
