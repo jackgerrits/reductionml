@@ -1,4 +1,6 @@
 import reductionml
 
+
 def test_package():
-    assert reductionml.sum_as_string(1, 2) == "3"
+    config = {"entryReduction": {"config": {}, "typename": "Coin"}, "globalConfig": {}}
+    assert reductionml.Workspace(config)

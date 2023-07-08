@@ -112,7 +112,7 @@ impl Workspace {
         Self::create_from_configuration(config)
     }
 
-    fn create_from_configuration(config: Configuration) -> Result<Workspace> {
+    pub fn create_from_configuration(config: Configuration) -> Result<Workspace> {
         let reduction_config = crate::reduction_factory::parse_config(&config.entry_reduction)?;
         let entry_reduction = crate::reduction_factory::create_reduction(
             reduction_config.as_ref(),

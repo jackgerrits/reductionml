@@ -281,7 +281,7 @@ impl ReductionWrapper {
 }
 
 #[typetag::serde(tag = "type")]
-pub trait ReductionImpl {
+pub trait ReductionImpl: Send {
     fn predict(
         &self,
         features: &mut Features,

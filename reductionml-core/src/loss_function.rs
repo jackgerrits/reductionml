@@ -17,7 +17,7 @@ impl LossFunctionType {
     }
 }
 
-pub trait LossFunction {
+pub trait LossFunction: Send {
     fn get_type(&self) -> LossFunctionType;
     fn get_loss(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32;
     fn get_update(

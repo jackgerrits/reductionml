@@ -11,3 +11,4 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.19.0", features = ["extension-module"] }
 reductionml-core = { path = "../reductionml-core", version = "0.0.1" }
+pythonize = "0.19.0"
