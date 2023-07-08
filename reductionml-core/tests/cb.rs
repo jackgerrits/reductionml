@@ -253,7 +253,6 @@ fn test_stationary_deterministic_actions_single_context() {
     }
 
     let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
-    let factory = CBExploreAdfGreedyReductionFactory::default();
     let mut learners = [
         CBExploreAdfGreedyReductionFactory::default().create(&CBExploreAdfGreedyConfig::default(), &global_config, 1.into()).unwrap(),
         CBExploreAdfSquareCBReductionFactory::default().create(&CBExploreAdfSquareCBConfig::default(), &global_config, 1.into()).unwrap(),
