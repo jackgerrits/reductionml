@@ -7,3 +7,5 @@
   - To build this documentation book
 - [`maturin`](https://www.maturin.rs/) (optional)
   - To build the python bindings
+- [`cargo-nextest](https://nexte.st/)
+  - A nicer experience for running tests. `just test` uses this if available.

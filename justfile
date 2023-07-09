@@ -11,3 +11,6 @@ serve-site:
 
 update-schema:
   cargo run --bin reml -- gen-schema > ./schemas/config/latest/schema.json
+
+@test:
+  cargo nextest run --run-ignored all || cargo test -- --include-ignored
