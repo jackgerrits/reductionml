@@ -1,21 +1,56 @@
 use pyo3::prelude::*;
+use reductionml_core::object_pool::Pool;
 
+use std::sync::Arc;
+
+use once_cell::sync::Lazy;
+
+pub(crate) mod features;
+pub(crate) mod labels;
+pub(crate) mod parsers;
+pub(crate) mod predictions;
 pub(crate) mod workspace;
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+pub static SPARSE_FEATURES_POOL: Lazy<
+    Arc<Pool<reductionml_core::sparse_namespaced_features::SparseFeatures>>,
+> = Lazy::new(|| Arc::new(Pool::new()));
+
+pub(crate) struct WrappedError(reductionml_core::error::Error);
+
+impl From<reductionml_core::error::Error> for WrappedError {
+    fn from(err: reductionml_core::error::Error) -> WrappedError {
+        WrappedError(err)
+    }
 }
 
-#[pyclass]
-struct ScalarPrediction(reductionml_core::ScalarPrediction);
+impl From<WrappedError> for PyErr {
+    fn from(err: WrappedError) -> PyErr {
+        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("{}", err.0))
+    }
+}
 
-/// A Python module implemented in Rust.
 #[pymodule]
 fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    m.add_class::<workspace::Workspace>()?;
-    m.add_class::<ScalarPrediction>()?;
+    // Workspace
+    m.add_class::<workspace::WrappedWorkspace>()?;
+
+    // Features
+    m.add_class::<features::WrappedSparseFeatures>()?;
+    m.add_class::<features::WrappedCbAdfFeatures>()?;
+
+    // Labels
+    m.add_class::<labels::WrappedSimpleLabel>()?;
+    m.add_class::<labels::WrappedCBLabel>()?;
+
+    // Predictions
+    m.add_class::<predictions::WrappedScalarPrediction>()?;
+    m.add_class::<predictions::WrappedActionProbsPrediction>()?;
+    m.add_class::<predictions::WrappedActionScoresPrediction>()?;
+
+    // Parsers
+    m.add_class::<parsers::FormatType>()?;
+    m.add_class::<parsers::ReductionType>()?;
+    m.add_class::<parsers::WrappedParser>()?;
+
     Ok(())
 }

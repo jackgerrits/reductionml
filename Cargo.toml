@@ -7,5 +7,10 @@ members = [
     "mdbook-reduction-config",
 ]
 
+default-members = [
+    "reductionml-core",
+    "reductionml-cli",
+]
+
 [profile.release]
 lto = "thin"
