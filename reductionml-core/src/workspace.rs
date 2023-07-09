@@ -36,6 +36,35 @@ pub struct Configuration {
     entry_reduction: JsonReductionConfig,
 }
 
+impl Configuration {
+    pub fn from_json_str(json: &str) -> Result<Self> {
+        serde_json::from_str::<serde_json::Value>(json)?.try_into()
+    }
+
+    pub fn from_yaml_str(yaml: &str) -> Result<Self> {
+        serde_yaml::from_str::<serde_yaml::Value>(yaml)?.try_into()
+    }
+}
+
+impl TryInto<Configuration> for serde_json::Value {
+    type Error = Error;
+
+    fn try_into(self) -> std::result::Result<Configuration, Self::Error> {
+        serde_json::from_value(self)
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse configuration: {e}")))
+    }
+}
+
+impl TryInto<Configuration> for serde_yaml::Value {
+    type Error = Error;
+
+    fn try_into(self) -> std::result::Result<Configuration, Self::Error> {
+        serde_yaml::from_value::<serde_json::Value>(self)
+            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse yaml: {e}")))?
+            .try_into()
+    }
+}
+
 // We need to search until we find an object with the keys weights, feature_index_size, model_index_size, feature_state_size, model_index_size_shift, feature_state_size_shift
 fn rewrite_json_ndarray_to_sparse(value: &mut serde_json::Value) {
     match value {
@@ -93,26 +122,7 @@ fn rewrite_json_sparse_to_ndarray(value: &mut serde_json::Value) {
 }
 
 impl Workspace {
-    pub fn create_from_json(json: &str) -> Result<Workspace> {
-        // TODO use serde_path_to_error for better error messages
-        let config: Configuration = serde_json::from_str(json).map_err(|e| {
-            Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
-        })?;
-
-        Self::create_from_configuration(config)
-    }
-
-    pub fn create_from_yaml(yaml: &str) -> Result<Workspace> {
-        let json_from_yaml = serde_yaml::from_str::<serde_json::Value>(yaml)
-            .map_err(|e| Error::InvalidConfiguration(format!("Failed to parse yaml: {e}")))?;
-        let config: Configuration = serde_json::from_value(json_from_yaml).map_err(|e| {
-            Error::InvalidConfiguration(format!("Failed to parse configuration: {e}"))
-        })?;
-
-        Self::create_from_configuration(config)
-    }
-
-    pub fn create_from_configuration(config: Configuration) -> Result<Workspace> {
+    pub fn new(config: Configuration) -> Result<Workspace> {
         let reduction_config = crate::reduction_factory::parse_config(&config.entry_reduction)?;
         let entry_reduction = crate::reduction_factory::create_reduction(
             reduction_config.as_ref(),
@@ -214,7 +224,7 @@ mod tests {
             }
         );
 
-        let mut workspace = Workspace::create_from_json(&config.to_string()).unwrap();
+        let mut workspace = Workspace::new(config.try_into().unwrap()).unwrap();
 
         let mut features = SparseFeatures::new();
         let ns =

@@ -42,7 +42,7 @@ impl CBAdfConfig {
 }
 
 fn default_cb_type() -> CBType {
-    CBType::Ips
+    CBType::Mtr
 }
 
 impl ReductionConfig for CBAdfConfig {

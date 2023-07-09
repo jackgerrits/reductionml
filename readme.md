@@ -1,4 +1,4 @@
-# ReductionML
+# 📚 ReductionML
 
 **Disclaimer**: ReductionML is my own personal project and experiment. ReductionML is an experiment and *very much a work in progress*. It is an opportunity for me to explore my own design ideas. Things are very rough and I am sure will change a lot.
 

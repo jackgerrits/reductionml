@@ -64,7 +64,7 @@
           "type": "object",
           "properties": {
             "cbType": {
-              "default": "ips",
+              "default": "mtr",
               "allOf": [
                 {
                   "$ref": "#/definitions/CBType"
@@ -105,7 +105,7 @@
             "cbAdf": {
               "default": {
                 "config": {
-                  "cbType": "ips",
+                  "cbType": "mtr",
                   "regressor": {
                     "config": {
                       "alpha": 4.0,
@@ -147,7 +147,7 @@
             "cbAdf": {
               "default": {
                 "config": {
-                  "cbType": "ips",
+                  "cbType": "mtr",
                   "regressor": {
                     "config": {
                       "alpha": 4.0,
