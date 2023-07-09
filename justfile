@@ -9,6 +9,12 @@ build-site:
 serve-site:
   python -m http.server --directory site-dist/
 
+py-develop:
+  maturin develop --manifest-path ./reductionml-python/Cargo.toml
+
+py-test:
+  PYTHONPATH=$(pwd)/reductionml-python/python python -m pytest ./reductionml-python/tests
+
 update-schema:
   cargo run --bin reml -- gen-schema > ./schemas/config/latest/schema.json
 

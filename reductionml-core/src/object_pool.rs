@@ -40,6 +40,9 @@ impl<T: Default> Default for Pool<T> {
     }
 }
 
+unsafe impl<T: Default> Sync for Pool<T> {}
+unsafe impl<T: Default> Send for Pool<T> {}
+
 pub trait PoolReturnable<T: Default> {
     fn clear_and_return_object(self, pool: &Pool<T>);
 }
