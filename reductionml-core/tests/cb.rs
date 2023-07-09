@@ -254,7 +254,7 @@ fn test_cb_stationary_deterministic_actions_single_context() {
         }
     }
 
-    let global_config = GlobalConfig::new(4, 0, true, &Vec::new());
+    let global_config = GlobalConfig::new(5, 0, true, &Vec::new());
     let mut learners = [
         CBExploreAdfGreedyReductionFactory::default()
             .create(
@@ -310,7 +310,7 @@ fn test_cb_stationary_deterministic_actions_with_personalization() {
     }
 
     let global_config = GlobalConfig::new(
-        4,
+        5,
         0,
         true,
         &vec![vec![
@@ -385,7 +385,7 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
     }
 
     let global_config = GlobalConfig::new(
-        4,
+        5,
         0,
         true,
         &vec![vec![
