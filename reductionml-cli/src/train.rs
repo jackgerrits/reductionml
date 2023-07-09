@@ -1,4 +1,5 @@
 use atomic_wait::{wait, wake_one};
+use reductionml_core::workspace::Configuration;
 use std::sync::atomic::AtomicU32;
 use std::{
     cell::UnsafeCell,
@@ -220,14 +221,13 @@ impl Command for TrainCommand {
             (Some(config_file), None) => {
                 let json = std::fs::read_to_string(config_file)
                     .with_context(|| format!("Failed to read config file: {}", config_file))?;
-                reductionml_core::workspace::Workspace::create_from_json(&json).with_context(
-                    || {
+                reductionml_core::workspace::Workspace::new(Configuration::from_json_str(&json)?)
+                    .with_context(|| {
                         format!(
                             "Failed to create workspace from config file: {}",
                             config_file
                         )
-                    },
-                )?
+                    })?
             }
             // Loading from model file
             (None, Some(input_model_file)) => {

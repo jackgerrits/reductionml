@@ -5,7 +5,7 @@
 - [Introduction](./introduction.md)
 - [Configuration](./configuration.md)
 - [Model serialization](./model_serialization.md)
-- [Supported data formats](./reading_data.md)
+- [Input formats](./input_formats.md)
 
 # Reference
 
@@ -21,3 +21,6 @@
 - [CbExploreAdfGreedy](./cb_explore_adf_greedy.md)
 - [CbExploreAdfSquareCb](./cb_explore_adf_square_cb.md)
 
+# Development
+
+- [Dev dependencies](./dev_dependencies.md)
