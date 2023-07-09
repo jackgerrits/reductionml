@@ -140,18 +140,18 @@ fn ex_learn(
             "probability": p
         },
         "shared": {
-            "shared": {
+            "user": {
                 "f": context,
             }
         },
         "actions": [
             {
-                "action": {
+                "content": {
                     "f": action0
                 }
             },
             {
-                "action": {
+                "content": {
                     "f": action1
                 }
             }
@@ -163,18 +163,18 @@ fn ex_learn(
 fn ex_pred(context: &str, action0: &str, action1: &str) -> String {
     json!({
         "shared": {
-            "shared": {
+            "user": {
                 "f": context,
             }
         },
         "actions": [
             {
-                "action": {
+                "content": {
                     "f": action0
                 }
             },
             {
-                "action": {
+                "content": {
                     "f": action1
                 }
             }
@@ -224,7 +224,14 @@ fn test_learning_e2e(
             let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
             for (action, prob) in pred.0.iter() {
                 if action.eq(expected) {
-                    assert!(prob > &0.5)
+                    assert!(
+                        prob > &0.5,
+                        "learner: {}, ctx: {}, expected exploit: {}, actual prob: {}",
+                        learner.typename(),
+                        ctx,
+                        expected,
+                        prob
+                    );
                 }
             }
         }
@@ -307,8 +314,8 @@ fn test_cb_stationary_deterministic_actions_with_personalization() {
         0,
         true,
         &vec![vec![
-            NamespaceDef::Name("shared".to_owned()),
-            NamespaceDef::Name("action".to_owned()),
+            NamespaceDef::Name("user".to_owned()),
+            NamespaceDef::Name("content".to_owned()),
         ]],
     );
     let mut learners = [
@@ -382,8 +389,8 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
         0,
         true,
         &vec![vec![
-            NamespaceDef::Name("shared".to_owned()),
-            NamespaceDef::Name("action".to_owned()),
+            NamespaceDef::Name("user".to_owned()),
+            NamespaceDef::Name("content".to_owned()),
         ]],
     );
     let mut learners = [
