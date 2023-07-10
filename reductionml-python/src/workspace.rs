@@ -5,7 +5,12 @@ use pythonize::{depythonize, pythonize};
 use pyo3::{pyclass, pymethods, types::PyDict, IntoPy, Python};
 use reductionml_core::{workspace::Configuration, Label};
 
-use crate::{features::WrappedFeatures, labels::WrappedLabel, predictions::WrappedPrediction};
+use crate::{
+    features::WrappedFeatures,
+    labels::WrappedLabel,
+    parsers::{create_parser, FormatType, WrappedParser},
+    predictions::WrappedPrediction,
+};
 
 #[pyclass]
 #[pyo3(name = "Workspace")]
@@ -45,6 +50,20 @@ impl WrappedWorkspace {
             let data = pythonize(py, &data).unwrap();
             Ok(data.into_py(py))
         })
+    }
+
+    pub(crate) fn create_parser(&self, format_type: FormatType) -> Result<WrappedParser, PyErr> {
+        let features_type = self.0.get_entry_reduction().types().input_features_type();
+        let label_type = self.0.get_entry_reduction().types().input_label_type();
+        let hash_seed = self.0.global_config().hash_seed();
+        let num_bits = self.0.global_config().num_bits();
+
+        create_parser(
+            format_type,
+            (features_type, label_type).try_into()?,
+            hash_seed,
+            num_bits,
+        )
     }
 
     pub(crate) fn predict(&self, mut features: WrappedFeatures) -> PyResult<WrappedPrediction> {
