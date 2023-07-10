@@ -6,6 +6,7 @@ reductionml
    pip install reductionml
 
 .. toctree::
+   :hidden:
 
    getting_started
    reference
