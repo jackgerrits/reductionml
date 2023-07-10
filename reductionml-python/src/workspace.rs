@@ -14,8 +14,8 @@ pub(crate) struct WrappedWorkspace(pub(crate) reductionml_core::workspace::Works
 #[pymethods]
 impl WrappedWorkspace {
     #[staticmethod]
-    pub(crate) fn create_from_config(args: &PyDict) -> Self {
-        let config: Configuration = depythonize(args).unwrap();
+    pub(crate) fn create_from_config(config: &PyDict) -> Self {
+        let config: Configuration = depythonize(config).unwrap();
         let workspace = reductionml_core::workspace::Workspace::new(config).unwrap();
         Self(workspace)
     }
@@ -27,8 +27,8 @@ impl WrappedWorkspace {
     }
 
     #[staticmethod]
-    pub(crate) fn create_from_json_model(data: &PyDict) -> Self {
-        let data = depythonize(data).unwrap();
+    pub(crate) fn create_from_json_model(model_json: &PyDict) -> Self {
+        let data = depythonize(model_json).unwrap();
         let workspace =
             reductionml_core::workspace::Workspace::deserialize_from_json(&data).unwrap();
         Self(workspace)

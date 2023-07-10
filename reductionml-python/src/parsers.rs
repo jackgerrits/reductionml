@@ -85,11 +85,11 @@ impl FormatType {
 impl WrappedParser {
     fn parse(
         &self,
-        chunk: &str,
+        input: &str,
     ) -> Result<(WrappedFeaturesForReturn, Option<WrappedLabel>), PyErr> {
         let (feats, label) = self
             .0
-            .parse_chunk(chunk)
+            .parse_chunk(input)
             .map_err(|x| WrappedError::from(x))?;
         let feats: WrappedFeaturesForReturn =
             feats.try_into().map_err(|x| WrappedError::from(x))?;
