@@ -50,7 +50,9 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Parsers
     m.add_class::<parsers::FormatType>()?;
     m.add_class::<parsers::ReductionType>()?;
-    m.add_class::<parsers::WrappedParser>()?;
+    m.add_class::<parsers::WrappedParserTextOnly>()?;
+    m.add_class::<parsers::WrappedParserTextAndJson>()?;
+    m.add_function(wrap_pyfunction!(parsers::create_parser, m)?)?;
 
     Ok(())
 }
