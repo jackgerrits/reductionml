@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional, Union, List, Tuple, Dict, Any, final
+from typing import Optional, Union, List, Tuple, Dict, Any, final, overload, Literal
 
 @final
 class SimpleLabel:
@@ -57,21 +57,32 @@ class ReductionType(Enum):
     CB = (1,)
     Simple = 2
 
+@overload
+def create_parser(
+    format_type: Literal[FormatType.VwText],
+    reduction_type: ReductionType,
+    hash_seed: int,
+    num_bits: int,
+) -> TextParser: ...
+@overload
+def create_parser(
+    format_type: Union[Literal[FormatType.DsJson], Literal[FormatType.Json]],
+    reduction_type: ReductionType,
+    hash_seed: int,
+    num_bits: int,
+) -> JsonParser: ...
 @final
-class Parser:
-    @staticmethod
-    def create_parser_with_workspace(
-        format_type: FormatType, workspace: Workspace
-    ) -> Parser: ...
-    @staticmethod
-    def create_parser(
-        format_type: FormatType,
-        reduction_type: ReductionType,
-        hash_seed: int,
-        num_bits: int,
-    ) -> Parser: ...
+class TextParser:
     def parse(
         self, input: str
+    ) -> Tuple[
+        Union[SparseFeatures, CbAdfFeatures], Optional[Union[SimpleLabel, CbLabel]]
+    ]: ...
+
+@final
+class JsonParser:
+    def parse(
+        self, input: Union[str, Dict[str, Any]]
     ) -> Tuple[
         Union[SparseFeatures, CbAdfFeatures], Optional[Union[SimpleLabel, CbLabel]]
     ]: ...
@@ -86,6 +97,16 @@ class Workspace:
     def create_from_json_model(model_json: Dict[str, Any]) -> Workspace: ...
     def serialize(self) -> bytearray: ...
     def serialize_to_json(self) -> Dict[str, Any]: ...
+    @overload
+    def create_parser(
+        self,
+        format_type: Literal[FormatType.VwText],
+    ) -> TextParser: ...
+    @overload
+    def create_parser(
+        self,
+        format_type: Union[Literal[FormatType.DsJson], Literal[FormatType.Json]],
+    ) -> JsonParser: ...
     def predict(
         self, features: Union[SparseFeatures, CbAdfFeatures]
     ) -> Union[ScalarPred, ActionScoresPred, ActionProbsPred]: ...

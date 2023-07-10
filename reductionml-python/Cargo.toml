@@ -13,3 +13,4 @@ pyo3 = { version = "0.19.0", features = ["extension-module"] }
 reductionml-core = { path = "../reductionml-core", version = "0.0.1" }
 pythonize = "0.19.0"
 once_cell = "1.17.2"
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
