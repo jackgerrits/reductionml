@@ -12,6 +12,9 @@ serve-site:
 py-develop:
   maturin develop --manifest-path ./reductionml-python/Cargo.toml
 
+py-install:
+  maturin build --manifest-path ./reductionml-python/Cargo.toml && pip install --no-index --find-links ./target/wheels --force-reinstall reductionml
+
 py-test:
   PYTHONPATH=$(pwd)/reductionml-python/python python -m pytest ./reductionml-python/tests
 
