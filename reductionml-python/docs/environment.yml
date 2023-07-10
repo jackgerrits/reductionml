@@ -6,3 +6,4 @@ dependencies:
   - pip:
     - furo
     - myst-nb
+    - scikit-learn
