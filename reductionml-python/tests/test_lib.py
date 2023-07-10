@@ -5,8 +5,10 @@ def test_package():
     config = {"entryReduction": {"config": {}, "typename": "Coin"}, "globalConfig": {}}
     assert reml.Workspace.create_from_config(config)
 
+
 def test_create_features():
     assert reml.SparseFeatures() is not None
+
 
 def test_package_f():
     config = {"entryReduction": {"config": {}, "typename": "Coin"}, "globalConfig": {}}
