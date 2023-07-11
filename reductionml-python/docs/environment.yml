@@ -7,3 +7,4 @@ dependencies:
     - furo
     - myst-nb
     - scikit-learn
+    - matplotlib
