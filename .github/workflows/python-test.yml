@@ -17,10 +17,13 @@ jobs:
     - uses: actions/setup-python@v4
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@v2
-    - run: pip install pytest
+    - run: pip install -r ./reductionml-python/dev-requirements.txt
+    - run: black --check ./reductionml-python/python/ ./reductionml-python/tests/
     - uses: PyO3/maturin-action@v1
       with:
         command: build
         args: --manifest-path reductionml-python/Cargo.toml
     - run: pip install --no-index --find-links target/wheels reductionml
+    - run: mypy -m reductionml
+    - run: stubtest reductionml
     - run: pytest reductionml-python/tests/

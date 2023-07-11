@@ -1,6 +1,7 @@
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
+use pythonize::depythonize;
 use reductionml_core::{
     parsers::{TextModeParser, TextModeParserFactory},
     FeaturesType, LabelType,
@@ -11,11 +12,31 @@ use crate::{
 };
 
 #[pyclass]
-#[pyo3(name = "Parser")]
-pub(crate) struct WrappedParser(Arc<dyn reductionml_core::parsers::TextModeParser>);
+#[pyo3(name = "TextParser")]
+pub(crate) struct WrappedParserTextOnly(Arc<dyn reductionml_core::parsers::TextModeParser>);
 
-unsafe impl Send for WrappedParser {}
-unsafe impl Sync for WrappedParser {}
+#[pyclass]
+#[pyo3(name = "JsonParser")]
+pub(crate) struct WrappedParserTextAndJson(Arc<dyn reductionml_core::parsers::TextModeParser>);
+
+pub(crate) enum WrappedParser {
+    WrappedParserTextOnly(WrappedParserTextOnly),
+    WrappedParserTextAndJson(WrappedParserTextAndJson),
+}
+
+impl IntoPy<PyObject> for WrappedParser {
+    fn into_py(self, py: Python) -> PyObject {
+        match self {
+            WrappedParser::WrappedParserTextOnly(x) => x.into_py(py),
+            WrappedParser::WrappedParserTextAndJson(x) => x.into_py(py),
+        }
+    }
+}
+
+unsafe impl Send for WrappedParserTextOnly {}
+unsafe impl Sync for WrappedParserTextOnly {}
+unsafe impl Send for WrappedParserTextAndJson {}
+unsafe impl Sync for WrappedParserTextAndJson {}
 
 #[pyclass]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -37,6 +58,22 @@ impl From<ReductionType> for (reductionml_core::FeaturesType, reductionml_core::
         match x {
             ReductionType::Simple => (FeaturesType::SparseSimple, LabelType::Simple),
             ReductionType::CB => (FeaturesType::SparseCBAdf, LabelType::CB),
+        }
+    }
+}
+
+impl TryFrom<(reductionml_core::FeaturesType, reductionml_core::LabelType)> for ReductionType {
+    type Error = pyo3::PyErr;
+
+    fn try_from(
+        value: (reductionml_core::FeaturesType, reductionml_core::LabelType),
+    ) -> Result<Self, Self::Error> {
+        match value {
+            (FeaturesType::SparseSimple, LabelType::Simple) => Ok(ReductionType::Simple),
+            (FeaturesType::SparseCBAdf, LabelType::CB) => Ok(ReductionType::CB),
+            _ => Err(pyo3::exceptions::PyValueError::new_err(
+                "Invalid reduction type",
+            )),
         }
     }
 }
@@ -81,48 +118,73 @@ impl FormatType {
     }
 }
 
+#[pyfunction]
+pub(crate) fn create_parser(
+    format_type: FormatType,
+    reduction_type: ReductionType,
+    hash_seed: u32,
+    num_bits: u8,
+) -> Result<WrappedParser, PyErr> {
+    let (features_type, label_type) = reduction_type.into();
+    let parser = format_type.get_parser(features_type, label_type, hash_seed, num_bits);
+    match format_type {
+        FormatType::VwText => Ok(WrappedParser::WrappedParserTextOnly(WrappedParserTextOnly(
+            parser.into(),
+        ))),
+        FormatType::Json => Ok(WrappedParser::WrappedParserTextAndJson(
+            WrappedParserTextAndJson(parser.into()),
+        )),
+        FormatType::DsJson => Ok(WrappedParser::WrappedParserTextAndJson(
+            WrappedParserTextAndJson(parser.into()),
+        )),
+    }
+}
+
 #[pymethods]
-impl WrappedParser {
+impl WrappedParserTextOnly {
     fn parse(
         &self,
-        chunk: &str,
+        input: &str,
     ) -> Result<(WrappedFeaturesForReturn, Option<WrappedLabel>), PyErr> {
         let (feats, label) = self
             .0
-            .parse_chunk(chunk)
+            .parse_chunk(input)
             .map_err(|x| WrappedError::from(x))?;
         let feats: WrappedFeaturesForReturn =
             feats.try_into().map_err(|x| WrappedError::from(x))?;
         let label: Option<WrappedLabel> = label.map(|x| x.into());
         Ok((feats, label))
     }
+}
 
-    #[staticmethod]
-    fn create_parser(
-        format_type: FormatType,
-        reduction_type: ReductionType,
-        hash_seed: u32,
-        num_bits: u8,
-    ) -> Result<WrappedParser, PyErr> {
-        let (features_type, label_type) = reduction_type.into();
-        let parser = format_type.get_parser(features_type, label_type, hash_seed, num_bits);
-        Ok(WrappedParser(parser.into()))
-    }
+#[derive(FromPyObject)]
+pub(crate) enum JsonInputKinds<'a> {
+    StringInput(&'a str),
+    DictInput(&'a PyDict),
+}
 
-    #[staticmethod]
-    fn create_parser_with_workspace(
-        format_type: FormatType,
-        workspace: &crate::workspace::WrappedWorkspace,
-    ) -> Result<WrappedParser, PyErr> {
-        let features_type = workspace
+#[pymethods]
+impl WrappedParserTextAndJson {
+    fn parse(
+        &self,
+        input: JsonInputKinds,
+    ) -> Result<(WrappedFeaturesForReturn, Option<WrappedLabel>), PyErr> {
+        let input: Cow<str> = match input {
+            JsonInputKinds::StringInput(x) => x.into(),
+            JsonInputKinds::DictInput(x) => {
+                // TODO: avoid the trip to string here.
+                let input: serde_json::Value = depythonize(x).unwrap();
+                serde_json::to_string(&input).unwrap().into()
+            }
+        };
+
+        let (feats, label) = self
             .0
-            .get_entry_reduction()
-            .types()
-            .input_features_type();
-        let label_type = workspace.0.get_entry_reduction().types().input_label_type();
-        let hash_seed = workspace.0.global_config().hash_seed();
-        let num_bits = workspace.0.global_config().num_bits();
-        let parser = format_type.get_parser(features_type, label_type, hash_seed, num_bits);
-        Ok(WrappedParser(parser.into()))
+            .parse_chunk(&input)
+            .map_err(|x| WrappedError::from(x))?;
+        let feats: WrappedFeaturesForReturn =
+            feats.try_into().map_err(|x| WrappedError::from(x))?;
+        let label: Option<WrappedLabel> = label.map(|x| x.into());
+        Ok((feats, label))
     }
 }
