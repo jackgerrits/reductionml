@@ -62,3 +62,6 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "reductionml-python/docs/source/",
 }
+
+nb_execution_raise_on_error = True
+nb_execution_timeout = 60
