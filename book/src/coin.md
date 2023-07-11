@@ -11,6 +11,6 @@ Coin is a regressor, which is based on [this paper](https://arxiv.org/abs/1602.0
 
 ## Types
 
-- This format expects a [`SimpleLabel`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/types/struct.SimpleLabel.html)
-- This format expects [`SparseFeatures`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/sparse_namespaced_features/struct.SparseFeatures.html)
-- This format produces a [`ScalarPrediction`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/types/struct.ScalarPrediction.html)
+- This format expects a [`SimpleLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.SimpleLabel.html)
+- This format expects [`SparseFeatures`](https://docs.rs/reductionml-core/latest/reductionml_core/sparse_namespaced_features/struct.SparseFeatures.html)
+- This format produces a [`ScalarPrediction`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.ScalarPrediction.html)

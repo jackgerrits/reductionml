@@ -22,7 +22,7 @@ copyright = '2023, Jack Gerrits'
 author = 'Jack Gerrits'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,6 +34,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "myst_nb"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
