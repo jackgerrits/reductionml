@@ -52,7 +52,7 @@ Currently there are two variants which share common structures.
 
 Simple input is for regression scenarios.
 
-This format produces a [`SimpleLabel`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/types/struct.SimpleLabel.html) and [`SparseFeatures`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/sparse_namespaced_features/struct.SparseFeatures.html).
+This format produces a [`SimpleLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.SimpleLabel.html) and [`SparseFeatures`](https://docs.rs/reductionml-core/latest/reductionml_core/sparse_namespaced_features/struct.SparseFeatures.html).
 
 
 ```json
@@ -72,7 +72,7 @@ This format produces a [`SimpleLabel`](https://docs.rs/reductionml-core/0.0.1/re
 
 CB input is for contextual bandit scenarios.
 
-This format produces a [`CBLabel`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/types/struct.CBLabel.html) and [`CBAdfFeatures`](https://docs.rs/reductionml-core/0.0.1/reductionml_core/types/struct.CBAdfFeatures.html).
+This format produces a [`CBLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBLabel.html) and [`CBAdfFeatures`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBAdfFeatures.html).
 
 ```json
 {
