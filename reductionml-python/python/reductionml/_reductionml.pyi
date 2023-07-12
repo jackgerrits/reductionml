@@ -21,6 +21,7 @@ class CbLabel:
 
 @final
 class ScalarPred:
+    def __init__(self, prediction: float, raw_prediction: float) -> None: ...
     @property
     def prediction(self) -> float: ...
     @property
@@ -28,11 +29,13 @@ class ScalarPred:
 
 @final
 class ActionScoresPred:
+    def __init__(self, value) -> None: ...
     @property
     def value(self) -> List[Tuple[int, float]]: ...
 
 @final
 class ActionProbsPred:
+    def __init__(self, value) -> None: ...
     @property
     def value(self) -> List[Tuple[int, float]]: ...
 

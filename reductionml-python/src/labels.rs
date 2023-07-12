@@ -28,6 +28,18 @@ impl WrappedSimpleLabel {
     fn get_weight(&self) -> f32 {
         self.0.weight()
     }
+
+    fn __str__(&self) -> String {
+        format!("{}, {}", self.0.value(), self.0.weight())
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "SimpleLabel(value={}, weight={})",
+            self.0.value(),
+            self.0.weight()
+        )
+    }
 }
 
 #[pyclass]
@@ -61,6 +73,24 @@ impl WrappedCBLabel {
     #[getter]
     fn get_probability(&self) -> f32 {
         self.0.probability()
+    }
+
+    fn __str__(&self) -> String {
+        format!(
+            "{}, {}, {}",
+            self.0.action(),
+            self.0.cost(),
+            self.0.probability()
+        )
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "CbLabel(action={}, cost={}, probability={})",
+            self.0.action(),
+            self.0.cost(),
+            self.0.probability()
+        )
     }
 }
 
