@@ -25,10 +25,7 @@ impl WrappedScalarPrediction {
     }
 
     fn __str__(&self) -> String {
-        format!(
-            "{}, {}",
-            self.0.prediction, self.0.raw_prediction
-        )
+        format!("{}, {}", self.0.prediction, self.0.raw_prediction)
     }
 
     fn __repr__(&self) -> String {
