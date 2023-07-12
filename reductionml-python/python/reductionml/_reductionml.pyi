@@ -110,6 +110,11 @@ class Workspace:
         self,
         format_type: Union[Literal[FormatType.DsJson], Literal[FormatType.Json]],
     ) -> JsonParser: ...
+    @overload
+    def create_parser(
+        self,
+        format_type: FormatType,
+    ) -> Union[TextParser, JsonParser]: ...
     def predict(
         self, features: Union[SparseFeatures, CbAdfFeatures]
     ) -> Union[ScalarPred, ActionScoresPred, ActionProbsPred]: ...
