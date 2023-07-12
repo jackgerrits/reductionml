@@ -20,6 +20,7 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 pub struct JsonReductionConfig {
     typename: PascalCaseString,
+    // TODO: ensure json schema reflects that this is option based on the below deserialize impl
     config: serde_json::Value,
 }
 
