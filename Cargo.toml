@@ -3,7 +3,13 @@
 members = [
     "reductionml-core",
     "reductionml-cli",
+    "reductionml-python",
     "mdbook-reduction-config",
+]
+
+default-members = [
+    "reductionml-core",
+    "reductionml-cli",
 ]
 
 [profile.release]

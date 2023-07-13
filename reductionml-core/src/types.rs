@@ -124,6 +124,28 @@ pub struct CBLabel {
     pub probability: f32,
 }
 
+impl CBLabel {
+    pub fn new(action: usize, cost: f32, probability: f32) -> Self {
+        CBLabel {
+            action,
+            cost,
+            probability,
+        }
+    }
+
+    pub fn action(&self) -> usize {
+        self.action
+    }
+
+    pub fn cost(&self) -> f32 {
+        self.cost
+    }
+
+    pub fn probability(&self) -> f32 {
+        self.probability
+    }
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Label {
     Simple(SimpleLabel),
@@ -141,7 +163,7 @@ pub enum LabelType {
     CB,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Default)]
 pub struct CBAdfFeatures {
     pub shared: Option<SparseFeatures>,
     pub actions: Vec<SparseFeatures>,

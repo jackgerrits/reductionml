@@ -213,32 +213,6 @@ impl ReductionImpl for CoinRegressor {
         scalar_pred.into()
     }
 
-    fn predict_then_learn(
-        &mut self,
-        features: &mut Features,
-        label: &Label,
-        _depth_info: &mut DepthInfo,
-        _model_offset: ModelIndex,
-    ) -> Prediction {
-        let sparse_feats: &SparseFeatures = features.as_inner().unwrap();
-        let simple_label: &SimpleLabel = label.as_inner().unwrap();
-
-        self.min_label = simple_label.value().min(self.min_label);
-        self.max_label = simple_label.value().max(self.max_label);
-        let prediction = self.coin_betting_predict(sparse_feats, simple_label.weight());
-        self.coin_betting_update_after_predict(
-            sparse_feats,
-            prediction,
-            simple_label.value(),
-            simple_label.weight(),
-        );
-        let scalar_pred = ScalarPrediction {
-            prediction: prediction.clamp(self.min_label, self.max_label),
-            raw_prediction: prediction,
-        };
-        scalar_pred.into()
-    }
-
     fn learn(
         &mut self,
         features: &mut Features,

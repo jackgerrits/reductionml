@@ -35,24 +35,26 @@ impl Command for GenCompletionsCommand {
                 generate(
                     Shell::from(shell),
                     &mut Cli::command(),
-                    "reductionml-cli",
+                    "reml",
                     &mut std::io::stdout(),
                 );
 
                 eprintln!();
                 match shell {
-                    ShellWrapper::Bash => eprintln!("{}: To install these completions, run: reductionml-cli gen-completions bash > /usr/share/bash-completion/completions/reductionml-cli", "Hint".blue()),
-                    ShellWrapper::Fish => eprintln!("{}: To install these completions, run: reductionml-cli gen-completions fish > ~/.config/fish/completions/reductionml-cli.fish", "Hint".blue()),
+                    ShellWrapper::Bash => eprintln!("{}: To install these completions, run: reml gen-completions bash > /usr/share/bash-completion/completions/reml", "Hint".blue()),
+                    ShellWrapper::Fish => eprintln!("{}: To install these completions, run: reml gen-completions fish > ~/.config/fish/completions/reml.fish", "Hint".blue()),
                 }
             }
             None => {
                 eprintln!("Generate shell completions. To install them for your shell, run:");
                 eprintln!();
                 eprintln!("{}", "Bash:".blue());
-                eprintln!("  reductionml-cli gen-completions bash > /usr/share/bash-completion/completions/reductionml-cli");
+                eprintln!(
+                    "  reml gen-completions bash > /usr/share/bash-completion/completions/reml"
+                );
                 eprintln!();
                 eprintln!("{}", "Fish:".blue());
-                eprintln!("  reductionml-cli gen-completions fish > ~/.config/fish/completions/reductionml-cli.fish");
+                eprintln!("  reml gen-completions fish > ~/.config/fish/completions/reml.fish");
                 eprintln!();
             }
         }
