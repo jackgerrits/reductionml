@@ -10,7 +10,7 @@ use approx::AbsDiffEq;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 pub struct NamespacesIterator<'a> {
-    namespaces: std::collections::hash_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
+    namespaces: std::collections::btree_map::Iter<'a, Namespace, SparseFeaturesNamespace>,
 }
 
 #[derive(Clone)]
@@ -38,12 +38,10 @@ impl<'a> Iterator for NamespacesIterator<'a> {
 impl<'a> Iterator for NamespaceIterator<'a> {
     type Item = (FeatureIndex, f32);
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(index) = self.indices.next() {
-            Some((*index, *self.values.next().expect(
-                "NamespaceIterator::indices and NamespaceIterator::values are not the same length",
-            )))
-        } else {
-            None
+        // TODO: debug assert for if the iterators are different lengths
+        match (self.indices.next(), self.values.next()) {
+            (Some(i), Some(v)) => Some((*i, *v)),
+            _ => None,
         }
     }
 
@@ -193,7 +191,7 @@ impl Namespace {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct SparseFeatures {
-    namespaces: std::collections::HashMap<Namespace, SparseFeaturesNamespace>,
+    namespaces: std::collections::BTreeMap<Namespace, SparseFeaturesNamespace>,
 }
 
 impl Default for SparseFeatures {
@@ -318,7 +316,7 @@ impl SparseFeatures {
 
     pub fn new() -> SparseFeatures {
         SparseFeatures {
-            namespaces: std::collections::HashMap::new(),
+            namespaces: std::collections::BTreeMap::new(),
         }
     }
 
