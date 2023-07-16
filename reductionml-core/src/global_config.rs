@@ -1,10 +1,11 @@
+use derive_builder::Builder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 
 use crate::interactions::Interaction;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde)]
+#[derive(Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde, Builder)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct GlobalConfig {
