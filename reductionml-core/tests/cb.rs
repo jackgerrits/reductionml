@@ -10,7 +10,7 @@ use reductionml_core::{
     reduction_factory::ReductionFactory,
     reductions::{
         CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory, CBExploreAdfSquareCBConfig,
-        CBExploreAdfSquareCBReductionFactory,
+        CBExploreAdfSquareCBReductionFactory, CBExploreAdfSoftmaxConfig, CBExploreAdfSoftmaxReductionFactory,
     },
     sparse_namespaced_features::{Namespace, SparseFeatures},
     utils::AsInner,
@@ -270,6 +270,13 @@ fn test_cb_stationary_deterministic_actions_single_context() {
                 1.into(),
             )
             .unwrap(),
+        CBExploreAdfSoftmaxReductionFactory::default()
+            .create(
+                &CBExploreAdfSoftmaxConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),            
     ];
 
     test_learning_e2e(
@@ -329,6 +336,13 @@ fn test_cb_stationary_deterministic_actions_with_personalization() {
         CBExploreAdfSquareCBReductionFactory::default()
             .create(
                 &CBExploreAdfSquareCBConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
+        CBExploreAdfSoftmaxReductionFactory::default()
+            .create(
+                &CBExploreAdfSoftmaxConfig::default(),
                 &global_config,
                 1.into(),
             )
@@ -404,6 +418,13 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
         CBExploreAdfSquareCBReductionFactory::default()
             .create(
                 &CBExploreAdfSquareCBConfig::default(),
+                &global_config,
+                1.into(),
+            )
+            .unwrap(),
+        CBExploreAdfSoftmaxReductionFactory::default()
+            .create(
+                &CBExploreAdfSoftmaxConfig::default(),
                 &global_config,
                 1.into(),
             )
