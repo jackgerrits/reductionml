@@ -1,16 +1,45 @@
-use pyo3::prelude::*;
+use pyo3::{prelude::*, impl_::pyclass::PyClassImpl, PyTypeInfo, types::PyType};
 
 use pythonize::{depythonize, pythonize};
 
 use pyo3::{pyclass, pymethods, types::PyDict, IntoPy, Python};
-use reductionml_core::{workspace::Configuration, Label};
+use reductionml_core::{workspace::Configuration, Label, reduction::ReductionTypeDescription, LabelType};
 
 use crate::{
     features::WrappedFeatures,
-    labels::WrappedLabel,
+    labels::{WrappedLabel, WrappedSimpleLabel, WrappedLabelType},
     parsers::{create_parser, FormatType, WrappedParser},
-    predictions::WrappedPrediction,
+    predictions::{WrappedPrediction, WrappedPredictionType},
 };
+
+
+
+#[pyclass]
+#[pyo3(name = "ReductionTypeDescription")]
+pub(crate) struct WrappedReductionTypeDescription(ReductionTypeDescription);
+
+#[pymethods]
+impl WrappedReductionTypeDescription {
+    #[getter]
+    pub(crate) fn input_label_type(&self) -> WrappedLabelType {
+        self.0.input_label_type().into()
+    }
+
+    #[getter]
+    pub(crate) fn output_label_type(&self) -> Option<WrappedLabelType> {
+        self.0.output_label_type().map(Into::into)
+    }
+
+    #[getter]
+    pub(crate) fn input_prediction_type(&self) -> Option<WrappedPredictionType> {
+        self.0.input_prediction_type().map(Into::into)
+    }
+
+    #[getter]
+    pub(crate) fn output_prediction_type(&self) -> WrappedPredictionType {
+        self.0.output_prediction_type().into()
+    }
+}
 
 #[pyclass]
 #[pyo3(name = "Workspace")]
@@ -92,5 +121,11 @@ impl WrappedWorkspace {
         let label: Label = label.into();
         self.0.learn(&mut feats, &label);
         Ok(())
+    }
+
+    pub(crate) fn entry_reduction_types(
+        &self,
+    ) -> PyResult<WrappedReductionTypeDescription> {
+        Ok(WrappedReductionTypeDescription(self.0.get_entry_reduction().types().clone()))
     }
 }
