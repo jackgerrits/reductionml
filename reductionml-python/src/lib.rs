@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use reductionml_core::object_pool::Pool;
+use reductionml_core::{object_pool::Pool, reduction::ReductionTypeDescription};
 
 use std::sync::Arc;
 
@@ -33,6 +33,7 @@ impl From<WrappedError> for PyErr {
 fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Workspace
     m.add_class::<workspace::WrappedWorkspace>()?;
+    m.add_class::<workspace::WrappedReductionTypesDescription>()?;
 
     // Features
     m.add_class::<features::WrappedSparseFeatures>()?;
@@ -41,11 +42,13 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Labels
     m.add_class::<labels::WrappedSimpleLabel>()?;
     m.add_class::<labels::WrappedCBLabel>()?;
+    m.add_class::<labels::WrappedLabelType>()?;
 
     // Predictions
     m.add_class::<predictions::WrappedScalarPrediction>()?;
     m.add_class::<predictions::WrappedActionProbsPrediction>()?;
     m.add_class::<predictions::WrappedActionScoresPrediction>()?;
+    m.add_class::<predictions::WrappedPredictionType>()?;
 
     // Parsers
     m.add_class::<parsers::FormatType>()?;
