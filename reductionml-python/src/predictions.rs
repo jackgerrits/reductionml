@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use reductionml_core::PredictionType;
 
 #[pyclass]
+#[pyo3(name = "PredictionType")]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum WrappedPredictionType {
     Scalar,

@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use reductionml_core::{Label, LabelType};
 
 #[pyclass]
+#[pyo3(name = "LabelType")]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum WrappedLabelType {
     Simple,

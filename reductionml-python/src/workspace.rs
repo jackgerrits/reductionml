@@ -15,11 +15,11 @@ use crate::{
 };
 
 #[pyclass]
-#[pyo3(name = "ReductionTypeDescription")]
-pub(crate) struct WrappedReductionTypeDescription(ReductionTypeDescription);
+#[pyo3(name = "ReductionTypesDescription")]
+pub(crate) struct WrappedReductionTypesDescription(ReductionTypeDescription);
 
 #[pymethods]
-impl WrappedReductionTypeDescription {
+impl WrappedReductionTypesDescription {
     #[getter]
     pub(crate) fn input_label_type(&self) -> WrappedLabelType {
         self.0.input_label_type().into()
@@ -123,8 +123,8 @@ impl WrappedWorkspace {
         Ok(())
     }
 
-    pub(crate) fn entry_reduction_types(&self) -> PyResult<WrappedReductionTypeDescription> {
-        Ok(WrappedReductionTypeDescription(
+    pub(crate) fn entry_reduction_types(&self) -> PyResult<WrappedReductionTypesDescription> {
+        Ok(WrappedReductionTypesDescription(
             self.0.get_entry_reduction().types().clone(),
         ))
     }

@@ -33,6 +33,7 @@ impl From<WrappedError> for PyErr {
 fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Workspace
     m.add_class::<workspace::WrappedWorkspace>()?;
+    m.add_class::<workspace::WrappedReductionTypesDescription>()?;
 
     // Features
     m.add_class::<features::WrappedSparseFeatures>()?;

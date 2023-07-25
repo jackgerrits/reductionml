@@ -20,28 +20,30 @@ ReductionType = _reductionml.ReductionType
 ScalarPred = _reductionml.ScalarPred
 SparseFeatures = _reductionml.SparseFeatures
 TextParser = _reductionml.TextParser
+ReductionTypesDescription = _reductionml.ReductionTypesDescription
 
 __all__ = [
-    "SimpleLabel",
     "ActionProbsPred",
     "ActionScoresPred",
     "CbAdfFeatures",
     "CbLabel",
+    "Config",
+    "EntryReductionConfig",
+    "Features",
     "FormatType",
+    "GlobalConfig",
+    "Interaction",
     "JsonParser",
+    "Label",
+    "NameInteraction",
+    "Prediction",
     "ReductionType",
+    "ReductionTypesDescription",
     "ScalarPred",
+    "SimpleLabel",
     "SparseFeatures",
     "TextParser",
     "Workspace",
-    "Config",
-    "GlobalConfig",
-    "EntryReductionConfig",
-    "Features",
-    "Label",
-    "Prediction",
-    "Interaction",
-    "NameInteraction",
 ]
 
 
