@@ -50,14 +50,14 @@ class CbAdfFeatures:
 # TODO: are integers correct here?
 @final
 class FormatType(Enum):
-    VwText = (1,)
+    VwText = 1
     Json = 2
     DsJson = 3
 
 # TODO: are integers correct here?
 @final
 class ReductionType(Enum):
-    CB = (1,)
+    CB = 1
     Simple = 2
 
 @overload
@@ -90,6 +90,32 @@ class JsonParser:
         Union[SparseFeatures, CbAdfFeatures], Optional[Union[SimpleLabel, CbLabel]]
     ]: ...
 
+# TODO: are integers correct here?
+@final
+class LabelType(Enum):
+    Simple = (1,)
+    Binary = (2,)
+    CB = (3,)
+
+# TODO: are integers correct here?
+@final
+class PredictionType(Enum):
+    Scalar = (1,)
+    Binary = (2,)
+    ActionScores = (3,)
+    ActionProbs = (4,)
+
+@final
+class ReductionTypesDescription:
+    @property
+    def input_label_type(self) -> LabelType: ...
+    @property
+    def output_label_type(self) -> Optional[LabelType]: ...
+    @property
+    def input_prediction_type(self) -> Optional[PredictionType]: ...
+    @property
+    def output_prediction_type(self) -> PredictionType: ...
+
 @final
 class Workspace:
     @staticmethod
@@ -100,6 +126,7 @@ class Workspace:
     def create_from_json_model(model_json: Dict[str, Any]) -> Workspace: ...
     def serialize(self) -> bytearray: ...
     def serialize_to_json(self) -> Dict[str, Any]: ...
+    def entry_reduction_types(self) -> ReductionTypesDescription: ...
     @overload
     def create_parser(
         self,

@@ -122,7 +122,7 @@ impl ReductionWrapper {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ReductionTypeDescription {
     input_label_type: LabelType,
     output_label_type: Option<LabelType>,

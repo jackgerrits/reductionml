@@ -1,4 +1,26 @@
 use pyo3::prelude::*;
+use reductionml_core::PredictionType;
+
+#[pyclass]
+#[pyo3(name = "PredictionType")]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum WrappedPredictionType {
+    Scalar,
+    Binary,
+    ActionScores,
+    ActionProbs,
+}
+
+impl From<PredictionType> for WrappedPredictionType {
+    fn from(x: PredictionType) -> Self {
+        match x {
+            PredictionType::Scalar => WrappedPredictionType::Scalar,
+            PredictionType::Binary => WrappedPredictionType::Binary,
+            PredictionType::ActionScores => WrappedPredictionType::ActionScores,
+            PredictionType::ActionProbs => WrappedPredictionType::ActionProbs,
+        }
+    }
+}
 
 #[pyclass]
 #[pyo3(name = "ScalarPred")]
