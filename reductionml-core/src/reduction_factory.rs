@@ -16,7 +16,7 @@ use crate::{
 
 // This intentionally does not derive JsonSchema
 // Use gen_json_reduction_config_schema instead with schema_with
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonReductionConfig {
     typename: PascalCaseString,
@@ -44,10 +44,7 @@ impl<'de> Deserialize<'de> for JsonReductionConfig {
         match config {
             Some(config) => Ok(JsonReductionConfig::new(typename, config.take())),
             None => {
-                let default_config = REDUCTION_REGISTRY
-                    .read()
-                    .as_ref()
-                    .unwrap()
+                let default_config = REDUCTION_REGISTRY.lock()
                     .get(&typename.0)
                     .ok_or_else(|| {
                         serde::de::Error::custom(format!("Unknown reduction type: {}", typename))
@@ -210,9 +207,7 @@ macro_rules! impl_default_factory_functions {
 
 pub fn parse_config(config: &JsonReductionConfig) -> Result<Box<dyn ReductionConfig>> {
     match REDUCTION_REGISTRY
-        .read()
-        .unwrap()
-        .get(config.typename.as_ref())
+        .lock().get(config.typename.as_ref())
     {
         Some(factory) => factory.parse_config(config.json_value()),
         None => Err(crate::error::Error::InvalidArgument(format!(
@@ -228,9 +223,7 @@ pub fn create_reduction(
     num_models_above: ModelIndex,
 ) -> Result<ReductionWrapper> {
     match REDUCTION_REGISTRY
-        .read()
-        .unwrap()
-        .get(config.typename().as_ref())
+        .lock().get(config.typename().as_ref())
     {
         Some(factory) => factory.create(config, global_config, num_models_above),
         None => Err(crate::error::Error::InvalidArgument(format!(
