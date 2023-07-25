@@ -1,7 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
-use std::sync::RwLock;
+use std::collections::BTreeMap;
 
 use once_cell::sync::Lazy;
+use parking_lot::{Mutex, ReentrantMutex};
 
 use crate::{
     reduction_factory::ReductionFactory,
@@ -11,15 +11,16 @@ use crate::{
     },
 };
 
-pub static REDUCTION_REGISTRY: Lazy<RwLock<ReductionRegistry>> = Lazy::new(|| {
-    let mut registry: ReductionRegistry = ReductionRegistry::default();
+// Reentrancy is required since the configuration generation often requires multiple reductions recursively to generate
+pub static REDUCTION_REGISTRY: Lazy<ReentrantMutex<ReductionRegistry>> = Lazy::new(|| {
+    let mut registry = ReductionRegistry::default();
     registry.register(Box::<CoinRegressorFactory>::default());
     registry.register(Box::<BinaryReductionFactory>::default());
     registry.register(Box::<CBAdfReductionFactory>::default());
     registry.register(Box::<CBExploreAdfGreedyReductionFactory>::default());
     registry.register(Box::<DebugReductionFactory>::default());
     registry.register(Box::<CBExploreAdfSquareCBReductionFactory>::default());
-    RwLock::new(registry)
+    registry.into()
 });
 
 #[derive(Default)]
@@ -27,8 +28,6 @@ pub struct ReductionRegistry {
     registry: BTreeMap<String, Box<dyn ReductionFactory>>,
 }
 
-// impl Send for ReductionRegistry {}
-unsafe impl Sync for ReductionRegistry {}
 unsafe impl Send for ReductionRegistry {}
 
 impl ReductionRegistry {
