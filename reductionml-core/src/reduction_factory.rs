@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for JsonReductionConfig {
             .to_string()
             .try_into()
             .map_err(|x| serde::de::Error::custom(x))?;
-        let config = json.get_mut("value");
+        let config = json.get_mut("config");
 
         match config {
             Some(config) => Ok(JsonReductionConfig::new(typename, config.take())),
