@@ -13,14 +13,9 @@ pub(crate) struct GenSchemaCommand;
 
 fn build_json_schema() -> Result<String> {
     let mut schema = ConfigSchema::new();
-    REDUCTION_REGISTRY
-        .read()
-        .as_ref()
-        .unwrap()
-        .iter()
-        .for_each(|x| {
-            schema.add_reduction(x);
-        });
+    REDUCTION_REGISTRY.lock().iter().for_each(|x| {
+        schema.add_reduction(x);
+    });
     Ok(serde_json::to_string_pretty(schema.schema()).unwrap())
 }
 
