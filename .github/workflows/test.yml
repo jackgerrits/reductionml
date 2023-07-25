@@ -15,3 +15,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # Includes integration tests which are ignored by default
       - run: cargo test -- --include-ignored
+      # Make sure benchmarks build
+      - run: cargo bench --no-run
