@@ -15,10 +15,14 @@ py-develop:
 py-install:
   maturin build --manifest-path ./reductionml-python/Cargo.toml && pip install --find-links ./target/wheels --force-reinstall reductionml
 
+py-install-docs-extension:
+  maturin build --manifest-path ./utils/reductionml-docs-extension/Cargo.toml && pip install --find-links ./target/wheels --force-reinstall reductionml-docs-extension
+
+
 py-test:
   PYTHONPATH=$(pwd)/reductionml-python/python python -m pytest ./reductionml-python/tests
 
-py-docs: py-install
+py-docs: py-install py-install-docs-extension
   make -C reductionml-python/docs/ html && python -m http.server --directory reductionml-python/docs/build/html/
 
 update-schema:

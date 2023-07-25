@@ -1,0 +1,11 @@
+name: readthedocs
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip:
+    - furo
+    - myst-nb
+    - scikit-learn
+    - matplotlib
+    - sphinx-copybutton

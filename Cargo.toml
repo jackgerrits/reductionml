@@ -5,6 +5,7 @@ members = [
     "reductionml-cli",
     "reductionml-python",
     "mdbook-reduction-config",
+    "utils/reductionml-docs-extension"
 ]
 
 default-members = [
