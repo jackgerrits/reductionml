@@ -1,6 +1,10 @@
-use crate::loss_function::{LossFunction, LossFunctionType};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-pub(crate) struct SquaredLoss {}
+use crate::loss_function::LossFunctionImpl;
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, Default)]
+pub struct SquaredLoss {}
 
 impl SquaredLoss {
     pub(crate) fn new() -> SquaredLoss {
@@ -8,11 +12,7 @@ impl SquaredLoss {
     }
 }
 
-impl LossFunction for SquaredLoss {
-    fn get_type(&self) -> LossFunctionType {
-        LossFunctionType::Squared
-    }
-
+impl LossFunctionImpl for SquaredLoss {
     fn get_loss(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32 {
         if prediction <= min_label && prediction >= max_label {
             (prediction - label) * (prediction - label)

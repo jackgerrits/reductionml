@@ -41,7 +41,10 @@ fn get_default_value(prop: &serde_json::Value) -> String {
         serde_json::Value::String(value) => value.to_string(),
         serde_json::Value::Array(_) => todo!(),
         // For now we will assume this always corresponds to a reduction
-        serde_json::Value::Object(obj) => obj.get("typename").unwrap().as_str().unwrap().to_owned(),
+        serde_json::Value::Object(obj) => match obj.get("typename") {
+            Some(name) => name.as_str().unwrap().to_owned(),
+            None => serde_json::to_string(prop).unwrap(),
+        },
         serde_json::Value::Null => "null".to_string(),
     }
 }
