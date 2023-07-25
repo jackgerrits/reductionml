@@ -2,7 +2,8 @@ use std::{io::BufRead, sync::Arc};
 
 use crate::{
     error::Result, object_pool::Pool, parsers::ParsedFeature,
-    sparse_namespaced_features::SparseFeatures, Features, FeaturesType, Label, LabelType,
+    sparse_namespaced_features::SparseFeatures, workspace::Workspace, Features, FeaturesType,
+    Label, LabelType,
 };
 
 pub trait TextModeParserFactory {
@@ -15,6 +16,19 @@ pub trait TextModeParserFactory {
         num_bits: u8,
         pool: Arc<Pool<SparseFeatures>>,
     ) -> Self::Parser;
+
+    fn create_with_workspace(&self, workspace: &Workspace) -> Self::Parser {
+        self.create(
+            workspace
+                .get_entry_reduction()
+                .types()
+                .input_features_type(),
+            workspace.get_entry_reduction().types().input_label_type(),
+            workspace.global_config().hash_seed(),
+            workspace.global_config().num_bits(),
+            workspace.features_pool().clone()
+        )
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
