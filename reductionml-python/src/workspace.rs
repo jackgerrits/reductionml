@@ -1,18 +1,18 @@
-use pyo3::{prelude::*, impl_::pyclass::PyClassImpl, PyTypeInfo, types::PyType};
+use pyo3::{impl_::pyclass::PyClassImpl, prelude::*, types::PyType, PyTypeInfo};
 
 use pythonize::{depythonize, pythonize};
 
 use pyo3::{pyclass, pymethods, types::PyDict, IntoPy, Python};
-use reductionml_core::{workspace::Configuration, Label, reduction::ReductionTypeDescription, LabelType};
+use reductionml_core::{
+    reduction::ReductionTypeDescription, workspace::Configuration, Label, LabelType,
+};
 
 use crate::{
     features::WrappedFeatures,
-    labels::{WrappedLabel, WrappedSimpleLabel, WrappedLabelType},
+    labels::{WrappedLabel, WrappedLabelType, WrappedSimpleLabel},
     parsers::{create_parser, FormatType, WrappedParser},
     predictions::{WrappedPrediction, WrappedPredictionType},
 };
-
-
 
 #[pyclass]
 #[pyo3(name = "ReductionTypeDescription")]
@@ -123,9 +123,9 @@ impl WrappedWorkspace {
         Ok(())
     }
 
-    pub(crate) fn entry_reduction_types(
-        &self,
-    ) -> PyResult<WrappedReductionTypeDescription> {
-        Ok(WrappedReductionTypeDescription(self.0.get_entry_reduction().types().clone()))
+    pub(crate) fn entry_reduction_types(&self) -> PyResult<WrappedReductionTypeDescription> {
+        Ok(WrappedReductionTypeDescription(
+            self.0.get_entry_reduction().types().clone(),
+        ))
     }
 }
