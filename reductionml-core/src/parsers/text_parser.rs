@@ -26,7 +26,7 @@ pub trait TextModeParserFactory {
             workspace.get_entry_reduction().types().input_label_type(),
             workspace.global_config().hash_seed(),
             workspace.global_config().num_bits(),
-            workspace.features_pool().clone()
+            workspace.features_pool().clone(),
         )
     }
 }
