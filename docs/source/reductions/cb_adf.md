@@ -4,7 +4,8 @@
 
 ## Configuration
 
-`reduction-config-json=CbAdf`
+```{reduction_config} CbAdf
+```
 
 ## Types
 

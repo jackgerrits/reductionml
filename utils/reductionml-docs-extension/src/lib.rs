@@ -9,7 +9,7 @@ fn get_type(prop: &serde_json::Value) -> String {
         serde_json::Value::Number(_) => "number".to_string(),
         serde_json::Value::String(_) => "string".to_string(),
         serde_json::Value::Array(_) => "array".to_string(),
-        serde_json::Value::Object(_) => "reduction".to_string(),
+        serde_json::Value::Object(_) => "object".to_string(),
         serde_json::Value::Null => "null".to_string(),
     }
 }
@@ -24,10 +24,7 @@ fn get_default_value(prop: &serde_json::Value) -> serde_json::Value {
         serde_json::Value::String(value) => value.to_string().into(),
         serde_json::Value::Array(_) => todo!(),
         // For now we will assume this always corresponds to a reduction
-        serde_json::Value::Object(obj) => match obj.get("typename") {
-            Some(name) => name.as_str().unwrap().to_owned().into(),
-            None => prop.clone(),
-        },
+        serde_json::Value::Object(obj) => prop.clone(),
         serde_json::Value::Null => "null".to_string().into(),
     }
 }
@@ -46,7 +43,9 @@ fn get_reduction_info(name: &str) -> PyResult<PyObject> {
     }
 
     Python::with_gil(|py| {
-        let data = pythonize(py, &props).unwrap();
+        let data = pythonize(py, &json!({
+            "properties": props
+        })).unwrap();
         Ok(data.into_py(py))
     })
 }

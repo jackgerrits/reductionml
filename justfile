@@ -23,7 +23,7 @@ py-test:
   PYTHONPATH=$(pwd)/reductionml-python/python python -m pytest ./reductionml-python/tests
 
 py-docs: py-install py-install-docs-extension
-  make -C reductionml-python/docs/ html && python -m http.server --directory reductionml-python/docs/build/html/
+  make -C docs/ html && python -m http.server --directory docs/build/html/
 
 update-schema:
   cargo run --bin reml -- gen-schema > ./schemas/config/latest/schema.json

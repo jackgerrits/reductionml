@@ -14,7 +14,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os
+import sys
 from reductionml import __version__
+from pathlib import Path
+
 
 # -- Project information -----------------------------------------------------
 
@@ -28,15 +32,16 @@ release = __version__
 
 # -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
+sys.path.append(str((Path(__file__).parent / "_ext").resolve()))
+
+print(sys.path)
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "myst_nb",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
+    "reduction_info"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
