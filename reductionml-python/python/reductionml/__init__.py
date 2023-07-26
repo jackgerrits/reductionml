@@ -45,7 +45,7 @@ __all__ = [
     "SparseFeatures",
     "TextParser",
     "Workspace",
-    "__version__"
+    "__version__",
 ]
 
 
