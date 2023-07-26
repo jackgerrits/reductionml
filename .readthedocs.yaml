@@ -4,7 +4,7 @@ version: 2
 
 sphinx:
   builder: html
-  configuration: reductionml-python/docs/source/conf.py
+  configuration: docs/source/conf.py
   fail_on_warning: true
 
 build:
@@ -17,6 +17,8 @@ python:
   install:
     - method: pip
       path: reductionml-python/
+    - method: pip
+      path: utils/reductionml-docs-extension/
 
 conda:
-  environment: reductionml-python/docs/environment.yml
+  environment: docs/environment.yml

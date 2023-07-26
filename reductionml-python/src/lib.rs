@@ -29,6 +29,12 @@ impl From<WrappedError> for PyErr {
     }
 }
 
+// expose version
+#[pyfunction]
+fn version() -> PyResult<String> {
+    Ok(env!("CARGO_PKG_VERSION").to_string())
+}
+
 #[pymodule]
 fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Workspace
@@ -56,6 +62,8 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<parsers::WrappedParserTextOnly>()?;
     m.add_class::<parsers::WrappedParserTextAndJson>()?;
     m.add_function(wrap_pyfunction!(parsers::create_parser, m)?)?;
+
+    m.add_function(wrap_pyfunction!(version, m)?)?;
 
     Ok(())
 }

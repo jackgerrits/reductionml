@@ -8,3 +8,4 @@ dependencies:
     - myst-nb
     - scikit-learn
     - matplotlib
+    - sphinx-copybutton

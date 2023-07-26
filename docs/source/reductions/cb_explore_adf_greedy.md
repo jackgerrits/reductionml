@@ -4,8 +4,8 @@
 
 ## Configuration
 
-`reduction-config-json=CbExploreAdfGreedy`
-
+```{reduction_config} CbExploreAdfGreedy
+```
 ## Types
 
 - This format expects a [`CBLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBLabel.html)

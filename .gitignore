@@ -28,6 +28,8 @@ venv/
 *.egg-info/
 .installed.cfg
 *.egg
+jupyter_execute/
+.jupyter_cache/
 
 # Installer logs
 pip-log.txt

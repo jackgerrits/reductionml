@@ -21,6 +21,7 @@ ScalarPred = _reductionml.ScalarPred
 SparseFeatures = _reductionml.SparseFeatures
 TextParser = _reductionml.TextParser
 ReductionTypesDescription = _reductionml.ReductionTypesDescription
+__version__ = _reductionml.version()
 
 __all__ = [
     "ActionProbsPred",
@@ -44,6 +45,7 @@ __all__ = [
     "SparseFeatures",
     "TextParser",
     "Workspace",
+    "__version__",
 ]
 
 
