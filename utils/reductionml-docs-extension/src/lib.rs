@@ -31,7 +31,11 @@ fn get_default_value(prop: &serde_json::Value) -> serde_json::Value {
 
 #[pyfunction]
 fn get_reduction_info(name: &str) -> PyResult<PyObject> {
-    let mut default_config = REDUCTION_REGISTRY.lock().get(name).unwrap().get_config_default();
+    let mut default_config = REDUCTION_REGISTRY
+        .lock()
+        .get(name)
+        .unwrap()
+        .get_config_default();
 
     let mut props = vec![];
     for (key, prop) in default_config.as_object().unwrap() {
@@ -43,9 +47,7 @@ fn get_reduction_info(name: &str) -> PyResult<PyObject> {
     }
 
     Python::with_gil(|py| {
-        let data = pythonize(py, &json!({
-            "properties": props
-        })).unwrap();
+        let data = pythonize(py, &json!({ "properties": props })).unwrap();
         Ok(data.into_py(py))
     })
 }
