@@ -1,5 +1,9 @@
+.card-header {
+  font-size: 1.25rem;
+  text-align: center;
+  font-weight: bold;
+}
+
 .card-emoji {
-    font-size: 1.25rem;
-    text-align: center;
-    font-weight: bold;
-  }
+  font-size: 1.75rem;
+}
