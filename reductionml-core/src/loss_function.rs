@@ -1,8 +1,10 @@
+mod logistic_loss;
 mod squared_loss;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub use self::logistic_loss::*;
 pub use self::squared_loss::*;
 
 pub trait LossFunctionImpl: Send {
@@ -24,6 +26,7 @@ pub trait LossFunctionImpl: Send {
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema)]
 pub enum LossFunction {
     Squared(SquaredLoss),
+    Logistic(LogisticLoss),
 }
 
 impl From<SquaredLoss> for LossFunction {
@@ -38,6 +41,24 @@ impl TryFrom<LossFunction> for SquaredLoss {
     fn try_from(loss: LossFunction) -> Result<Self, Self::Error> {
         match loss {
             LossFunction::Squared(loss) => Ok(loss),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<LogisticLoss> for LossFunction {
+    fn from(loss: LogisticLoss) -> Self {
+        LossFunction::Logistic(loss)
+    }
+}
+
+impl TryFrom<LossFunction> for LogisticLoss {
+    type Error = ();
+
+    fn try_from(loss: LossFunction) -> Result<Self, Self::Error> {
+        match loss {
+            LossFunction::Logistic(loss) => Ok(loss),
+            _ => Err(()),
         }
     }
 }
@@ -46,6 +67,7 @@ impl LossFunctionImpl for LossFunction {
     fn get_loss(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32 {
         match self {
             LossFunction::Squared(loss) => loss.get_loss(min_label, max_label, prediction, label),
+            LossFunction::Logistic(loss) => loss.get_loss(min_label, max_label, prediction, label),
         }
     }
 
@@ -60,24 +82,32 @@ impl LossFunctionImpl for LossFunction {
             LossFunction::Squared(loss) => {
                 loss.get_update(prediction, label, update_scale, pred_per_update)
             }
+            LossFunction::Logistic(loss) => {
+                loss.get_update(prediction, label, update_scale, pred_per_update)
+            }
         }
     }
 
     fn get_unsafe_update(&self, prediction: f32, label: f32, update_scale: f32) -> f32 {
         match self {
             LossFunction::Squared(loss) => loss.get_unsafe_update(prediction, label, update_scale),
+            LossFunction::Logistic(loss) => loss.get_unsafe_update(prediction, label, update_scale),
         }
     }
 
     fn get_square_grad(&self, prediction: f32, label: f32) -> f32 {
         match self {
             LossFunction::Squared(loss) => loss.get_square_grad(prediction, label),
+            LossFunction::Logistic(loss) => loss.get_square_grad(prediction, label),
         }
     }
 
     fn first_derivative(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32 {
         match self {
             LossFunction::Squared(loss) => {
+                loss.first_derivative(min_label, max_label, prediction, label)
+            }
+            LossFunction::Logistic(loss) => {
                 loss.first_derivative(min_label, max_label, prediction, label)
             }
         }
@@ -92,6 +122,9 @@ impl LossFunctionImpl for LossFunction {
     ) -> f32 {
         match self {
             LossFunction::Squared(loss) => {
+                loss.second_derivative(min_label, max_label, prediction, label)
+            }
+            LossFunction::Logistic(loss) => {
                 loss.second_derivative(min_label, max_label, prediction, label)
             }
         }

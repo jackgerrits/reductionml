@@ -5,7 +5,7 @@ use serde_default::DefaultFromSerde;
 
 use crate::interactions::Interaction;
 
-#[derive(Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde, Builder)]
+#[derive(Clone, Serialize, Deserialize, Debug, JsonSchema, DefaultFromSerde, Builder)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct GlobalConfig {
@@ -59,5 +59,9 @@ impl GlobalConfig {
 
     pub fn interactions(&self) -> &[Interaction] {
         &self.interactions
+    }
+
+    pub fn set_interactions(&mut self, interactions: &[Interaction]) {
+        self.interactions = interactions.to_vec();
     }
 }
