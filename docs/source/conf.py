@@ -34,7 +34,6 @@ release = __version__
 
 sys.path.append(str((Path(__file__).parent / "_ext").resolve()))
 
-print(sys.path)
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
