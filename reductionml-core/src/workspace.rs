@@ -249,4 +249,36 @@ mod tests {
         let scalar_pred: &ScalarPrediction = pred.as_inner().unwrap();
         assert_relative_eq!(scalar_pred.prediction, 0.5);
     }
+
+    #[test]
+    fn test_create_coin_ws_with_default_config() {
+        let config = json!(
+            {
+                "globalConfig": {
+                    "numBits": 4
+                },
+                "entryReduction": {
+                    "typename": "Coin",
+                    "config": {
+                        "alpha": 10
+                    }
+                }
+            }
+        );
+
+        let workspace = Workspace::new(config.try_into().unwrap()).unwrap();
+        assert_eq!(workspace.get_entry_reduction().typename(), "Coin");
+
+        let config = json!(
+            {
+                "globalConfig": {},
+                "entryReduction": {
+                    "typename": "Coin"
+                }
+            }
+        );
+
+        let workspace = Workspace::new(config.try_into().unwrap()).unwrap();
+        assert_eq!(workspace.get_entry_reduction().typename(), "Coin");
+    }
 }

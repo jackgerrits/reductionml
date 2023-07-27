@@ -16,50 +16,20 @@ use crate::{
 
 // This intentionally does not derive JsonSchema
 // Use gen_json_reduction_config_schema instead with schema_with
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonReductionConfig {
     typename: PascalCaseString,
     // TODO: ensure json schema reflects that this is option based on the below deserialize impl
-    config: serde_json::Value,
-}
-
-impl<'de> Deserialize<'de> for JsonReductionConfig {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let mut json: serde_json::value::Value =
-            serde_json::value::Value::deserialize(deserializer)?;
-        let typename = json
-            .get("typename")
-            .expect("type")
-            .as_str()
-            .unwrap()
-            .to_string()
-            .try_into()
-            .map_err(serde::de::Error::custom)?;
-        let config = json.get_mut("config");
-
-        match config {
-            Some(config) => Ok(JsonReductionConfig::new(typename, config.take())),
-            None => {
-                let default_config = REDUCTION_REGISTRY
-                    .lock()
-                    .get(&typename.0)
-                    .ok_or_else(|| {
-                        serde::de::Error::custom(format!("Unknown reduction type: {}", typename))
-                    })?
-                    .get_config_default();
-                Ok(JsonReductionConfig::new(typename, default_config))
-            }
-        }
-    }
+    config: Option<serde_json::Value>,
 }
 
 impl JsonReductionConfig {
     pub fn new(typename: PascalCaseString, config: serde_json::Value) -> Self {
-        JsonReductionConfig { typename, config }
+        JsonReductionConfig {
+            typename,
+            config: Some(config),
+        }
     }
 }
 
@@ -91,7 +61,7 @@ impl JsonReductionConfig {
     pub fn typename(&self) -> String {
         self.typename.as_ref().to_owned()
     }
-    pub fn json_value(&self) -> &serde_json::Value {
+    pub fn json_value(&self) -> &Option<serde_json::Value> {
         &self.config
     }
 }
@@ -208,7 +178,10 @@ macro_rules! impl_default_factory_functions {
 
 pub fn parse_config(config: &JsonReductionConfig) -> Result<Box<dyn ReductionConfig>> {
     match REDUCTION_REGISTRY.lock().get(config.typename.as_ref()) {
-        Some(factory) => factory.parse_config(config.json_value()),
+        Some(factory) => match config.json_value() {
+            Some(val) => factory.parse_config(val),
+            None => factory.parse_config(&factory.get_config_default()),
+        },
         None => Err(crate::error::Error::InvalidArgument(format!(
             "Unknown reduction type: {}",
             &config.typename
@@ -234,7 +207,9 @@ pub fn create_reduction(
 mod tests {
     use serde_json::json;
 
-    use crate::reduction_factory::JsonReductionConfig;
+    use crate::{reduction_factory::JsonReductionConfig, reduction_registry::REDUCTION_REGISTRY};
+
+    use super::parse_config;
 
     #[test]
     fn parse_json_config_with_no_config() {
@@ -247,9 +222,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn parse_json_config_with_no_config_does_not_exist() {
-        let _config: JsonReductionConfig = serde_json::from_value(json!( {
+        let config: JsonReductionConfig = serde_json::from_value(json!( {
             "typename": "DoesNotExist",
         }))
         .unwrap();
+        let _config = parse_config(&config).unwrap();
     }
 }
