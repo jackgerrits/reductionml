@@ -1,11 +1,7 @@
-use std::sync::Arc;
-
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 
 use reductionml_core::{
     self,
-    global_config::{GlobalConfig, GlobalConfigBuilder},
-    object_pool::{Pool, PoolReturnable},
     parsers::{TextModeParser, TextModeParserFactory},
     workspace::{Configuration, Workspace},
 };
@@ -21,7 +17,7 @@ pub fn learn_coin_no_interactions_rcv1(c: &mut Criterion) {
     let cfg: Configuration = config.try_into().unwrap();
     let mut workspace = Workspace::new(cfg).unwrap();
 
-    let pool = workspace.features_pool();
+    let _pool = workspace.features_pool();
     let text_parser =
         reductionml_core::parsers::VwTextParserFactory::default().create_with_workspace(&workspace);
 
@@ -55,7 +51,6 @@ pub fn learn_coin_interactions_rcv1(c: &mut Criterion) {
     let cfg: Configuration = config.try_into().unwrap();
     let mut workspace = Workspace::new(cfg).unwrap();
 
-    let pool = workspace.features_pool();
     let text_parser =
         reductionml_core::parsers::VwTextParserFactory::default().create_with_workspace(&workspace);
 

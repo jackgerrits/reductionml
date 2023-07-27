@@ -134,7 +134,7 @@ fn enforce_min_prob(
     consider_zero_valued_elements: bool,
     elements: &mut [(usize, f32)],
 ) -> Result<()> {
-    if elements.len() == 0 {
+    if elements.is_empty() {
         return Err(crate::error::Error::InvalidArgument(
             "elements.len() == 0".to_string(),
         ));
@@ -144,7 +144,7 @@ fn enforce_min_prob(
         return Ok(());
     }
 
-    if uniform_epsilon < 0.0 || uniform_epsilon > 1.0 {
+    if !(0.0..=1.0).contains(&uniform_epsilon) {
         return Err(crate::error::Error::InvalidArgument(format!(
             "uniform_epsilon must be in [0, 1], but is {}",
             uniform_epsilon
@@ -173,12 +173,11 @@ fn enforce_min_prob(
     // Descending order. Args flipped
     elements_copy.sort_by(|(_, p1), (_, p2)| p2.partial_cmp(p1).unwrap());
 
-    let mut idx = 0;
     let mut running_sum = 0.0;
     let mut rho_idx = 0;
     let mut rho_sum = elements_copy[0].1;
 
-    for (_, prob) in elements_copy {
+    for (idx, (_, prob)) in elements_copy.into_iter().enumerate() {
         if !consider_zero_valued_elements && prob == 0.0 {
             break;
         }
@@ -191,8 +190,6 @@ fn enforce_min_prob(
             rho_idx = idx;
             rho_sum = running_sum;
         }
-
-        idx += 1;
     }
 
     let tau = ((support_size as f32 - rho_idx as f32 - 1.0) * minimum_probability + rho_sum - 1.0)
@@ -255,7 +252,7 @@ impl ReductionImpl for CBExploreAdfSquareCBReduction {
         _model_offset: ModelIndex,
     ) {
         let cb_label: &CBLabel = label.as_inner().unwrap();
-        let mut cb_label_clone: CBLabel = cb_label.clone();
+        let mut cb_label_clone: CBLabel = *cb_label;
         cb_label_clone.probability = 1.0;
         let new_label = Label::CB(cb_label_clone);
         self.cb_adf
@@ -333,7 +330,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_enforce_minimum_probability_bad_range() {
-        enforce_min_prob(1.0, false, &mut vec![]).unwrap();
+        enforce_min_prob(1.0, false, &mut []).unwrap();
     }
     #[test]
     fn test_enforce_minimum_probability_uniform1() {

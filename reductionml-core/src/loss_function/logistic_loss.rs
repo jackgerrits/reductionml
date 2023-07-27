@@ -21,7 +21,7 @@ fn default_max() -> f32 {
 }
 fn get_loss_sub(prediction: f32, label: f32) -> f32 {
     debug_assert!(label == -1. || label == 1.);
-    return (1. + (-label * prediction).exp()).ln();
+    (1. + (-label * prediction).exp()).ln()
 }
 
 // Based on implementation in VowpalWabbit
@@ -62,17 +62,16 @@ fn get_update_sub(prediction: f32, label: f32, update_scale: f32, pred_per_updat
 
 fn get_unsafe_update_sub(prediction: f32, label: f32, update_scale: f32) -> f32 {
     let d = (label * prediction).exp();
-    return label * update_scale / (1.0 + d);
+    label * update_scale / (1.0 + d)
 }
 
 fn first_derivative_sub(prediction: f32, label: f32) -> f32 {
-    let v = -label / (1.0 + (label * prediction).exp());
-    return v;
+    -label / (1.0 + (label * prediction).exp())
 }
 
 fn second_derivative_sub(prediction: f32, label: f32) -> f32 {
     let p = 1.0 / (1.0 + (label * prediction).exp());
-    return p * (1.0 - p);
+    p * (1.0 - p)
 }
 
 impl LogisticLoss {
@@ -88,8 +87,8 @@ impl LossFunctionImpl for LogisticLoss {
     fn get_loss(&self, _min_label: f32, _max_label: f32, prediction: f32, label: f32) -> f32 {
         debug_assert!(label >= self.min_label && label <= self.max_label);
         let std_label = (label - self.min_label) / (self.max_label - self.min_label);
-        return std_label * get_loss_sub(prediction, 1.0)
-            + (1.0 - std_label) * get_loss_sub(prediction, -1.0);
+        std_label * get_loss_sub(prediction, 1.0)
+            + (1.0 - std_label) * get_loss_sub(prediction, -1.0)
     }
 
     fn get_update(
@@ -100,19 +99,19 @@ impl LossFunctionImpl for LogisticLoss {
         pred_per_update: f32,
     ) -> f32 {
         let std_label = (label - self.min_label) / (self.max_label - self.min_label);
-        return std_label * get_update_sub(prediction, 1.0, update_scale, pred_per_update)
-            + (1.0 - std_label) * get_update_sub(prediction, -1.0, update_scale, pred_per_update);
+        std_label * get_update_sub(prediction, 1.0, update_scale, pred_per_update)
+            + (1.0 - std_label) * get_update_sub(prediction, -1.0, update_scale, pred_per_update)
     }
 
     fn get_unsafe_update(&self, prediction: f32, label: f32, update_scale: f32) -> f32 {
         let std_label = (label - self.min_label) / (self.max_label - self.min_label);
-        return std_label * get_unsafe_update_sub(prediction, 1.0, update_scale)
-            + (1.0 - std_label) * get_unsafe_update_sub(prediction, -1.0, update_scale);
+        std_label * get_unsafe_update_sub(prediction, 1.0, update_scale)
+            + (1.0 - std_label) * get_unsafe_update_sub(prediction, -1.0, update_scale)
     }
 
     fn get_square_grad(&self, prediction: f32, label: f32) -> f32 {
         let d = self.first_derivative(0.0, 0.0, prediction, label);
-        return d * d;
+        d * d
     }
 
     fn first_derivative(
@@ -123,8 +122,8 @@ impl LossFunctionImpl for LogisticLoss {
         label: f32,
     ) -> f32 {
         let std_label = (label - self.min_label) / (self.max_label - self.min_label);
-        return std_label * first_derivative_sub(prediction, 1.0)
-            + (1.0 - std_label) * first_derivative_sub(prediction, -1.0);
+        std_label * first_derivative_sub(prediction, 1.0)
+            + (1.0 - std_label) * first_derivative_sub(prediction, -1.0)
     }
 
     fn second_derivative(
@@ -135,7 +134,7 @@ impl LossFunctionImpl for LogisticLoss {
         label: f32,
     ) -> f32 {
         let std_label = (label - self.min_label) / (self.max_label - self.min_label);
-        return std_label * second_derivative_sub(prediction, 1.0)
-            + (1.0 - std_label) * second_derivative_sub(prediction, -1.0);
+        std_label * second_derivative_sub(prediction, 1.0)
+            + (1.0 - std_label) * second_derivative_sub(prediction, -1.0)
     }
 }

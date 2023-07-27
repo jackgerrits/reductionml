@@ -32,7 +32,7 @@ pub fn to_features(
                                 .map(|x| FeatureHash::from(x).mask(mask));
                             ns.add_features_with_iter(
                                 it,
-                                ar.into_iter().map(|x| {
+                                ar.iter().map(|x| {
                                     x.as_f64().expect("Arrays must contain the same type") as f32
                                 }),
                             );
@@ -64,10 +64,8 @@ pub fn to_features(
                                     );
                                 }
                                 Value::Str(value) => {
-                                    let feat = ParsedFeature::SimpleWithStringValue {
-                                        name: key,
-                                        value: value,
-                                    };
+                                    let feat =
+                                        ParsedFeature::SimpleWithStringValue { name: key, value };
                                     ns.add_feature(feat.hash(ns_hash).mask(mask), 1.0);
                                 }
                                 Value::Bool(value) => {
@@ -134,7 +132,7 @@ impl TextModeParser for JsonParser {
         Ok(Some(output_buffer))
     }
 
-    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
+    fn parse_chunk<'b>(&self, chunk: &str) -> Result<(Features<'b>, Option<Label>)> {
         let json: Value = serde_json::from_str(chunk).expect("JSON was not well-formatted");
         Ok(match (self._feature_type, self._label_type) {
             (FeaturesType::SparseSimple, LabelType::Simple) => {
@@ -150,11 +148,7 @@ impl TextModeParser for JsonParser {
 
                 let features = match json.get("features") {
                     Value::Null => panic!("No features found"),
-                    val => {
-                        let feats =
-                            to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits);
-                        feats
-                    }
+                    val => to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits),
                 };
 
                 (Features::SparseSimple(features), label.map(|l| l.into()))

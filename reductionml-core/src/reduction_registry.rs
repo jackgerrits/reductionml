@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use once_cell::sync::Lazy;
-use parking_lot::{Mutex, ReentrantMutex};
+use parking_lot::ReentrantMutex;
 
 use crate::{
     reduction_factory::ReductionFactory,

@@ -16,6 +16,7 @@ pub trait Weights {
 
 macro_rules! generate_foreach_feature_func {
     ($func_name: ident, $weight_type: ty, $inner_func_type: ty, $weight_at_func: ident) => {
+        #[allow(clippy::too_many_arguments)]
         pub fn $func_name<F, W>(
             model_offset: ModelIndex,
             features: &SparseFeatures,
