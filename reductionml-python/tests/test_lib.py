@@ -40,3 +40,12 @@ def test_package_json():
     w.learn(features, label)
     pred = w.predict(features)
     assert isinstance(pred, reml.ScalarPred)
+
+
+def test_package_json():
+    config = {"entryReduction": {"typename": "Coin"}, "globalConfig": {}}
+    ws = reml.Workspace.create_from_config(config)
+    assert ws.entry_reduction_types.input_label_type == reml.LabelType.Simple
+    assert ws.entry_reduction_types.output_prediction_type == reml.PredictionType.Scalar
+    assert ws.entry_reduction_types.output_label_type == None
+    assert ws.entry_reduction_types.input_prediction_type == None
