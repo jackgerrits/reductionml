@@ -14,9 +14,9 @@
     .. grid-item::
 
         .. card::
-            :class-header: card-emoji
+            :class-header: card-header
 
-            🐍 :raw-html:`<br />` Python package
+            :raw-html:`<span class="card-emoji">🐍</span><br />` Python package
             ^^^
 
             Install from `PyPi <https://pypi.org/project/reductionml/>`_:
@@ -30,14 +30,14 @@
                 <div style="display:flex;">
 
             .. button-ref:: getting_started
-                :color: primary
+                :color: info
                 :shadow:
                 :class: sd-mr-1
 
                 Getting started
 
             .. button-ref:: reference
-                :color: primary
+                :color: info
                 :shadow:
 
                 API reference
@@ -50,9 +50,9 @@
     .. grid-item::
 
         .. card::
-            :class-header: card-emoji
+            :class-header: card-header
 
-            📦 :raw-html:`<br />` Rust package
+            :raw-html:`<span class="card-emoji">📦</span><br />` Rust package
             ^^^
 
             Install from `crates.io <https://crates.io/crates/reductionml-core>`__:
@@ -62,7 +62,7 @@
                 cargo add reductionml-core
 
             .. button-link:: https://docs.rs/reductionml-core/latest/reductionml_core/
-                :color: primary
+                :color: info
                 :shadow:
 
                 API reference :octicon:`link-external`
@@ -70,9 +70,9 @@
     .. grid-item::
 
         .. card::
-            :class-header: card-emoji
+            :class-header: card-header
 
-            ⌨️ :raw-html:`<br />` Command line tool
+            :raw-html:`<span class="card-emoji">⌨️</span><br />` Command line tool
             ^^^
 
             Install from `crates.io <https://crates.io/crates/reductionml-cli>`__:
@@ -84,7 +84,7 @@
             Binary name: ``reml``
 
             .. button-link:: https://github.com/jackgerrits/reductionml#first-steps
-                :color: primary
+                :color: info
                 :shadow:
 
                 Getting started :octicon:`link-external`
