@@ -123,9 +123,7 @@ impl WrappedWorkspace {
         Ok(())
     }
 
-    pub(crate) fn entry_reduction_types(&self) -> PyResult<WrappedReductionTypesDescription> {
-        Ok(WrappedReductionTypesDescription(
-            self.0.get_entry_reduction().types().clone(),
-        ))
+    pub(crate) fn get_entry_reduction_types(&self) -> WrappedReductionTypesDescription {
+        WrappedReductionTypesDescription(self.0.get_entry_reduction().types().clone())
     }
 }
