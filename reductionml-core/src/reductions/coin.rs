@@ -15,12 +15,28 @@ use crate::utils::bits_to_max_feature_index;
 use crate::utils::AsInner;
 use crate::weights::{foreach_feature, foreach_feature_with_state, foreach_feature_with_state_mut};
 use crate::{impl_default_factory_functions, types::*, ModelIndex, StateIndex};
+use derive_builder::Builder;
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 
-#[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone, JsonSchema)]
+#[derive(Deserialize, Serialize, Debug, Clone, JsonSchema)]
+pub enum LinkFunction {
+    Identity,
+    Logistic,
+}
+
+impl LinkFunction {
+    pub fn link(&self, value: f32) -> f32 {
+        match self {
+            LinkFunction::Identity => value,
+            LinkFunction::Logistic => 1.0 / (1.0 + (-value).exp()),
+        }
+    }
+}
+
+#[derive(Deserialize, DefaultFromSerde, Serialize, Debug, Clone, JsonSchema, Builder)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct CoinRegressorConfig {
@@ -38,6 +54,9 @@ pub struct CoinRegressorConfig {
 
     #[serde(default = "default_loss_function")]
     loss_function: LossFunction,
+
+    #[serde(default = "default_link_function")]
+    link_function: LinkFunction,
 }
 
 const fn default_alpha() -> f32 {
@@ -50,6 +69,10 @@ const fn default_beta() -> f32 {
 
 fn default_loss_function() -> LossFunction {
     SquaredLoss::default().into()
+}
+
+fn default_link_function() -> LinkFunction {
+    LinkFunction::Identity
 }
 
 impl ReductionConfig for CoinRegressorConfig {
@@ -92,6 +115,13 @@ impl CoinRegressor {
     ) -> Result<CoinRegressor> {
         let (pairs, triples) =
             compile_interactions(global_config.interactions(), global_config.hash_seed());
+
+        let (min_label, max_label) = match config.loss_function {
+            LossFunction::Squared(_) => (0.0, 0.0),
+            // This is essentially so that the clamp is a no-op
+            LossFunction::Logistic(_) => (-50.0, 50.0),
+        };
+
         Ok(CoinRegressor {
             weights: DenseWeights::new(
                 bits_to_max_feature_index(global_config.num_bits()),
@@ -107,8 +137,8 @@ impl CoinRegressor {
                 *num_models_above as usize
             ],
             average_squared_norm_x: 0.0,
-            min_label: 0.0,
-            max_label: 0.0,
+            min_label,
+            max_label,
             loss_function: LossFunction::Squared(SquaredLoss::new()),
             pairs,
             triples,
@@ -180,7 +210,10 @@ impl ReductionImpl for CoinRegressor {
         }
 
         let scalar_pred = ScalarPrediction {
-            prediction: prediction.clamp(self.min_label, self.max_label),
+            prediction: self
+                .config
+                .link_function
+                .link(prediction.clamp(self.min_label, self.max_label)),
             raw_prediction: prediction,
         };
         scalar_pred.into()
