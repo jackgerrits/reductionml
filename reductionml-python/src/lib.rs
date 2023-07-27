@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use reductionml_core::{object_pool::Pool, reduction::ReductionTypeDescription};
+use reductionml_core::object_pool::Pool;
 
 use std::sync::Arc;
 

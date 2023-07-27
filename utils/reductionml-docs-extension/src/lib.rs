@@ -24,14 +24,14 @@ fn get_default_value(prop: &serde_json::Value) -> serde_json::Value {
         serde_json::Value::String(value) => value.to_string().into(),
         serde_json::Value::Array(_) => todo!(),
         // For now we will assume this always corresponds to a reduction
-        serde_json::Value::Object(obj) => prop.clone(),
+        serde_json::Value::Object(_) => prop.clone(),
         serde_json::Value::Null => "null".to_string().into(),
     }
 }
 
 #[pyfunction]
 fn get_reduction_info(name: &str) -> PyResult<PyObject> {
-    let mut default_config = REDUCTION_REGISTRY
+    let default_config = REDUCTION_REGISTRY
         .lock()
         .get(name)
         .unwrap()

@@ -1,15 +1,15 @@
-use pyo3::{impl_::pyclass::PyClassImpl, prelude::*, types::PyType, PyTypeInfo};
+use pyo3::prelude::*;
 
 use pythonize::{depythonize, pythonize};
 
 use pyo3::{pyclass, pymethods, types::PyDict, IntoPy, Python};
 use reductionml_core::{
-    reduction::ReductionTypeDescription, workspace::Configuration, Label, LabelType,
+    reduction::ReductionTypeDescription, workspace::Configuration, Label,
 };
 
 use crate::{
     features::WrappedFeatures,
-    labels::{WrappedLabel, WrappedLabelType, WrappedSimpleLabel},
+    labels::{WrappedLabel, WrappedLabelType},
     parsers::{create_parser, FormatType, WrappedParser},
     predictions::{WrappedPrediction, WrappedPredictionType},
 };
