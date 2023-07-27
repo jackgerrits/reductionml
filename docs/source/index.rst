@@ -55,7 +55,7 @@
             📦 :raw-html:`<br />` Rust package
             ^^^
 
-            Install from `crates.io <https://crates.io/crates/reductionml-core>`_:
+            Install from `crates.io <https://crates.io/crates/reductionml-core>`__:
 
             ::
 
@@ -75,7 +75,7 @@
             ⌨️ :raw-html:`<br />` Command line tool
             ^^^
 
-            Install from `crates.io <https://crates.io/crates/reductionml-cli>`_:
+            Install from `crates.io <https://crates.io/crates/reductionml-cli>`__:
 
             ::
 
