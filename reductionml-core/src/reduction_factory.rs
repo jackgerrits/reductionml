@@ -38,7 +38,7 @@ impl<'de> Deserialize<'de> for JsonReductionConfig {
             .unwrap()
             .to_string()
             .try_into()
-            .map_err(|x| serde::de::Error::custom(x))?;
+            .map_err(serde::de::Error::custom)?;
         let config = json.get_mut("config");
 
         match config {

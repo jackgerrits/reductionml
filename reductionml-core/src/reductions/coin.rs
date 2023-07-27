@@ -1,6 +1,5 @@
 use std::iter::Sum;
 
-
 use crate::dense_weights::DenseWeights;
 use crate::error::Result;
 use crate::global_config::GlobalConfig;

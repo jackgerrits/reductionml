@@ -24,6 +24,12 @@ impl DepthInfo {
     }
 }
 
+impl Default for DepthInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReductionWrapper {
     pub fn predict(
         &self,

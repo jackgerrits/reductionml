@@ -1,4 +1,3 @@
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -86,41 +85,48 @@ impl LossFunctionImpl for SquaredLoss {
     }
 }
 
-#[test]
-fn squared_loss_test() {
-    let loss_function = SquaredLoss::new();
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
 
-    let min_label = 0.0;
-    let max_label = 1.0;
+    use crate::loss_function::{LossFunctionImpl, SquaredLoss};
 
-    let learning_rate = 0.1;
-    let weight = 1.0;
+    #[test]
+    fn squared_loss_test() {
+        let loss_function = SquaredLoss::new();
 
-    let label = 0.5;
-    let prediction = 0.4;
-    let update_scale = learning_rate * weight;
-    let pred_per_update = 1.0;
+        let min_label = 0.0;
+        let max_label = 1.0;
 
-    assert_relative_eq!(
-        0.01,
-        loss_function.get_loss(min_label, max_label, prediction, label)
-    );
-    assert_relative_eq!(
-        0.01812692,
-        loss_function.get_update(prediction, label, update_scale, pred_per_update)
-    );
-    assert_relative_eq!(
-        0.02,
-        loss_function.get_unsafe_update(prediction, label, update_scale)
-    );
+        let learning_rate = 0.1;
+        let weight = 1.0;
 
-    assert_relative_eq!(0.04, loss_function.get_square_grad(prediction, label));
-    assert_relative_eq!(
-        -0.2,
-        loss_function.first_derivative(min_label, max_label, prediction, label)
-    );
-    assert_relative_eq!(
-        2.0,
-        loss_function.second_derivative(min_label, max_label, prediction, label)
-    );
+        let label = 0.5;
+        let prediction = 0.4;
+        let update_scale = learning_rate * weight;
+        let pred_per_update = 1.0;
+
+        assert_relative_eq!(
+            0.01,
+            loss_function.get_loss(min_label, max_label, prediction, label)
+        );
+        assert_relative_eq!(
+            0.01812692,
+            loss_function.get_update(prediction, label, update_scale, pred_per_update)
+        );
+        assert_relative_eq!(
+            0.02,
+            loss_function.get_unsafe_update(prediction, label, update_scale)
+        );
+
+        assert_relative_eq!(0.04, loss_function.get_square_grad(prediction, label));
+        assert_relative_eq!(
+            -0.2,
+            loss_function.first_derivative(min_label, max_label, prediction, label)
+        );
+        assert_relative_eq!(
+            2.0,
+            loss_function.second_derivative(min_label, max_label, prediction, label)
+        );
+    }
 }

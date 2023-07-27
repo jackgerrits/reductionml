@@ -258,6 +258,7 @@ pub enum Features<'a> {
     SparseCBAdfRef(&'a mut CBAdfFeatures),
 }
 
+#[allow(clippy::should_implement_trait)]
 impl<'a> Features<'a> {
     pub fn clone(&self) -> Features<'static> {
         match self {
