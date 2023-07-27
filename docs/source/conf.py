@@ -41,7 +41,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "myst_nb",
     "sphinx_copybutton",
-    "reduction_info"
+    "reduction_info",
+    "sphinx_design"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -62,7 +63,10 @@ exclude_patterns = []
 html_static_path = ['_static']
 
 html_theme = "furo"
-html_static_path = []
+
+html_css_files = [
+    'css/custom.css',
+]
 
 html_theme_options = {
     "source_repository": "https://github.com/jackgerrits/reductionml",
@@ -74,6 +78,8 @@ html_title = f"📚 ReductionML {release}"
 
 nb_execution_raise_on_error = True
 nb_execution_timeout = 60
-nb_execution_mode = "cache"
+nb_execution_mode = "off"
 nitpicky = True
 myst_heading_anchors = 3
+
+html_favicon = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>"
