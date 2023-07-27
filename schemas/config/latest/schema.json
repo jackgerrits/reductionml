@@ -32,6 +32,7 @@
                   "beta": 1.0,
                   "l1Lambda": 0.0,
                   "l2Lambda": 0.0,
+                  "linkFunction": "Identity",
                   "lossFunction": {
                     "Squared": {}
                   }
@@ -81,6 +82,7 @@
                   "beta": 1.0,
                   "l1Lambda": 0.0,
                   "l2Lambda": 0.0,
+                  "linkFunction": "Identity",
                   "lossFunction": {
                     "Squared": {}
                   }
@@ -118,6 +120,7 @@
                       "beta": 1.0,
                       "l1Lambda": 0.0,
                       "l2Lambda": 0.0,
+                      "linkFunction": "Identity",
                       "lossFunction": {
                         "Squared": {}
                       }
@@ -163,6 +166,7 @@
                       "beta": 1.0,
                       "l1Lambda": 0.0,
                       "l2Lambda": 0.0,
+                      "linkFunction": "Identity",
                       "lossFunction": {
                         "Squared": {}
                       }
@@ -227,6 +231,14 @@
               "default": 0.0,
               "type": "number",
               "format": "float"
+            },
+            "linkFunction": {
+              "default": "Identity",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/LinkFunction"
+                }
+              ]
             },
             "lossFunction": {
               "default": {
@@ -327,6 +339,28 @@
       },
       "additionalProperties": false
     },
+    "LinkFunction": {
+      "type": "string",
+      "enum": [
+        "Identity",
+        "Logistic"
+      ]
+    },
+    "LogisticLoss": {
+      "type": "object",
+      "properties": {
+        "max_label": {
+          "default": 1.0,
+          "type": "number",
+          "format": "float"
+        },
+        "min_label": {
+          "default": -1.0,
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
     "LossFunction": {
       "oneOf": [
         {
@@ -337,6 +371,18 @@
           "properties": {
             "Squared": {
               "$ref": "#/definitions/SquaredLoss"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Logistic"
+          ],
+          "properties": {
+            "Logistic": {
+              "$ref": "#/definitions/LogisticLoss"
             }
           },
           "additionalProperties": false
