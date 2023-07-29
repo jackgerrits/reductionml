@@ -210,7 +210,7 @@ impl ReductionImpl for CBExploreAdfSoftmaxReduction {
         let mut total_weight = 0.0;
 
         for (_, score) in scores.0.iter_mut() {
-            *score = (self.config.lambda * (*score - best_score)).exp();
+            *score = (-self.config.lambda * (*score - best_score)).exp();
             total_weight += *score;
         }
         for (_, score) in scores.0.iter_mut() {
