@@ -1,6 +1,7 @@
 pub mod config_schema;
 pub mod dense_weights;
 pub mod error;
+pub mod explore;
 pub mod global_config;
 pub mod hash;
 pub mod interactions;

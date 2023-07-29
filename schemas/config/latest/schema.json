@@ -150,6 +150,57 @@
       },
       "additionalProperties": false
     },
+    "CbExploreAdfSoftmax": {
+      "properties": {
+        "config": {
+          "title": "CBExploreAdfSoftmaxConfig",
+          "type": "object",
+          "properties": {
+            "cbAdf": {
+              "default": {
+                "config": {
+                  "cbType": "mtr",
+                  "regressor": {
+                    "config": {
+                      "alpha": 4.0,
+                      "beta": 1.0,
+                      "l1Lambda": 0.0,
+                      "l2Lambda": 0.0,
+                      "linkFunction": "Identity",
+                      "lossFunction": {
+                        "Squared": {}
+                      }
+                    },
+                    "typename": "Coin"
+                  }
+                },
+                "typename": "CbAdf"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            },
+            "lambda": {
+              "default": 1.0,
+              "type": "number",
+              "format": "float"
+            },
+            "uniformEpsilon": {
+              "default": 0.0,
+              "type": "number",
+              "format": "float"
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "CbExploreAdfSoftmax"
+        }
+      },
+      "additionalProperties": false
+    },
     "CbExploreAdfSquareCb": {
       "properties": {
         "config": {
@@ -424,6 +475,9 @@
         },
         {
           "$ref": "#/definitions/CbExploreAdfGreedy"
+        },
+        {
+          "$ref": "#/definitions/CbExploreAdfSoftmax"
         },
         {
           "$ref": "#/definitions/CbExploreAdfSquareCb"
