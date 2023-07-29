@@ -48,7 +48,7 @@ Currently there are two variants which share common structures.
 - [Simple](#simple) format
 - [CB](#cb) format
 
-### Simple
+#### Simple
 
 Simple input is for regression scenarios.
 
@@ -68,7 +68,7 @@ This format produces a [`SimpleLabel`](https://docs.rs/reductionml-core/latest/r
 - If the `weight` property is not provided, it is assumed to be 1.0.
 - `label` is optional. If not provided, the input can only be used for predictions and not training.
 
-### CB
+#### CB
 
 CB input is for contextual bandit scenarios.
 
