@@ -8,3 +8,5 @@ dependencies:
     - myst-nb
     - scikit-learn
     - matplotlib
+    - sphinx-copybutton
+    - sphinx-design

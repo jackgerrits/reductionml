@@ -31,7 +31,11 @@
                   "alpha": 4.0,
                   "beta": 1.0,
                   "l1Lambda": 0.0,
-                  "l2Lambda": 0.0
+                  "l2Lambda": 0.0,
+                  "linkFunction": "Identity",
+                  "lossFunction": {
+                    "Squared": {}
+                  }
                 },
                 "typename": "Coin"
               },
@@ -77,7 +81,11 @@
                   "alpha": 4.0,
                   "beta": 1.0,
                   "l1Lambda": 0.0,
-                  "l2Lambda": 0.0
+                  "l2Lambda": 0.0,
+                  "linkFunction": "Identity",
+                  "lossFunction": {
+                    "Squared": {}
+                  }
                 },
                 "typename": "Coin"
               },
@@ -111,7 +119,11 @@
                       "alpha": 4.0,
                       "beta": 1.0,
                       "l1Lambda": 0.0,
-                      "l2Lambda": 0.0
+                      "l2Lambda": 0.0,
+                      "linkFunction": "Identity",
+                      "lossFunction": {
+                        "Squared": {}
+                      }
                     },
                     "typename": "Coin"
                   }
@@ -153,7 +165,11 @@
                       "alpha": 4.0,
                       "beta": 1.0,
                       "l1Lambda": 0.0,
-                      "l2Lambda": 0.0
+                      "l2Lambda": 0.0,
+                      "linkFunction": "Identity",
+                      "lossFunction": {
+                        "Squared": {}
+                      }
                     },
                     "typename": "Coin"
                   }
@@ -215,6 +231,24 @@
               "default": 0.0,
               "type": "number",
               "format": "float"
+            },
+            "linkFunction": {
+              "default": "Identity",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/LinkFunction"
+                }
+              ]
+            },
+            "lossFunction": {
+              "default": {
+                "Squared": {}
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/LossFunction"
+                }
+              ]
             }
           },
           "additionalProperties": false
@@ -305,6 +339,56 @@
       },
       "additionalProperties": false
     },
+    "LinkFunction": {
+      "type": "string",
+      "enum": [
+        "Identity",
+        "Logistic"
+      ]
+    },
+    "LogisticLoss": {
+      "type": "object",
+      "properties": {
+        "max_label": {
+          "default": 1.0,
+          "type": "number",
+          "format": "float"
+        },
+        "min_label": {
+          "default": -1.0,
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "LossFunction": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "Squared"
+          ],
+          "properties": {
+            "Squared": {
+              "$ref": "#/definitions/SquaredLoss"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Logistic"
+          ],
+          "properties": {
+            "Logistic": {
+              "$ref": "#/definitions/LogisticLoss"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "NamespaceDef": {
       "oneOf": [
         {
@@ -326,6 +410,9 @@
           "additionalProperties": false
         }
       ]
+    },
+    "SquaredLoss": {
+      "type": "object"
     },
     "any_reduction_config": {
       "oneOf": [

@@ -20,28 +20,36 @@ ReductionType = _reductionml.ReductionType
 ScalarPred = _reductionml.ScalarPred
 SparseFeatures = _reductionml.SparseFeatures
 TextParser = _reductionml.TextParser
+ReductionTypesDescription = _reductionml.ReductionTypesDescription
+LabelType = _reductionml.LabelType
+PredictionType = _reductionml.PredictionType
+__version__ = _reductionml.version()
 
 __all__ = [
-    "SimpleLabel",
+    "__version__",
     "ActionProbsPred",
     "ActionScoresPred",
     "CbAdfFeatures",
     "CbLabel",
+    "Config",
+    "EntryReductionConfig",
+    "Features",
     "FormatType",
+    "GlobalConfig",
+    "Interaction",
     "JsonParser",
+    "Label",
+    "LabelType",
+    "NameInteraction",
+    "Prediction",
+    "PredictionType",
     "ReductionType",
+    "ReductionTypesDescription",
     "ScalarPred",
+    "SimpleLabel",
     "SparseFeatures",
     "TextParser",
     "Workspace",
-    "Config",
-    "GlobalConfig",
-    "EntryReductionConfig",
-    "Features",
-    "Label",
-    "Prediction",
-    "Interaction",
-    "NameInteraction",
 ]
 
 
@@ -148,3 +156,7 @@ class Workspace:
         label: Label,
     ) -> Prediction:
         return self._workspace.predict_then_learn(features, label)
+
+    @property
+    def entry_reduction_types(self) -> ReductionTypesDescription:
+        return self._workspace.get_entry_reduction_types()

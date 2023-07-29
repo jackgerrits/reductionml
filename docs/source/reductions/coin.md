@@ -6,8 +6,8 @@ Coin is a regressor, which is based on [this paper](https://arxiv.org/abs/1602.0
 
 ## Configuration
 
-`reduction-config-json=Coin`
-
+```{reduction_config} Coin
+```
 
 ## Types
 

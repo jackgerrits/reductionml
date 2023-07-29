@@ -4,7 +4,8 @@
 
 ## Configuration
 
-`reduction-config-json=CbExploreAdfSquareCb`
+```{reduction_config} CbExploreAdfSquareCb
+```
 
 ## Types
 

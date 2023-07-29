@@ -7,7 +7,6 @@ The simplest configuration, to use a linear regressor is the following:
 ```json
 {
   "entryReduction": {
-    "config": {},
     "typename": "Coin"
   },
   "globalConfig": {}

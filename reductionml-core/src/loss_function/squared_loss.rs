@@ -1,6 +1,10 @@
-use crate::loss_function::{LossFunction, LossFunctionType};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-pub(crate) struct SquaredLoss {}
+use crate::loss_function::LossFunctionImpl;
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, Default)]
+pub struct SquaredLoss {}
 
 impl SquaredLoss {
     pub(crate) fn new() -> SquaredLoss {
@@ -8,26 +12,22 @@ impl SquaredLoss {
     }
 }
 
-impl LossFunction for SquaredLoss {
-    fn get_type(&self) -> LossFunctionType {
-        LossFunctionType::Squared
-    }
-
+impl LossFunctionImpl for SquaredLoss {
     fn get_loss(&self, min_label: f32, max_label: f32, prediction: f32, label: f32) -> f32 {
-        if prediction <= min_label && prediction >= max_label {
+        if prediction <= max_label && prediction >= min_label {
             (prediction - label) * (prediction - label)
-        } else if prediction < max_label {
-            if label == max_label {
+        } else if prediction < min_label {
+            if label == min_label {
                 return 0.;
             } else {
-                return (label - max_label) * (label - max_label)
-                    + 2. * (label - max_label) * (max_label - prediction);
+                return (label - min_label) * (label - min_label)
+                    + 2. * (label - min_label) * (min_label - prediction);
             }
-        } else if label == min_label {
+        } else if label == max_label {
             return 0.;
         } else {
-            return (min_label - label) * (min_label - label)
-                + 2. * (min_label - label) * (prediction - min_label);
+            return (max_label - label) * (max_label - label)
+                + 2. * (max_label - label) * (prediction - max_label);
         }
     }
 
@@ -77,10 +77,56 @@ impl LossFunction for SquaredLoss {
         prediction: f32,
         _label: f32,
     ) -> f32 {
-        if prediction <= min_label && prediction >= max_label {
+        if prediction <= max_label && prediction >= min_label {
             2.
         } else {
             0.
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+
+    use crate::loss_function::{LossFunctionImpl, SquaredLoss};
+
+    #[test]
+    fn squared_loss_test() {
+        let loss_function = SquaredLoss::new();
+
+        let min_label = 0.0;
+        let max_label = 1.0;
+
+        let learning_rate = 0.1;
+        let weight = 1.0;
+
+        let label = 0.5;
+        let prediction = 0.4;
+        let update_scale = learning_rate * weight;
+        let pred_per_update = 1.0;
+
+        assert_relative_eq!(
+            0.01,
+            loss_function.get_loss(min_label, max_label, prediction, label)
+        );
+        assert_relative_eq!(
+            0.01812692,
+            loss_function.get_update(prediction, label, update_scale, pred_per_update)
+        );
+        assert_relative_eq!(
+            0.02,
+            loss_function.get_unsafe_update(prediction, label, update_scale)
+        );
+
+        assert_relative_eq!(0.04, loss_function.get_square_grad(prediction, label));
+        assert_relative_eq!(
+            -0.2,
+            loss_function.first_derivative(min_label, max_label, prediction, label)
+        );
+        assert_relative_eq!(
+            2.0,
+            loss_function.second_derivative(min_label, max_label, prediction, label)
+        );
     }
 }

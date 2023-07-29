@@ -85,7 +85,7 @@ fn test_greedy_predict_json() {
         LabelType::CB,
         0,
         global_config.num_bits(),
-        pool.clone(),
+        pool,
     );
 
     let input = json!({
@@ -194,7 +194,7 @@ fn test_learning_e2e(
     global_config: &GlobalConfig,
     test_set: &[(String, usize)],
 ) {
-    for mut learner in learners.iter_mut() {
+    for learner in learners.iter_mut() {
         let pool = Arc::new(Pool::new());
         let json_parser_factory = JsonParserFactory::default();
         let json_parser = json_parser_factory.create(
@@ -208,7 +208,7 @@ fn test_learning_e2e(
         for i in 0..n {
             let ctx = context(i);
             let (chosen_action, p) = chosen(&ctx, i);
-            let reward = r(&ctx, &actions[usize::try_from(chosen_action).unwrap()], i);
+            let reward = r(&ctx, actions[usize::try_from(chosen_action).unwrap()], i);
             let (mut features, label) = json_parser
                 .parse_chunk(&ex_learn(&ctx, action0, action1, chosen_action, p, reward))
                 .unwrap();
@@ -218,7 +218,7 @@ fn test_learning_e2e(
         }
         for (ctx, expected) in test_set {
             let (mut features, _) = json_parser
-                .parse_chunk(&ex_pred(&ctx, action0, action1))
+                .parse_chunk(&ex_pred(ctx, action0, action1))
                 .unwrap();
             let prediction = learner.predict(&mut features, &mut DepthInfo::new(), 0.into());
             let pred: &ActionProbsPrediction = prediction.as_inner().unwrap();
@@ -240,13 +240,13 @@ fn test_learning_e2e(
 
 #[test]
 fn test_cb_stationary_deterministic_actions_single_context() {
-    fn context(i: i32) -> String {
+    fn context(_i: i32) -> String {
         "Tom".to_owned()
     }
-    fn chosen(context: &str, i: i32) -> (i32, f32) {
+    fn chosen(_context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
-    fn r(context: &str, action: &str, i: i32) -> f32 {
+    fn r(_context: &str, action: &str, _i: i32) -> f32 {
         if action == "Politics" {
             1.0
         } else {
@@ -301,10 +301,10 @@ fn test_cb_stationary_deterministic_actions_with_personalization() {
             "Anna".to_owned()
         }
     }
-    fn chosen(context: &str, i: i32) -> (i32, f32) {
+    fn chosen(_context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
-    fn r(context: &str, action: &str, i: i32) -> f32 {
+    fn r(context: &str, action: &str, _i: i32) -> f32 {
         if context == "Tom" && action == "Politics" {
             1.0
         } else if context == "Tom" && action == "Sports" {
@@ -371,7 +371,7 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
             "Anna".to_owned()
         }
     }
-    fn chosen(context: &str, i: i32) -> (i32, f32) {
+    fn chosen(_context: &str, i: i32) -> (i32, f32) {
         (i % 2, 0.5)
     }
     fn r(context: &str, action: &str, i: i32) -> f32 {
@@ -385,16 +385,14 @@ fn test_cb_nonstationary_deterministic_actions_with_personalization() {
             } else {
                 1.0
             }
+        } else if context == "Tom" && action == "Politics" {
+            0.0
+        } else if context == "Tom" && action == "Sports" {
+            1.0
+        } else if context == "Anna" && action == "Politics" {
+            1.0
         } else {
-            if context == "Tom" && action == "Politics" {
-                0.0
-            } else if context == "Tom" && action == "Sports" {
-                1.0
-            } else if context == "Anna" && action == "Politics" {
-                1.0
-            } else {
-                0.0
-            }
+            0.0
         }
     }
 

@@ -38,3 +38,7 @@ criterion = "0.5"
 [[bench]]
 name = "text_bench"
 harness = false
+
+[[bench]]
+name = "learn_bench"
+harness = false

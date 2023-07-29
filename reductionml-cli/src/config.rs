@@ -65,16 +65,12 @@ impl Command for ConfigCommand {
             ConfigSubCommand::New(args) => {
                 let default_reduction_config =
                     reductionml_core::reduction_registry::REDUCTION_REGISTRY
-                        .read()
-                        .as_ref()
-                        .unwrap()
+                        .lock()
                         .get(&args.reduction)
                         .with_context(|| {
                             let available_reductions =
                                 reductionml_core::reduction_registry::REDUCTION_REGISTRY
-                                    .read()
-                                    .as_ref()
-                                    .unwrap()
+                                    .lock()
                                     .iter()
                                     .map(|s| s.typename().to_string())
                                     .collect::<Vec<String>>()

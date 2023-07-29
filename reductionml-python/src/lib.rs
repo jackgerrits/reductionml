@@ -29,10 +29,17 @@ impl From<WrappedError> for PyErr {
     }
 }
 
+// expose version
+#[pyfunction]
+fn version() -> PyResult<String> {
+    Ok(env!("CARGO_PKG_VERSION").to_string())
+}
+
 #[pymodule]
 fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Workspace
     m.add_class::<workspace::WrappedWorkspace>()?;
+    m.add_class::<workspace::WrappedReductionTypesDescription>()?;
 
     // Features
     m.add_class::<features::WrappedSparseFeatures>()?;
@@ -41,11 +48,13 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     // Labels
     m.add_class::<labels::WrappedSimpleLabel>()?;
     m.add_class::<labels::WrappedCBLabel>()?;
+    m.add_class::<labels::WrappedLabelType>()?;
 
     // Predictions
     m.add_class::<predictions::WrappedScalarPrediction>()?;
     m.add_class::<predictions::WrappedActionProbsPrediction>()?;
     m.add_class::<predictions::WrappedActionScoresPrediction>()?;
+    m.add_class::<predictions::WrappedPredictionType>()?;
 
     // Parsers
     m.add_class::<parsers::FormatType>()?;
@@ -53,6 +62,8 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<parsers::WrappedParserTextOnly>()?;
     m.add_class::<parsers::WrappedParserTextAndJson>()?;
     m.add_function(wrap_pyfunction!(parsers::create_parser, m)?)?;
+
+    m.add_function(wrap_pyfunction!(version, m)?)?;
 
     Ok(())
 }

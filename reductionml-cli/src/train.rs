@@ -397,12 +397,13 @@ impl Command for TrainCommand {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn process_example(
     label: Option<Label>,
     workspace: &mut reductionml_core::workspace::Workspace,
     mut features: Features<'_>,
     predictions_file: &mut Option<io::BufWriter<File>>,
-    metrics: &mut Vec<Box<dyn Metric>>,
+    metrics: &mut [Box<dyn Metric>],
     manager: &mut TrainResultManager,
     quiet: bool,
     pool: &std::sync::Arc<
