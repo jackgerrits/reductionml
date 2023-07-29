@@ -9,6 +9,7 @@ For example, contextual bandit exploration algorithms reduce to contextual bandi
 
 cb_adf
 cb_explore_adf_greedy
+cb_explore_adf_softmax.md
 cb_explore_adf_square_cb.md
 coin
 ```
