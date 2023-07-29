@@ -7,8 +7,8 @@ use crate::{
     reduction_factory::ReductionFactory,
     reductions::{
         BinaryReductionFactory, CBAdfReductionFactory, CBExploreAdfGreedyReductionFactory,
-        CBExploreAdfSquareCBReductionFactory, CoinRegressorFactory, DebugReductionFactory,
-        CBExploreAdfSoftmaxReductionFactory,
+        CBExploreAdfSoftmaxReductionFactory, CBExploreAdfSquareCBReductionFactory,
+        CoinRegressorFactory, DebugReductionFactory,
     },
 };
 
@@ -21,7 +21,7 @@ pub static REDUCTION_REGISTRY: Lazy<ReentrantMutex<ReductionRegistry>> = Lazy::n
     registry.register(Box::<CBExploreAdfGreedyReductionFactory>::default());
     registry.register(Box::<DebugReductionFactory>::default());
     registry.register(Box::<CBExploreAdfSquareCBReductionFactory>::default());
-    registry.register(Box::<CBExploreAdfSoftmaxReductionFactory>::default());    
+    registry.register(Box::<CBExploreAdfSoftmaxReductionFactory>::default());
     registry.into()
 });
 

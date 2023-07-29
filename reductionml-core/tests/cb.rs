@@ -9,8 +9,9 @@ use reductionml_core::{
     reduction::ReductionWrapper,
     reduction_factory::ReductionFactory,
     reductions::{
-        CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory, CBExploreAdfSquareCBConfig,
-        CBExploreAdfSquareCBReductionFactory, CBExploreAdfSoftmaxConfig, CBExploreAdfSoftmaxReductionFactory,
+        CBExploreAdfGreedyConfig, CBExploreAdfGreedyReductionFactory, CBExploreAdfSoftmaxConfig,
+        CBExploreAdfSoftmaxReductionFactory, CBExploreAdfSquareCBConfig,
+        CBExploreAdfSquareCBReductionFactory,
     },
     sparse_namespaced_features::{Namespace, SparseFeatures},
     utils::AsInner,
@@ -276,7 +277,7 @@ fn test_cb_stationary_deterministic_actions_single_context() {
                 &global_config,
                 1.into(),
             )
-            .unwrap(),            
+            .unwrap(),
     ];
 
     test_learning_e2e(

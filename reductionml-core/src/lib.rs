@@ -1,6 +1,7 @@
 pub mod config_schema;
 pub mod dense_weights;
 pub mod error;
+pub mod explore;
 pub mod global_config;
 pub mod hash;
 pub mod interactions;
@@ -17,7 +18,6 @@ pub mod sparse_namespaced_features;
 pub mod types;
 pub mod weights;
 pub mod workspace;
-pub mod explore;
 
 pub mod utils;
 

@@ -8,13 +8,13 @@ use crate::reduction_factory::{
     create_reduction, JsonReductionConfig, PascalCaseString, ReductionConfig, ReductionFactory,
 };
 
+use crate::explore::enforce_min_prob;
 use crate::{impl_default_factory_functions, types::*, ModelIndex};
 use schemars::schema::RootSchema;
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_default::DefaultFromSerde;
 use serde_json::json;
-use crate::explore::enforce_min_prob;
 
 use super::CBAdfConfig;
 
