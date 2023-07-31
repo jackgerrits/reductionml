@@ -1,4 +1,3 @@
-import re
 from docutils.parsers.rst import Directive
 import reductionml_docs_extension
 import docutils
