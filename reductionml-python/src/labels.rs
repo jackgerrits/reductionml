@@ -30,7 +30,6 @@ impl From<WrappedLabelType> for LabelType {
     }
 }
 
-
 #[pyclass]
 #[derive(Clone)]
 #[pyo3(name = "SimpleLabel")]
@@ -50,7 +49,6 @@ impl Into<Label> for WrappedSimpleLabel {
 
 #[pymethods]
 impl WrappedSimpleLabel {
-
     #[new]
     #[pyo3(signature = (value, weight = 1.0))]
     pub(crate) fn new(value: f32, weight: f32) -> Self {

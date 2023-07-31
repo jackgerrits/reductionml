@@ -9,6 +9,7 @@ pub(crate) mod features;
 pub(crate) mod labels;
 pub(crate) mod parsers;
 pub(crate) mod predictions;
+pub(crate) mod python_factory;
 pub(crate) mod workspace;
 
 pub static SPARSE_FEATURES_POOL: Lazy<
@@ -28,7 +29,6 @@ impl From<WrappedError> for PyErr {
         PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("{}", err.0))
     }
 }
-
 
 #[pyclass]
 #[pyo3(name = "FeaturesType")]

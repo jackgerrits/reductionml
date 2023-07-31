@@ -8,8 +8,9 @@ use reductionml_core::{
 };
 
 use crate::{
-    features::WrappedFeaturesForReturn, labels::{WrappedLabel, WrappedLabelType}, WrappedError, SPARSE_FEATURES_POOL,
-    WrappedFeaturesType
+    features::WrappedFeaturesForReturn,
+    labels::{WrappedLabel, WrappedLabelType},
+    WrappedError, WrappedFeaturesType, SPARSE_FEATURES_POOL,
 };
 
 #[pyclass]
@@ -95,7 +96,8 @@ pub(crate) fn create_parser(
     hash_seed: u32,
     num_bits: u8,
 ) -> Result<WrappedParser, PyErr> {
-    let parser = format_type.get_parser(features_type.into(), label_type.into(), hash_seed, num_bits);
+    let parser =
+        format_type.get_parser(features_type.into(), label_type.into(), hash_seed, num_bits);
     match format_type {
         FormatType::VwText => Ok(WrappedParser::WrappedParserTextOnly(WrappedParserTextOnly(
             parser.into(),
