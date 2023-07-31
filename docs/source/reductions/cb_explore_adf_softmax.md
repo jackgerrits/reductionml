@@ -1,6 +1,5 @@
+(CbExploreAdfSoftmax)=
 # CbExploreAdfSoftmax
-
-- Typename: `CbExploreAdfSoftmax`
 
 ## Configuration
 
@@ -9,6 +8,6 @@
 
 ## Types
 
-- This format expects a [`CBLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBLabel.html)
-- This format expects [`CBAdfFeatures`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBAdfFeatures.html)
-- This format produces a [`ActionProbsPrediction`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.ActionProbsPrediction.html)
+- Expects: {class}`~reductionml.CbLabel`
+- Expects: {class}`~reductionml.CbAdfFeatures`
+- Produces: {class}`~reductionml.ActionProbsPred`

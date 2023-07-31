@@ -8,7 +8,9 @@ use reductionml_core::{
 };
 
 use crate::{
-    features::WrappedFeaturesForReturn, labels::WrappedLabel, WrappedError, SPARSE_FEATURES_POOL,
+    features::WrappedFeaturesForReturn,
+    labels::{WrappedLabel, WrappedLabelType},
+    WrappedError, WrappedFeaturesType, SPARSE_FEATURES_POOL,
 };
 
 #[pyclass]
@@ -44,38 +46,6 @@ pub(crate) enum FormatType {
     VwText,
     Json,
     DsJson,
-}
-
-#[pyclass]
-#[derive(Clone, Copy)]
-pub(crate) enum ReductionType {
-    Simple,
-    CB,
-}
-
-impl From<ReductionType> for (reductionml_core::FeaturesType, reductionml_core::LabelType) {
-    fn from(x: ReductionType) -> Self {
-        match x {
-            ReductionType::Simple => (FeaturesType::SparseSimple, LabelType::Simple),
-            ReductionType::CB => (FeaturesType::SparseCBAdf, LabelType::CB),
-        }
-    }
-}
-
-impl TryFrom<(reductionml_core::FeaturesType, reductionml_core::LabelType)> for ReductionType {
-    type Error = pyo3::PyErr;
-
-    fn try_from(
-        value: (reductionml_core::FeaturesType, reductionml_core::LabelType),
-    ) -> Result<Self, Self::Error> {
-        match value {
-            (FeaturesType::SparseSimple, LabelType::Simple) => Ok(ReductionType::Simple),
-            (FeaturesType::SparseCBAdf, LabelType::CB) => Ok(ReductionType::CB),
-            _ => Err(pyo3::exceptions::PyValueError::new_err(
-                "Invalid reduction type",
-            )),
-        }
-    }
 }
 
 impl FormatType {
@@ -121,12 +91,13 @@ impl FormatType {
 #[pyfunction]
 pub(crate) fn create_parser(
     format_type: FormatType,
-    reduction_type: ReductionType,
+    features_type: WrappedFeaturesType,
+    label_type: WrappedLabelType,
     hash_seed: u32,
     num_bits: u8,
 ) -> Result<WrappedParser, PyErr> {
-    let (features_type, label_type) = reduction_type.into();
-    let parser = format_type.get_parser(features_type, label_type, hash_seed, num_bits);
+    let parser =
+        format_type.get_parser(features_type.into(), label_type.into(), hash_seed, num_bits);
     match format_type {
         FormatType::VwText => Ok(WrappedParser::WrappedParserTextOnly(WrappedParserTextOnly(
             parser.into(),
@@ -142,6 +113,7 @@ pub(crate) fn create_parser(
 
 #[pymethods]
 impl WrappedParserTextOnly {
+    /// parse(input: str) -> typing.Tuple[typing.Union[SparseFeatures, CbAdfFeatures], typing.Optional[Union[SimpleLabel, CbLabel]]]
     fn parse(
         &self,
         input: &str,
@@ -165,6 +137,7 @@ pub(crate) enum JsonInputKinds<'a> {
 
 #[pymethods]
 impl WrappedParserTextAndJson {
+    /// parse(input: typing.Union[typing.Dict[str, typing.Any], str]) -> typing.Tuple[typing.Union[SparseFeatures, CbAdfFeatures], typing.Optional[Union[SimpleLabel, CbLabel]]]
     fn parse(
         &self,
         input: JsonInputKinds,

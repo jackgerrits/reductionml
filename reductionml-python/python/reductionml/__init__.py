@@ -1,13 +1,9 @@
 from __future__ import annotations
 from . import _reductionml
 import typing
-import sys
-from typing import Any, Dict, Literal, Optional, List, Union
+from typing import Any, Dict, Literal, List, Union
 
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 SimpleLabel = _reductionml.SimpleLabel
 ActionProbsPred = _reductionml.ActionProbsPred
@@ -16,13 +12,13 @@ CbAdfFeatures = _reductionml.CbAdfFeatures
 CbLabel = _reductionml.CbLabel
 FormatType = _reductionml.FormatType
 JsonParser = _reductionml.JsonParser
-ReductionType = _reductionml.ReductionType
 ScalarPred = _reductionml.ScalarPred
 SparseFeatures = _reductionml.SparseFeatures
 TextParser = _reductionml.TextParser
 ReductionTypesDescription = _reductionml.ReductionTypesDescription
 LabelType = _reductionml.LabelType
 PredictionType = _reductionml.PredictionType
+FeaturesType = _reductionml.FeaturesType
 __version__ = _reductionml.version()
 
 __all__ = [
@@ -34,6 +30,7 @@ __all__ = [
     "Config",
     "EntryReductionConfig",
     "Features",
+    "FeaturesType",
     "FormatType",
     "GlobalConfig",
     "Interaction",
@@ -43,7 +40,6 @@ __all__ = [
     "NameInteraction",
     "Prediction",
     "PredictionType",
-    "ReductionType",
     "ReductionTypesDescription",
     "ScalarPred",
     "SimpleLabel",
@@ -61,18 +57,24 @@ Interaction = Union[Literal["Default"], NameInteraction]
 
 
 class GlobalConfig(TypedDict):
-    numBits: Optional[int]
-    hashSeed: Optional[int]
-    constantFeatureEnabled: Optional[bool]
-    interactions: Optional[List[Interaction]]
+    """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
+    numBits: NotRequired[int]
+    hashSeed: NotRequired[int]
+    constantFeatureEnabled: NotRequired[bool]
+    interactions: NotRequired[List[Interaction]]
 
 
 class EntryReductionConfig(TypedDict):
-    config: Dict[str, Any]
+    """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
+    config: NotRequired[Dict[str, Any]]
     typename: str
 
 
 class Config(TypedDict):
+    """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
     globalConfig: GlobalConfig
     entryReduction: EntryReductionConfig
 

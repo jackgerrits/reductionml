@@ -20,9 +20,25 @@ impl From<LabelType> for WrappedLabelType {
     }
 }
 
+impl From<WrappedLabelType> for LabelType {
+    fn from(x: WrappedLabelType) -> Self {
+        match x {
+            WrappedLabelType::Simple => LabelType::Simple,
+            WrappedLabelType::Binary => LabelType::Binary,
+            WrappedLabelType::CB => LabelType::CB,
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 #[pyo3(name = "SimpleLabel")]
+/// __init__(value: float, weight: float = 1.0) -> None
+///
+/// Args:
+///     value(float): Label value
+///     weight(float): Label weight
+///
 pub(crate) struct WrappedSimpleLabel(reductionml_core::SimpleLabel);
 
 impl Into<Label> for WrappedSimpleLabel {
@@ -34,16 +50,25 @@ impl Into<Label> for WrappedSimpleLabel {
 #[pymethods]
 impl WrappedSimpleLabel {
     #[new]
+    #[pyo3(signature = (value, weight = 1.0))]
     pub(crate) fn new(value: f32, weight: f32) -> Self {
         Self(reductionml_core::SimpleLabel::new(value, weight))
     }
 
     #[getter]
+    /// The label's value
+    ///
+    /// Returns:
+    ///     float:
     fn get_value(&self) -> f32 {
         self.0.value()
     }
 
     #[getter]
+    /// Weight of example to be used in update
+    ///
+    /// Returns:
+    ///     float
     fn get_weight(&self) -> f32 {
         self.0.weight()
     }

@@ -54,23 +54,19 @@ class FormatType(Enum):
     Json = 2
     DsJson = 3
 
-# TODO: are integers correct here?
-@final
-class ReductionType(Enum):
-    CB = 1
-    Simple = 2
-
 @overload
 def create_parser(
     format_type: Literal[FormatType.VwText],
-    reduction_type: ReductionType,
+    features_type: FeaturesType,
+    label_type: LabelType,
     hash_seed: int,
     num_bits: int,
 ) -> TextParser: ...
 @overload
 def create_parser(
     format_type: Union[Literal[FormatType.DsJson], Literal[FormatType.Json]],
-    reduction_type: ReductionType,
+    features_type: FeaturesType,
+    label_type: LabelType,
     hash_seed: int,
     num_bits: int,
 ) -> JsonParser: ...
@@ -89,6 +85,12 @@ class JsonParser:
     ) -> Tuple[
         Union[SparseFeatures, CbAdfFeatures], Optional[Union[SimpleLabel, CbLabel]]
     ]: ...
+
+# TODO: are integers correct here?
+@final
+class FeaturesType(Enum):
+    SparseSimple = (1,)
+    SparseCbAdf = (2,)
 
 # TODO: are integers correct here?
 @final
