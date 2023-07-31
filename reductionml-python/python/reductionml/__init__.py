@@ -58,6 +58,7 @@ Interaction = Union[Literal["Default"], NameInteraction]
 
 class GlobalConfig(TypedDict):
     """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
     numBits: NotRequired[int]
     hashSeed: NotRequired[int]
     constantFeatureEnabled: NotRequired[bool]
@@ -66,12 +67,14 @@ class GlobalConfig(TypedDict):
 
 class EntryReductionConfig(TypedDict):
     """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
     config: NotRequired[Dict[str, Any]]
     typename: str
 
 
 class Config(TypedDict):
     """While this shows up as a class, it is actually a TypedDict. So it can be instantiated as a dict or as a class."""
+
     globalConfig: GlobalConfig
     entryReduction: EntryReductionConfig
 
