@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use reductionml_core::object_pool::Pool;
+use reductionml_core::{object_pool::Pool, FeaturesType};
 
 use std::sync::Arc;
 
@@ -29,6 +29,33 @@ impl From<WrappedError> for PyErr {
     }
 }
 
+
+#[pyclass]
+#[pyo3(name = "FeaturesType")]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum WrappedFeaturesType {
+    SparseSimple,
+    SparseCbAdf,
+}
+
+impl From<FeaturesType> for WrappedFeaturesType {
+    fn from(x: FeaturesType) -> Self {
+        match x {
+            FeaturesType::SparseSimple => WrappedFeaturesType::SparseSimple,
+            FeaturesType::SparseCBAdf => WrappedFeaturesType::SparseCbAdf,
+        }
+    }
+}
+
+impl From<WrappedFeaturesType> for FeaturesType {
+    fn from(x: WrappedFeaturesType) -> Self {
+        match x {
+            WrappedFeaturesType::SparseSimple => FeaturesType::SparseSimple,
+            WrappedFeaturesType::SparseCbAdf => FeaturesType::SparseCBAdf,
+        }
+    }
+}
+
 // expose version
 #[pyfunction]
 fn version() -> PyResult<String> {
@@ -42,6 +69,7 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<workspace::WrappedReductionTypesDescription>()?;
 
     // Features
+    m.add_class::<WrappedFeaturesType>()?;
     m.add_class::<features::WrappedSparseFeatures>()?;
     m.add_class::<features::WrappedCbAdfFeatures>()?;
 
@@ -58,7 +86,6 @@ fn _reductionml(_py: Python, m: &PyModule) -> PyResult<()> {
 
     // Parsers
     m.add_class::<parsers::FormatType>()?;
-    m.add_class::<parsers::ReductionType>()?;
     m.add_class::<parsers::WrappedParserTextOnly>()?;
     m.add_class::<parsers::WrappedParserTextAndJson>()?;
     m.add_function(wrap_pyfunction!(parsers::create_parser, m)?)?;

@@ -87,7 +87,8 @@ impl WrappedWorkspace {
 
         create_parser(
             format_type,
-            (features_type, label_type).try_into()?,
+            features_type.into(),
+            label_type.into(),
             hash_seed,
             num_bits,
         )

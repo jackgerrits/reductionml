@@ -60,6 +60,10 @@ impl WrappedScalarPrediction {
 
 #[pyclass]
 #[pyo3(name = "ActionScoresPred")]
+/// __init__(value: List[Tuple[int, float]]) -> None
+///
+/// Args:
+///     value: A list of tuples of the form (action, score)
 pub(crate) struct WrappedActionScoresPrediction(reductionml_core::ActionScoresPrediction);
 
 #[pymethods]

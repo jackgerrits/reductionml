@@ -1,6 +1,5 @@
+(CbAdf)=
 # CbAdf
-
-- Typename: `CbAdf`
 
 ## Configuration
 
@@ -9,6 +8,6 @@
 
 ## Types
 
-- This format expects a [`CBLabel`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBLabel.html)
-- This format expects [`CBAdfFeatures`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.CBAdfFeatures.html)
-- This format produces a [`ActionScoresPrediction`](https://docs.rs/reductionml-core/latest/reductionml_core/types/struct.ActionScoresPrediction.html)
+- Expects: {class}`~reductionml.CbLabel`
+- Expects: {class}`~reductionml.CbAdfFeatures`
+- Produces: {class}`~reductionml.ActionScoresPred`

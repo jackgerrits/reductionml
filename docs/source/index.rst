@@ -61,27 +61,6 @@ Packages
 
                 </div>
 
-
-    .. grid-item::
-
-        .. card::
-            :class-header: card-header
-
-            :raw-html:`<span class="card-emoji">📦</span><br />` Rust package
-            ^^^
-
-            Install from `crates.io <https://crates.io/crates/reductionml-core>`__:
-
-            ::
-
-                cargo add reductionml-core
-
-            .. button-link:: https://docs.rs/reductionml-core/latest/reductionml_core/
-                :color: info
-                :shadow:
-
-                API reference :octicon:`link-external`
-
     .. grid-item::
 
         .. card::
@@ -103,6 +82,27 @@ Packages
                 :shadow:
 
                 Getting started
+
+
+    .. grid-item::
+
+        .. card::
+            :class-header: card-header
+
+            :raw-html:`<span class="card-emoji">📦</span><br />` Rust package
+            ^^^
+
+            Install from `crates.io <https://crates.io/crates/reductionml-core>`__:
+
+            ::
+
+                cargo add reductionml-core
+
+            .. button-link:: https://docs.rs/reductionml-core/latest/reductionml_core/
+                :color: info
+                :shadow:
+
+                API reference :octicon:`link-external`
 
 .. toctree::
     :hidden:

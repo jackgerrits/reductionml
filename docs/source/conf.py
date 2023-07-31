@@ -41,7 +41,9 @@ extensions = [
     "myst_nb",
     "sphinx_copybutton",
     "reduction_info",
-    "sphinx_design"
+    "sphinx_design",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -82,3 +84,10 @@ nitpicky = True
 myst_heading_anchors = 4
 
 html_favicon = "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>"
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    }
+
+
+add_module_names = False

@@ -1,30 +1,42 @@
-from docutils import nodes
+import re
 from docutils.parsers.rst import Directive
 import reductionml_docs_extension
+import docutils
 
 class ReductionConfig(Directive):
 
     required_arguments = 1
 
     def run(self):
+        parser = docutils.parsers.rst.Parser()
+        document = self.state.document.copy()
+
         reduction_name = self.arguments[0]
+        content = f"""
+Typename: ``{reduction_name}``
+
+.. csv-table::
+    :header: "Property", "Type", "Default value"
+    :align: left
+
+"""
+
         info = reductionml_docs_extension.get_reduction_info(reduction_name)
-        bullet_list = nodes.bullet_list()
         for prop in info["properties"]:
-            item = nodes.list_item()
-            item += nodes.Text(f"{prop['name']}(")
-            item += nodes.literal(text=prop["type"])
-            item += nodes.Text(f"), default=")
+            name = prop['name']
+            proptype = prop['type']
 
             if isinstance(prop["default"], dict) and "typename" in prop["default"]:
-                value = f"{{\"typename\": \"{prop['default']['typename']}\"}}"
-                item += nodes.literal(text=value)
+                proptype = "reduction"
+                default_value = f"``{{\"typename\": \"{prop['default']['typename']}\"}}`` - :ref:`{prop['default']['typename']}`"
             else:
-                item += nodes.literal(text=prop["default"])
+                default_value = f"``{str(prop['default'])}``"
+            default_value = default_value.replace("\"", "\"\"")
+            content += f"""    "``{name}``", "{proptype}", "{default_value}"\n """
+        content += "\n\n"
 
-            bullet_list += item
-
-        return [bullet_list]
+        parser.parse(content, document)
+        return document.children
 
 
 def setup(app):
