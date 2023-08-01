@@ -32,6 +32,10 @@ impl From<WrappedError> for PyErr {
 #[pyclass]
 #[pyo3(name = "FeaturesType")]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Type of features
+///
+/// - SparseSimple - Corresponds with :py:class:`reductionml.SparseFeatures`
+/// - SparseCbAdf - Corresponds with :py:class:`reductionml.CbAdfFeatures`
 pub(crate) enum WrappedFeaturesType {
     SparseSimple,
     SparseCbAdf,
