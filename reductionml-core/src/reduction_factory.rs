@@ -147,7 +147,10 @@ pub trait ReductionFactory {
         num_models_above: ModelIndex,
     ) -> Result<ReductionWrapper>;
     fn typename(&self) -> PascalCaseString;
-    fn get_config_schema(&self) -> RootSchema;
+    fn get_config_schema(&self) -> RootSchema {
+        // TODO: make this accept "any"
+        RootSchema::default()
+    }
     fn get_config_default(&self) -> serde_json::Value;
     fn get_suggested_metrics(&self) -> Vec<String> {
         vec![]
