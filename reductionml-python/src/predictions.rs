@@ -4,6 +4,12 @@ use reductionml_core::PredictionType;
 #[pyclass]
 #[pyo3(name = "PredictionType")]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Type of prediction
+///
+/// - Scalar - Corresponds with :py:class:`reductionml.ScalarPred`
+/// - ActionScores - Corresponds with :py:class:`reductionml.ActionScoresPred`
+/// - ActionProbs - Corresponds with :py:class:`reductionml.ActionProbsPred`
+/// - Binary - not implemented
 pub(crate) enum WrappedPredictionType {
     Scalar,
     Binary,
@@ -22,8 +28,24 @@ impl From<PredictionType> for WrappedPredictionType {
     }
 }
 
+impl From<WrappedPredictionType> for PredictionType {
+    fn from(x: WrappedPredictionType) -> Self {
+        match x {
+            WrappedPredictionType::Scalar => PredictionType::Scalar,
+            WrappedPredictionType::Binary => PredictionType::Binary,
+            WrappedPredictionType::ActionScores => PredictionType::ActionScores,
+            WrappedPredictionType::ActionProbs => PredictionType::ActionProbs,
+        }
+    }
+}
+
 #[pyclass]
 #[pyo3(name = "ScalarPred")]
+/// __init__(prediction: float, raw_prediction: float) -> None
+///
+/// Args:
+///     prediction(float): Prediction value (including clamping by the seen range and link function)
+///     raw_prediction(float): Raw prediction value
 pub(crate) struct WrappedScalarPrediction(reductionml_core::ScalarPrediction);
 
 #[pymethods]
@@ -89,6 +111,10 @@ impl WrappedActionScoresPrediction {
 
 #[pyclass]
 #[pyo3(name = "ActionProbsPred")]
+/// __init__(value: List[Tuple[int, float]]) -> None
+///
+/// Args:
+///     value: A list of tuples of the form (action, probability)
 pub(crate) struct WrappedActionProbsPrediction(reductionml_core::ActionProbsPrediction);
 
 #[pymethods]
