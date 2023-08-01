@@ -4,6 +4,11 @@ use reductionml_core::{Label, LabelType};
 #[pyclass]
 #[pyo3(name = "LabelType")]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Type of label
+///
+/// - Simple - Corresponds with :py:class:`reductionml.SimpleLabel`
+/// - CB - Corresponds with :py:class:`reductionml.CbLabel`
+/// - Binary - not implemented
 pub(crate) enum WrappedLabelType {
     Simple,
     Binary,
@@ -68,7 +73,7 @@ impl WrappedSimpleLabel {
     /// Weight of example to be used in update
     ///
     /// Returns:
-    ///     float
+    ///     float:
     fn get_weight(&self) -> f32 {
         self.0.weight()
     }
@@ -89,6 +94,13 @@ impl WrappedSimpleLabel {
 #[pyclass]
 #[pyo3(name = "CbLabel")]
 #[derive(Clone)]
+/// __init__(action: int, cost: float, probability: float) -> None
+///
+/// Args:
+///     action(int): Chosen action (zero based)
+///     cost(float): Cost of chosen action
+///     probability(float): Probability of chosen action
+///
 pub(crate) struct WrappedCBLabel(reductionml_core::CBLabel);
 
 impl Into<Label> for WrappedCBLabel {
@@ -105,16 +117,28 @@ impl WrappedCBLabel {
     }
 
     #[getter]
+    /// The label's action
+    ///
+    /// Returns:
+    ///     int:
     fn get_action(&self) -> usize {
         self.0.action()
     }
 
     #[getter]
+    /// The label's cost
+    ///
+    /// Returns:
+    ///    float:
     fn get_cost(&self) -> f32 {
         self.0.cost()
     }
 
     #[getter]
+    /// The label's probability
+    ///
+    /// Returns:
+    ///    float:
     fn get_probability(&self) -> f32 {
         self.0.probability()
     }
