@@ -101,8 +101,8 @@ impl TextModeParserFactory for JsonParserFactory {
         pool: std::sync::Arc<Pool<SparseFeatures>>,
     ) -> JsonParser {
         JsonParser {
-            _feature_type: features_type,
-            _label_type: label_type,
+            features_type,
+            label_type,
             hash_seed,
             num_bits,
             pool,
@@ -111,11 +111,73 @@ impl TextModeParserFactory for JsonParserFactory {
 }
 
 pub struct JsonParser {
-    _feature_type: FeaturesType,
-    _label_type: LabelType,
+    features_type: FeaturesType,
+    label_type: LabelType,
     hash_seed: u32,
     num_bits: u8,
     pool: std::sync::Arc<Pool<SparseFeatures>>,
+}
+
+impl<'a, 'b> JsonParser {
+    fn parse_features(&self, json_input: &'a Value) -> Result<Features<'b>> {
+        match self.features_type {
+            FeaturesType::SparseSimple => match json_input.get("features") {
+                Value::Null => panic!("No features found"),
+                val => Ok(
+                    to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits).into(),
+                ),
+            },
+            FeaturesType::SparseCBAdf => {
+                let shared = match json_input.get("shared") {
+                    Value::Null => None,
+                    val => {
+                        let feats =
+                            to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits);
+                        Some(feats)
+                    }
+                };
+
+                let actions = match json_input.get("actions") {
+                    Value::Null => panic!("No actions found"),
+                    Value::Array(val) => val
+                        .iter()
+                        .map(|x| {
+                            to_features(x, self.pool.get_object(), self.hash_seed, self.num_bits)
+                        })
+                        .collect(),
+                    _ => panic!("Actions must be an array"),
+                };
+
+                Ok(CBAdfFeatures { shared, actions }.into())
+            }
+        }
+    }
+}
+
+impl JsonParser {
+    fn parse_label(&self, json_input: &Value) -> Result<Option<Label>> {
+        match self.label_type {
+            LabelType::Simple => Ok(match json_input.get("label") {
+                Value::Null => None,
+                Value::Number(val) => Some(SimpleLabel::from(val.as_f64().unwrap() as f32)),
+                val => {
+                    let l: SimpleLabel =
+                        serde_json::from_value(serde_json::Value::from(val.clone())).unwrap();
+                    Some(l)
+                }
+            }
+            .map(Into::into)),
+            LabelType::Binary => todo!(),
+            LabelType::CB => Ok(match json_input.get("label") {
+                Value::Null => None,
+                val => {
+                    let l: CBLabel =
+                        serde_json::from_value(serde_json::Value::from(val.clone())).unwrap();
+                    Some(l.into())
+                }
+            }),
+        }
+    }
 }
 
 impl TextModeParser for JsonParser {
@@ -132,65 +194,11 @@ impl TextModeParser for JsonParser {
         Ok(Some(output_buffer))
     }
 
-    fn parse_chunk<'b>(&self, chunk: &str) -> Result<(Features<'b>, Option<Label>)> {
+    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
         let json: Value = serde_json::from_str(chunk).expect("JSON was not well-formatted");
-        Ok(match (self._feature_type, self._label_type) {
-            (FeaturesType::SparseSimple, LabelType::Simple) => {
-                let label = match json.get("label") {
-                    Value::Null => None,
-                    Value::Number(val) => Some(SimpleLabel::from(val.as_f64().unwrap() as f32)),
-                    val => {
-                        let l: SimpleLabel =
-                            serde_json::from_value(serde_json::Value::from(val.clone())).unwrap();
-                        Some(l)
-                    }
-                };
-
-                let features = match json.get("features") {
-                    Value::Null => panic!("No features found"),
-                    val => to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits),
-                };
-
-                (Features::SparseSimple(features), label.map(|l| l.into()))
-            }
-            (FeaturesType::SparseCBAdf, LabelType::CB) => {
-                let label = match json.get("label") {
-                    Value::Null => None,
-                    val => {
-                        let l: CBLabel =
-                            serde_json::from_value(serde_json::Value::from(val.clone())).unwrap();
-                        Some(l)
-                    }
-                };
-
-                let shared = match json.get("shared") {
-                    Value::Null => None,
-                    val => {
-                        let feats =
-                            to_features(val, self.pool.get_object(), self.hash_seed, self.num_bits);
-                        Some(feats)
-                    }
-                };
-
-                let actions = match json.get("actions") {
-                    Value::Null => panic!("No actions found"),
-                    Value::Array(val) => val
-                        .iter()
-                        .map(|x| {
-                            to_features(x, self.pool.get_object(), self.hash_seed, self.num_bits)
-                        })
-                        .collect(),
-                    _ => panic!("Actions must be an array"),
-                };
-
-                (
-                    Features::SparseCBAdf(CBAdfFeatures { shared, actions }),
-                    label.map(|l| l.into()),
-                )
-            }
-
-            (_, _) => panic!("Feature type mismatch"),
-        })
+        let features = self.parse_features(&json)?;
+        let label = self.parse_label(&json)?;
+        Ok((features, label))
     }
 }
 
@@ -250,7 +258,8 @@ mod test {
             pool,
         );
 
-        let (features, label) = parser.parse_chunk(&json_obj.to_string()).unwrap();
+        let input = json_obj.to_string();
+        let (features, label) = parser.parse_chunk(&input).unwrap();
         let cb_label: &CBLabel = label.as_ref().unwrap().as_inner().unwrap();
         assert_eq!(cb_label.action, 3);
         assert_relative_eq!(cb_label.cost, 0.0);
@@ -317,7 +326,8 @@ mod test {
             pool,
         );
 
-        let (features, label) = parser.parse_chunk(&json_obj.to_string()).unwrap();
+        let input = json_obj.to_string();
+        let (features, label) = parser.parse_chunk(&input).unwrap();
         let lbl: &SimpleLabel = label.as_ref().unwrap().as_inner().unwrap();
         assert_relative_eq!(lbl.value(), 0.2);
         assert_relative_eq!(lbl.weight(), 0.4);

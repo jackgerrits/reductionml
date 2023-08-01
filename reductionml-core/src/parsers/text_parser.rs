@@ -43,7 +43,7 @@ pub trait TextModeParser: Sync {
         input: &mut dyn BufRead,
         output_buffer: String,
     ) -> Result<Option<String>>;
-    fn parse_chunk<'a>(&self, chunk: &str) -> Result<(Features<'a>, Option<Label>)>;
+    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)>;
     fn extract_feature_names<'a>(
         &self,
         _chunk: &'a str,

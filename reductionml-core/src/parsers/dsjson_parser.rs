@@ -170,7 +170,7 @@ impl TextModeParser for DsJsonParser {
         Ok(Some(output_buffer))
     }
 
-    fn parse_chunk<'b>(&self, chunk: &str) -> Result<(Features<'b>, Option<Label>)> {
+    fn parse_chunk<'a, 'b>(&self, chunk: &'a str) -> Result<(Features<'b>, Option<Label>)> {
         let json: Value = serde_json::from_str(chunk).expect("JSON was not well-formatted");
 
         let mut namespace_stack = Vec::new();
@@ -288,7 +288,8 @@ mod test {
             pool,
         );
 
-        let (features, label) = parser.parse_chunk(&json_obj.to_string()).unwrap();
+        let input = json_obj.to_string();
+        let (features, label) = parser.parse_chunk(&input).unwrap();
         let cb_label: &CBLabel = label.as_ref().unwrap().as_inner().unwrap();
         assert_eq!(cb_label.action, 3);
         assert_relative_eq!(cb_label.cost, 0.0);
