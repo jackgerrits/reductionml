@@ -4,7 +4,7 @@ use std::{
 };
 
 use schemars::schema::RootSchema;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     error::{Error, Result},

@@ -12,19 +12,25 @@ pub enum NamespaceDef {
 pub type Interaction = Vec<NamespaceDef>;
 pub type HashedInteraction = Vec<Namespace>;
 
+impl NamespaceDef {
+    pub fn to_namespace(&self, hash_seed: u32) -> Namespace {
+        match self {
+            NamespaceDef::Name(name) => {
+                let namespace_hash = hash_bytes(name.as_bytes(), hash_seed);
+                Namespace::Named(namespace_hash.into())
+            }
+            NamespaceDef::Default => Namespace::Default,
+        }
+    }
+}
+
 pub fn hash_interaction(interaction: &Interaction, hash_seed: u32) -> HashedInteraction {
     if interaction.is_empty() || interaction.len() > 3 {
         panic!("Interaction must be between 1 and 3 namespaces")
     }
     interaction
         .iter()
-        .map(|ns| match ns {
-            NamespaceDef::Name(name) => {
-                let namespace_hash = hash_bytes(name.as_bytes(), hash_seed);
-                Namespace::Named(namespace_hash.into())
-            }
-            NamespaceDef::Default => Namespace::Default,
-        })
+        .map(|ns| ns.to_namespace(hash_seed))
         .collect()
 }
 
