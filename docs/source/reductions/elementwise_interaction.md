@@ -1,5 +1,5 @@
 (ElementwiseInteraction)=
-# ElementwiseInteraction
+# Elementwise Interaction
 
 This reduction provides a way to generate features as the elementwise multiplication of two vectors. The specified pair of namespaces must both contain dense features.
 
