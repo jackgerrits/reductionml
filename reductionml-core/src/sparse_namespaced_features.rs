@@ -94,6 +94,14 @@ impl SparseFeaturesNamespace {
         }
     }
 
+    pub fn indices(&self) -> &[FeatureIndex] {
+        &self.feature_indices
+    }
+
+    pub fn values(&self) -> &[f32] {
+        &self.feature_values
+    }
+
     pub fn new(namespace: Namespace) -> SparseFeaturesNamespace {
         SparseFeaturesNamespace {
             namespace,
@@ -165,6 +173,7 @@ impl SparseFeaturesNamespace {
 #[derive(Serialize, Deserialize, PartialOrd, Ord, Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Namespace {
     Named(NamespaceHash),
+    RawHash(NamespaceHash),
     Default,
 }
 
@@ -181,9 +190,10 @@ impl Namespace {
         }
     }
 
-    pub fn hash(&self, _hash_seed: u32) -> NamespaceHash {
+    pub fn hash(&self) -> NamespaceHash {
         match self {
             Namespace::Named(hash) => *hash,
+            Namespace::RawHash(hash) => *hash,
             Namespace::Default => 0.into(),
         }
     }
@@ -335,6 +345,10 @@ impl SparseFeatures {
             .filter(|namespace| namespace.is_active())
     }
 
+    pub fn remove_namespace(&mut self, namespace: Namespace) -> Option<SparseFeaturesNamespace> {
+        self.namespaces.remove(&namespace)
+    }
+
     pub fn clear(&mut self) {
         for namespace in self.namespaces.values_mut() {
             namespace.clear();
@@ -348,6 +362,14 @@ impl SparseFeatures {
     //         namespace.feature_values.shrink_to_fit();
     //     }
     // }
+
+    pub fn set_namespace(
+        &mut self,
+        namespace: Namespace,
+        namespace_features: SparseFeaturesNamespace,
+    ) {
+        self.namespaces.insert(namespace, namespace_features);
+    }
 
     pub fn get_or_create_namespace(
         &mut self,

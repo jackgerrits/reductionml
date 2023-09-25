@@ -250,7 +250,7 @@ fn parse_namespace_inline(
     };
 
     let namespace_def = Namespace::from_name(namespace_name, hash_seed);
-    let namespace_hash = namespace_def.hash(hash_seed);
+    let namespace_hash = namespace_def.hash();
 
     let dest = dest_namespace.get_or_create_namespace(namespace_def);
     let mut offset_counter = 0;

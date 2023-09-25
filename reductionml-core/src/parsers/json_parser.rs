@@ -22,7 +22,7 @@ pub fn to_features(
         Value::Object(obj) => {
             for (ns_name, value) in obj {
                 let ns = output.get_or_create_namespace(Namespace::from_name(ns_name, hash_seed));
-                let ns_hash = ns.namespace().hash(hash_seed);
+                let ns_hash = ns.namespace().hash();
                 let mask = FeatureMask::from_num_bits(num_bits);
                 match value {
                     Value::Str(_) => todo!(),

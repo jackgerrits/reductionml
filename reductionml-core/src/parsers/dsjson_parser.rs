@@ -72,7 +72,7 @@ impl DsJsonParser {
                 let current_ns = *namespace_stack
                     .last()
                     .expect("namespace stack should not be empty here");
-                let current_ns_hash = current_ns.hash(self.hash_seed);
+                let current_ns_hash = current_ns.hash();
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
                     ParsedFeature::Simple { name: object_key }
@@ -86,7 +86,7 @@ impl DsJsonParser {
                 let current_ns = *namespace_stack
                     .last()
                     .expect("namespace stack should not be empty here");
-                let current_ns_hash = current_ns.hash(self.hash_seed);
+                let current_ns_hash = current_ns.hash();
                 let current_feats = features.get_or_create_namespace(current_ns);
                 current_feats.add_feature(
                     ParsedFeature::Simple { name: object_key }
@@ -99,7 +99,7 @@ impl DsJsonParser {
                 let current_ns = namespace_stack
                     .last()
                     .expect("namespace stack should not be empty here");
-                let current_ns_hash = current_ns.hash(self.hash_seed);
+                let current_ns_hash = current_ns.hash();
                 let current_feats = features.get_or_create_namespace(*current_ns);
                 current_feats.add_feature(
                     ParsedFeature::SimpleWithStringValue {
@@ -116,7 +116,7 @@ impl DsJsonParser {
                 let current_ns = *namespace_stack
                     .last()
                     .expect("namespace stack should not be empty here");
-                let current_ns_hash = current_ns.hash(self.hash_seed);
+                let current_ns_hash = current_ns.hash();
                 for (anon_idx, v) in value.iter().enumerate() {
                     match v {
                         Value::Number(value) => {
