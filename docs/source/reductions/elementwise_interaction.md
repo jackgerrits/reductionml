@@ -6,6 +6,8 @@ This reduction provides a way to generate features as the elementwise multiplica
 ```{warning} This is a work in progress and the API will change.
 ```
 
+To generate for multiple pairs, this reduction can be added multiple times.
+
 ## Configuration
 
 ```{reduction_config} ElementwiseInteraction

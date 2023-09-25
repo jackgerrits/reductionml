@@ -80,3 +80,13 @@ Contextual bandit scorer for action dependent features
 ````
 
 ### Other
+````{card-carousel} 2
+
+```{card} Elementwise Interaction
+:link: elementwise_interaction
+:link-type: doc
+
+Generate features as the elementwise multiplication of two vectors
+
+```
+````
