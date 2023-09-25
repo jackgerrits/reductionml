@@ -11,6 +11,7 @@ cb_adf
 cb_explore_adf_greedy
 cb_explore_adf_softmax
 cb_explore_adf_square_cb
+elementwise_interaction
 coin
 ```
 
