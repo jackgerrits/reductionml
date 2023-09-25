@@ -37,7 +37,8 @@ An elementwise interaction could be generated with the following config:
       "regressor": {
         "config": {
           "keepOriginalFeatures": false,
-          "pair": [{ "Name": "shared_vector" }, { "Name": "action_vector" }]
+          "one": { "Name": "action_vector" },
+          "two": { "Name": "shared_vector" }
         },
         "typename": "ElementwiseInteraction"
       }

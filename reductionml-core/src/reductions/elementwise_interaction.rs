@@ -29,8 +29,10 @@ struct ElementwiseInteractionConfig {
 
     /// TODO: document that is it pairs for now. But could conceptually be more.
     /// FIXME: this default doesn't really make sense.
-    #[serde(default = "default_pair")]
-    pair: (NamespaceDef, NamespaceDef),
+    #[serde(default = "default_ns")]
+    one: NamespaceDef,
+    #[serde(default = "default_ns")]
+    two: NamespaceDef,
 
     /// Default is false.
     #[serde(default)]
@@ -44,8 +46,8 @@ fn default_regressor() -> JsonReductionConfig {
     )
 }
 
-fn default_pair() -> (NamespaceDef, NamespaceDef) {
-    (NamespaceDef::Default, NamespaceDef::Default)
+fn default_ns() -> NamespaceDef {
+    NamespaceDef::Default
 }
 
 #[derive(Serialize, Deserialize)]
@@ -102,10 +104,9 @@ impl ReductionFactory for ElementwiseInteractionFactory {
             )));
         }
 
-        let (one, two) = config.pair.clone();
         let (one, two) = (
-            one.to_namespace(global_config.hash_seed()),
-            two.to_namespace(global_config.hash_seed()),
+            config.one.to_namespace(global_config.hash_seed()),
+            config.two.to_namespace(global_config.hash_seed()),
         );
 
         Ok(ReductionWrapper::new(
