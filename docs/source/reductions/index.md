@@ -11,6 +11,7 @@ cb_adf
 cb_explore_adf_greedy
 cb_explore_adf_softmax
 cb_explore_adf_square_cb
+elementwise_interaction
 coin
 ```
 
@@ -80,3 +81,13 @@ Contextual bandit scorer for action dependent features
 ````
 
 ### Other
+````{card-carousel} 2
+
+```{card} Elementwise Interaction
+:link: elementwise_interaction
+:link-type: doc
+
+Generate features as the elementwise multiplication of two vectors
+
+```
+````

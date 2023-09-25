@@ -358,6 +358,63 @@
       },
       "additionalProperties": false
     },
+    "ElementwiseInteraction": {
+      "properties": {
+        "config": {
+          "title": "ElementwiseInteractionConfig",
+          "type": "object",
+          "properties": {
+            "keepOriginalFeatures": {
+              "description": "Default is false.",
+              "default": false,
+              "type": "boolean"
+            },
+            "one": {
+              "description": "TODO: document that is it pairs for now. But could conceptually be more. FIXME: this default doesn't really make sense.",
+              "default": "Default",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/NamespaceDef"
+                }
+              ]
+            },
+            "regressor": {
+              "default": {
+                "config": {
+                  "alpha": 4.0,
+                  "beta": 1.0,
+                  "l1Lambda": 0.0,
+                  "l2Lambda": 0.0,
+                  "linkFunction": "Identity",
+                  "lossFunction": {
+                    "Squared": {}
+                  }
+                },
+                "typename": "Coin"
+              },
+              "allOf": [
+                {
+                  "$ref": "#/definitions/any_reduction_config"
+                }
+              ]
+            },
+            "two": {
+              "default": "Default",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/NamespaceDef"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "typename": {
+          "const": "ElementwiseInteraction"
+        }
+      },
+      "additionalProperties": false
+    },
     "GlobalConfig": {
       "type": "object",
       "properties": {
@@ -487,6 +544,9 @@
         },
         {
           "$ref": "#/definitions/Debug"
+        },
+        {
+          "$ref": "#/definitions/ElementwiseInteraction"
         }
       ]
     }
