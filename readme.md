@@ -1,4 +1,4 @@
-# 📚 ReductionML
+# 📚 ReductionML (ReML)
 
 [![Documentation Status](https://readthedocs.org/projects/reductionml/badge/?version=latest)](https://reductionml.readthedocs.io/en/latest/?badge=latest)
 
