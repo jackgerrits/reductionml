@@ -207,7 +207,7 @@ pub fn create_reduction(
 mod tests {
     use serde_json::json;
 
-    use crate::{reduction_factory::JsonReductionConfig, reduction_registry::REDUCTION_REGISTRY};
+    use crate::reduction_factory::JsonReductionConfig;
 
     use super::parse_config;
 
