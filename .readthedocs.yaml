@@ -8,10 +8,10 @@ sphinx:
   fail_on_warning: true
 
 build:
-  os: "ubuntu-22.04"
+  os: "ubuntu-24.04"
   tools:
     python: "miniconda3-4.7"
-    rust: "1.70"
+    rust: "1.87"
 
 python:
   install:
