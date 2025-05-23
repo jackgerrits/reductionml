@@ -124,8 +124,7 @@ class Workspace:
     def create_parser(
         self,
         format_type: typing.Literal[FormatType.VwText],
-    ) -> TextParser:
-        ...
+    ) -> TextParser: ...
 
     @typing.overload
     def create_parser(
@@ -133,8 +132,7 @@ class Workspace:
         format_type: typing.Union[
             typing.Literal[FormatType.DsJson], typing.Literal[FormatType.Json]
         ],
-    ) -> JsonParser:
-        ...
+    ) -> JsonParser: ...
 
     def create_parser(
         self,
